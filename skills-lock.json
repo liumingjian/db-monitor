@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "playwright-cli": {
+      "source": "microsoft/playwright-cli",
+      "sourceType": "github",
+      "computedHash": "d3b0292e4fce2457cb6a80eee36f496c0ec75383724f8b9a1b5e62f657673256"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "computedHash": "6337038fe1fe6bbe1b9f252ab678ee575859190bab6f0f246f4061824eb40875"
+    }
+  }
+}

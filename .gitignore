@@ -1,0 +1,12 @@
+.claude/
+.playwright/
+.playwright-cli/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+lepus-v3.8/logs/
+lepus-v3.8/etc/config.ini
+lepus-v3.8/web/application/config/database.php
+
