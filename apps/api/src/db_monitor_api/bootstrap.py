@@ -9,11 +9,13 @@ from db_monitor_api.alerting.postgres_repository import PostgresAlertingReposito
 from db_monitor_api.alerting.repository import AlertingRepository, InMemoryAlertingRepository
 from db_monitor_api.alerting.service import AlertingService
 from db_monitor_api.auth.repository import (
+    AuditRepository,
     InMemoryAuditRepository,
     InMemorySessionRepository,
     InMemoryUserRepository,
     SeedUser,
 )
+from db_monitor_api.auth.postgres_repository import PostgresAuditRepository
 from db_monitor_api.auth.service import (
     AuditService,
     AuthService,
@@ -71,6 +73,7 @@ def build_local_runtime(
     return _build_runtime(
         analytics_repository=analytics_repository or InMemoryAnalyticsRepository(),
         alerting_repository=alerting_repository or InMemoryAlertingRepository(),
+        audit_repository=InMemoryAuditRepository(),
         control_plane_repository=control_plane_repository or InMemoryControlPlaneRepository(),
         dependency_checks=dependency_checks
         or (
@@ -106,6 +109,7 @@ def build_postgres_runtime(
     return _build_runtime(
         analytics_repository=resolved_analytics,
         alerting_repository=alerting_repository or PostgresAlertingRepository(postgres_dsn=postgres_dsn),
+        audit_repository=PostgresAuditRepository(postgres_dsn=postgres_dsn),
         control_plane_repository=PostgresControlPlaneRepository(postgres_dsn=postgres_dsn),
         dependency_checks=dependency_checks
         or _build_postgres_dependency_checks(
@@ -124,6 +128,7 @@ def _build_runtime(
     *,
     analytics_repository: AnalyticsRepository,
     alerting_repository: AlertingRepository,
+    audit_repository: AuditRepository,
     control_plane_repository: ControlPlaneRepository,
     dependency_checks: tuple[DependencyCheck, ...],
     mysql_validator: MySQLConnectionValidator,
@@ -132,7 +137,6 @@ def _build_runtime(
     runtime_mode: str,
 ) -> AppRuntime:
     password_hasher = PasswordHasher()
-    audit_repository = InMemoryAuditRepository()
     audit_service = AuditService(audit_repository=audit_repository)
     auth_service = AuthService(
         audit_service=audit_service,

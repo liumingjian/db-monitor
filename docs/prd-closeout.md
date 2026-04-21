@@ -56,7 +56,7 @@
 | 用户/角色管理产品面 | 部分缺失 | 当前有 seed users、session、roles、permissions、RBAC enforcement，但没有完整的用户/角色管理 API 与 UI |
 | 实例列表筛选 | 已完成 | `Epic 10 / child #1` 已为 `/control/instances`、typed client 和 `/instances` 页面补齐名称、环境、标签、状态筛选 |
 | 告警列表筛选 | 已完成 | `Epic 10 / child #1` 已为 `/alerts`、typed client 和 `/alerts` 页面补齐状态、级别、时间、实例筛选 |
-| 审计日志持久化与查询 | 部分缺失 | 当前有 audit hooks，但 runtime 仍以 `InMemoryAuditRepository` 为主，不是正式的 PostgreSQL audit 产品面 |
+| 审计日志持久化与查询 | 已完成（最小产品面） | `Epic 10 / child #2` 已补齐 `audit_entries`、`PostgresAuditRepository` 和 admin-only `/auth/audit-entries`，关键控制面写路径已进入 PostgreSQL 审计真相 |
 | TPS 指标显式交付 | 缺失 | 当前显式交付的是 QPS、网络、uptime、replication lag、buffer-pool / Oracle sessions 等，未看到独立 TPS contract |
 | 实例角色/版本显式展示 | 部分缺失 | validation 中已有 server version，但详情页当前主要展示连接信息、validation status 和 trends，没有把“角色/版本”作为正式 readout 收口 |
 
@@ -66,9 +66,8 @@
 
 当前 closeout track 的剩余目标是：
 
-1. 审计日志持久化与最小查询面
-2. 用户/角色管理产品面
-3. TPS 与实例角色/版本显式展示
+1. 用户/角色管理产品面
+2. TPS 与实例角色/版本显式展示
 
 ## Bottom Line
 

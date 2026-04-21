@@ -18,6 +18,7 @@ POSTGRES_REQUIRED_TABLES: Final[tuple[str, ...]] = (
     "alert_history",
     "alert_records",
     "alert_rules",
+    "audit_entries",
     "control_mysql_instances",
     "control_settings",
     "organization_memberships",
@@ -121,6 +122,18 @@ CREATE TABLE IF NOT EXISTS alert_history (
     event_type TEXT NOT NULL,
     detail TEXT NOT NULL,
     occurred_at TIMESTAMPTZ NOT NULL,
+    FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+)
+"""
+_CREATE_AUDIT_ENTRIES_SQL = """
+CREATE TABLE IF NOT EXISTS audit_entries (
+    audit_id BIGSERIAL PRIMARY KEY,
+    organization_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    actor_user_id TEXT NOT NULL,
+    occurred_at TIMESTAMPTZ NOT NULL,
+    outcome TEXT NOT NULL,
+    resource TEXT NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
 )
 """
@@ -405,6 +418,7 @@ def bootstrap_postgres_schema(*, postgres_dsn: str) -> SchemaVersion:
             )
             cursor.execute(_SET_ALERT_HISTORY_ORGANIZATION_NOT_NULL_SQL)
             cursor.execute(_ENSURE_ALERT_HISTORY_ORGANIZATION_FK_SQL)
+            cursor.execute(_CREATE_AUDIT_ENTRIES_SQL)
             cursor.execute(
                 _UPSERT_VERSION_SQL,
                 (POSTGRES_SCHEMA_SCOPE, POSTGRES_SCHEMA_VERSION, updated_at),

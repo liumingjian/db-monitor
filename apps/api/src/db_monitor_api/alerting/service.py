@@ -98,6 +98,7 @@ class AlertingService:
         self.audit_service.record(
             action="rules.create",
             actor_user_id=actor_user_id,
+            organization_id=organization_id,
             outcome="allowed",
             resource="alert-rule",
         )
@@ -187,7 +188,11 @@ class AlertingService:
         updated_alert, event = workflow_result
         self.repository.upsert_alert(updated_alert)
         self.repository.append_history(event)
-        self._record_workflow_audit(action="alerts.acknowledge", actor_user_id=actor_user_id)
+        self._record_workflow_audit(
+            action="alerts.acknowledge",
+            actor_user_id=actor_user_id,
+            organization_id=organization_id,
+        )
         return self.get_alert(alert_id=alert_id, organization_id=organization_id)
 
     def assign_alert_owner(
@@ -213,7 +218,11 @@ class AlertingService:
         updated_alert, event = workflow_result
         self.repository.upsert_alert(updated_alert)
         self.repository.append_history(event)
-        self._record_workflow_audit(action="alerts.assign_owner", actor_user_id=actor_user_id)
+        self._record_workflow_audit(
+            action="alerts.assign_owner",
+            actor_user_id=actor_user_id,
+            organization_id=organization_id,
+        )
         return self.get_alert(alert_id=alert_id, organization_id=organization_id)
 
     def add_alert_note(
@@ -235,7 +244,11 @@ class AlertingService:
             occurred_at=utc_now(),
         )
         self.repository.append_history(event)
-        self._record_workflow_audit(action="alerts.add_note", actor_user_id=actor_user_id)
+        self._record_workflow_audit(
+            action="alerts.add_note",
+            actor_user_id=actor_user_id,
+            organization_id=organization_id,
+        )
         return self.get_alert(alert_id=alert_id, organization_id=organization_id)
 
     def _require_alert(
@@ -288,10 +301,17 @@ class AlertingService:
             f"Unsupported alert metric for engine {engine.value}: {metric_name}"
         )
 
-    def _record_workflow_audit(self, *, action: str, actor_user_id: str) -> None:
+    def _record_workflow_audit(
+        self,
+        *,
+        action: str,
+        actor_user_id: str,
+        organization_id: str,
+    ) -> None:
         self.audit_service.record(
             action=action,
             actor_user_id=actor_user_id,
+            organization_id=organization_id,
             outcome="allowed",
             resource="alert",
         )

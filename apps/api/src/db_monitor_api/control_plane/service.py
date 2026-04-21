@@ -44,7 +44,11 @@ class AssetService:
     ) -> MonitoredInstance:
         validation = self._validate_connection(engine=engine, connection=connection)
         if validation.status is ValidationStatus.FAILED:
-            self._record_asset_audit(actor_user_id=actor_user_id, outcome="failed")
+            self._record_asset_audit(
+                actor_user_id=actor_user_id,
+                organization_id=organization_id,
+                outcome="failed",
+            )
             raise AssetValidationError(validation.detail)
         instance = MonitoredInstance(
             connection=connection,
@@ -58,7 +62,11 @@ class AssetService:
             validation=validation,
         )
         self.repository.create_instance(instance)
-        self._record_asset_audit(actor_user_id=actor_user_id, outcome="allowed")
+        self._record_asset_audit(
+            actor_user_id=actor_user_id,
+            organization_id=organization_id,
+            outcome="allowed",
+        )
         return instance
 
     def get_instance(self, *, instance_id: str, organization_id: str) -> MonitoredInstance:
@@ -112,15 +120,23 @@ class AssetService:
         self.audit_service.record(
             action="instances.validate",
             actor_user_id=actor_user_id,
+            organization_id=organization_id,
             outcome="allowed" if validation.status is ValidationStatus.PASSED else "failed",
             resource="instance",
         )
         return updated_instance
 
-    def _record_asset_audit(self, *, actor_user_id: str, outcome: str) -> None:
+    def _record_asset_audit(
+        self,
+        *,
+        actor_user_id: str,
+        organization_id: str,
+        outcome: str,
+    ) -> None:
         self.audit_service.record(
             action="instances.create",
             actor_user_id=actor_user_id,
+            organization_id=organization_id,
             outcome=outcome,
             resource="instance",
         )
@@ -164,6 +180,7 @@ class SettingsService:
         self.audit_service.record(
             action="settings.write",
             actor_user_id=actor_user_id,
+            organization_id=organization_id,
             outcome="allowed",
             resource="settings",
         )

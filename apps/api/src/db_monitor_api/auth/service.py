@@ -14,7 +14,7 @@ from db_monitor_api.auth.domain import (
     utc_now,
 )
 from db_monitor_api.auth.repository import (
-    InMemoryAuditRepository,
+    AuditRepository,
     InMemorySessionRepository,
     InMemoryUserRepository,
 )
@@ -53,13 +53,14 @@ class PasswordHasher:
 
 @dataclass(frozen=True)
 class AuditService:
-    audit_repository: InMemoryAuditRepository
+    audit_repository: AuditRepository
 
     def record(
         self,
         *,
         action: str,
         actor_user_id: str,
+        organization_id: str,
         outcome: str,
         resource: str,
     ) -> None:
@@ -68,9 +69,22 @@ class AuditService:
                 action=action,
                 actor_user_id=actor_user_id,
                 occurred_at=utc_now(),
+                organization_id=organization_id,
                 outcome=outcome,
                 resource=resource,
             )
+        )
+
+    def list_entries(
+        self,
+        *,
+        limit: int,
+        organization_id: str,
+    ) -> tuple[AuditEntry, ...]:
+        return self.audit_repository.list_entries(
+            descending=True,
+            limit=limit,
+            organization_id=organization_id,
         )
 
 
@@ -101,6 +115,7 @@ class AuthService:
         self.audit_service.record(
             action="auth.login",
             actor_user_id=user_record.user.user_id,
+            organization_id=user_record.user.active_organization_id,
             outcome="allowed",
             resource="session",
         )
@@ -113,6 +128,7 @@ class AuthService:
         self.audit_service.record(
             action="auth.logout",
             actor_user_id=session.user_id,
+            organization_id=session.active_organization_id,
             outcome="allowed",
             resource="session",
         )
@@ -144,6 +160,7 @@ class AuthorizationService:
         self.audit_service.record(
             action=f"{resource}.denied",
             actor_user_id=context.user.user_id,
+            organization_id=context.active_organization.organization_id,
             outcome="denied",
             resource=resource,
         )

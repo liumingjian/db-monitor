@@ -81,6 +81,7 @@ class AuditEntry:
     action: str
     actor_user_id: str
     occurred_at: datetime
+    organization_id: str
     outcome: str
     resource: str
 

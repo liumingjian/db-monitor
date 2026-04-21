@@ -315,6 +315,45 @@
         "title": "AssignAlertOwnerRequest",
         "type": "object"
       },
+      "AuditEntryResponse": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "organization_id": {
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "resource": {
+            "title": "Resource",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "actor_user_id",
+          "occurred_at",
+          "organization_id",
+          "outcome",
+          "resource"
+        ],
+        "title": "AuditEntryResponse",
+        "type": "object"
+      },
       "ChartPointResponse": {
         "properties": {
           "timestamp": {
@@ -1606,6 +1645,52 @@
           }
         },
         "summary": "Get Overview"
+      }
+    },
+    "/auth/audit-entries": {
+      "get": {
+        "operationId": "list_audit_entries_auth_audit_entries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntryResponse"
+                  },
+                  "title": "Response List Audit Entries Auth Audit Entries Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Audit Entries"
       }
     },
     "/auth/login": {

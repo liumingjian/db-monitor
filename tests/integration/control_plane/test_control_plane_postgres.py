@@ -24,6 +24,8 @@ from db_monitor_api.alerting.domain import (
 from db_monitor_api.alerting.postgres_repository import PostgresAlertingRepository
 from db_monitor_api.app import create_app
 from db_monitor_api.bootstrap import build_postgres_runtime
+from db_monitor_api.auth.domain import AuditEntry
+from db_monitor_api.auth.postgres_repository import PostgresAuditRepository
 from db_monitor_api.control_plane.domain import DatabaseEngine, SystemSetting
 from db_monitor_api.control_plane.postgres_repository import PostgresControlPlaneRepository
 from db_monitor_api.runtime import AppRuntime
@@ -247,7 +249,34 @@ def test_postgres_repository_persists_multi_engine_instances_and_settings(
     assert alerts_response.json()[0]["rule_id"] == rule_response.json()["rule_id"]
     external_alert_response = postgres_client.get("/alerts/alert-external")
     assert external_alert_response.status_code == 404
-    assert postgres_runtime.audit_repository.entries[-1].action == "rules.create"
+    reloaded_runtime = build_postgres_runtime(
+        analytics_repository=InMemoryAnalyticsRepository(),
+        postgres_dsn=postgres_dsn,
+        mysql_validator=StaticMySQLConnectionValidator(),
+        oracle_validator=StaticOracleConnectionValidator(),
+    )
+    assert reloaded_runtime.audit_repository.entries[-1].action == "rules.create"
+
+    audit_repository = PostgresAuditRepository(postgres_dsn=postgres_dsn)
+    audit_repository.append(
+        AuditEntry(
+            action="external.audit",
+            actor_user_id="user-external",
+            occurred_at=external_anchor,
+            organization_id="org-external",
+            outcome="allowed",
+            resource="external",
+        )
+    )
+    audit_response = postgres_client.get("/auth/audit-entries?limit=2")
+    assert audit_response.status_code == 200
+    assert len(audit_response.json()) == 2
+    assert audit_response.json()[0]["action"] == "rules.create"
+    assert {entry["organization_id"] for entry in audit_response.json()} == {"org-internal"}
+    assert {entry["action"] for entry in audit_response.json()} == {
+        "rules.create",
+        "settings.write",
+    }
 
 
 def _login_admin(client: TestClient) -> None:
@@ -293,6 +322,7 @@ def _reset_control_plane_tables(dsn: str) -> None:
     with psycopg.connect(dsn) as connection:
         with connection.cursor() as cursor:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
+            cursor.execute("DROP TABLE IF EXISTS audit_entries")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")

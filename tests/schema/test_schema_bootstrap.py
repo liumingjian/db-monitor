@@ -93,6 +93,8 @@ def test_postgres_bootstrap_creates_tables_and_version_row(monkeypatch: pytest.M
     assert executed_sql.count("organization_id TEXT NOT NULL") >= 4
     assert "CREATE TABLE IF NOT EXISTS alert_records" in executed_sql
     assert "CREATE TABLE IF NOT EXISTS alert_history" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS audit_entries" in executed_sql
+    assert "audit_id BIGSERIAL PRIMARY KEY" in executed_sql
     assert "acknowledged_at TIMESTAMPTZ NULL" in executed_sql
     assert "owner_user_id TEXT NULL" in executed_sql
     assert "INSERT INTO schema_version" in executed_sql
@@ -105,6 +107,7 @@ def test_postgres_contract_requires_bootstrapped_version(monkeypatch: pytest.Mon
                 ("alert_history",),
                 ("alert_records",),
                 ("alert_rules",),
+                ("audit_entries",),
                 ("control_mysql_instances",),
                 ("control_settings",),
                 ("organization_memberships",),

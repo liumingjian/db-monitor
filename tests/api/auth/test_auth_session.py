@@ -51,3 +51,35 @@ def test_session_rejects_invalid_credentials(client: TestClient) -> None:
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid username or password."}
+
+
+def test_admin_can_read_recent_audit_entries(client: TestClient) -> None:
+    login_response = client.post(
+        "/auth/login",
+        json={"password": "admin-password", "username": "admin"},
+    )
+
+    assert login_response.status_code == 200
+
+    response = client.get("/auth/audit-entries?limit=5")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["action"] == "auth.login"
+    assert response.json()[0]["organization_id"] == "org-internal"
+
+
+def test_non_admin_is_denied_audit_history(client: TestClient, runtime: AppRuntime) -> None:
+    login_response = client.post(
+        "/auth/login",
+        json={"password": "viewer-password", "username": "viewer"},
+    )
+
+    assert login_response.status_code == 200
+
+    response = client.get("/auth/audit-entries")
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Missing permission: settings:write"}
+    assert runtime.audit_repository.entries[-1].action == "audit.denied"
+    assert runtime.audit_repository.entries[-1].outcome == "denied"

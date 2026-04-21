@@ -1,9 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel
 
-from db_monitor_api.auth.domain import AuthContext
+from db_monitor_api.auth.domain import AuthContext, Permission
 from db_monitor_api.auth.service import AuthenticationError, SESSION_COOKIE_NAME
-from db_monitor_api.dependencies import get_runtime, require_auth_context
+from db_monitor_api.dependencies import (
+    get_runtime,
+    require_auth_context,
+    require_permission_dependency,
+)
 from db_monitor_api.runtime import AppRuntime
 
 router = APIRouter()
@@ -33,6 +39,15 @@ class SessionUserResponse(BaseModel):
     roles: list[str]
     user_id: str
     username: str
+
+
+class AuditEntryResponse(BaseModel):
+    action: str
+    actor_user_id: str
+    occurred_at: datetime
+    organization_id: str
+    outcome: str
+    resource: str
 
 
 def build_auth_router() -> APIRouter:
@@ -77,6 +92,30 @@ def logout(
 @router.get("/auth/me", response_model=SessionUserResponse)
 def me(context: AuthContext = Depends(require_auth_context)) -> SessionUserResponse:
     return _build_session_response(context)
+
+
+@router.get("/auth/audit-entries", response_model=list[AuditEntryResponse])
+def list_audit_entries(
+    limit: int = Query(default=50, ge=1, le=200),
+    context: AuthContext = Depends(
+        require_permission_dependency(Permission.SETTINGS_WRITE, "audit")
+    ),
+    runtime: AppRuntime = Depends(get_runtime),
+) -> list[AuditEntryResponse]:
+    return [
+        AuditEntryResponse(
+            action=entry.action,
+            actor_user_id=entry.actor_user_id,
+            occurred_at=entry.occurred_at,
+            organization_id=entry.organization_id,
+            outcome=entry.outcome,
+            resource=entry.resource,
+        )
+        for entry in runtime.audit_service.list_entries(
+            limit=limit,
+            organization_id=context.active_organization.organization_id,
+        )
+    ]
 
 
 def _build_session_response(context: AuthContext) -> SessionUserResponse:
