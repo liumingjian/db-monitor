@@ -9,10 +9,10 @@
 
 - 任务: 以当前本地目录为真实开发源，补齐 post-Epic-09 的 roadmap / PRD closeout 文档，并完成安全的 Git 接入与推送
 - 形态: single-full
-- 进度: 4/5
-- 当前: 整理 Git 工作树并准备统一提交推送到 `origin/main`
+- 进度: 5/5
+- 当前: 已完成
 - 文件: `.codex-tasks/20260421-repo-truth-sync-and-publish/TODO.csv`
-- 下一步: 复核 `git status`、确认仅忽略本地缓存/临时产物，然后提交并推送当前本地树
+- 下一步: 无。当前仓库 truth 已同步，`origin/main` 已更新到本轮推送结果
 
 ## Control Contract
 
@@ -40,4 +40,11 @@
   - `pnpm openapi:check`
   - `pnpm --filter web typecheck`
   - `uv run pytest tests/api/health/test_health_endpoints.py tests/api/auth tests/api/rbac -q`
+- Git publish 已完成：
+  - 本地目录已接入 `origin`
+  - 已提交：
+    - `5be443a Publish local-first db-monitor workspace sync`
+    - `42751c0 Normalize repository file permissions`
+  - `git push origin main` 已成功把远端从 `ad68f5a` 推进到 `42751c0`
+  - 当前 `git status --short --branch` 为 clean
 - 远端仓库 URL 由用户显式提供：`https://github.com/liumingjian/db-monitor.git`
