@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 import secrets
 
 from db_monitor_api.alerting.domain import (
     AlertDetail,
     AlertRecord,
     AlertRule,
+    AlertStatus,
     EvaluationSummary,
     RuleOperator,
     RuleSeverity,
@@ -136,9 +138,26 @@ class AlertingService:
     def list_alerts(
         self,
         *,
+        instance: str | None = None,
+        opened_after: datetime | None = None,
+        opened_before: datetime | None = None,
         organization_id: str = DEFAULT_ORGANIZATION_ID,
+        severity: RuleSeverity | None = None,
+        status: AlertStatus | None = None,
     ) -> tuple[AlertRecord, ...]:
-        return self.repository.list_alerts(organization_id=organization_id)
+        alerts = self.repository.list_alerts(organization_id=organization_id)
+        return tuple(
+            alert
+            for alert in alerts
+            if _matches_alert_filters(
+                alert=alert,
+                instance=instance,
+                opened_after=opened_after,
+                opened_before=opened_before,
+                severity=severity,
+                status=status,
+            )
+        )
 
     def list_rules(
         self,
@@ -276,3 +295,32 @@ class AlertingService:
             outcome="allowed",
             resource="alert",
         )
+
+
+def _matches_alert_filters(
+    *,
+    alert: AlertRecord,
+    instance: str | None,
+    opened_after: datetime | None,
+    opened_before: datetime | None,
+    severity: RuleSeverity | None,
+    status: AlertStatus | None,
+) -> bool:
+    if status is not None and alert.status is not status:
+        return False
+    if severity is not None and alert.severity is not severity:
+        return False
+    if instance is not None and instance.strip():
+        if instance.strip().casefold() not in alert.instance_id.casefold():
+            return False
+    if opened_after is not None and alert.opened_at < _normalize_filter_timestamp(opened_after):
+        return False
+    if opened_before is not None and alert.opened_at > _normalize_filter_timestamp(opened_before):
+        return False
+    return True
+
+
+def _normalize_filter_timestamp(value: datetime) -> datetime:
+    if value.tzinfo is not None:
+        return value
+    return value.astimezone()

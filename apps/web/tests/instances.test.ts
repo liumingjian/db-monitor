@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+	buildInstanceListFilterValues,
 	buildInstanceCapabilityBoundary,
 	buildInstancesFlowModel,
 	supportsInstanceAnalytics,
@@ -25,6 +26,12 @@ describe("instances flow", () => {
 			"labels",
 		]);
 		expect(model.formValues.engine).toBe("mysql");
+		expect(model.filters).toEqual({
+			environment: "",
+			label: "",
+			name: "",
+			status: "",
+		});
 		expect(model.tableColumns.map((column) => column.key)).toEqual([
 			"name",
 			"environment",
@@ -72,6 +79,28 @@ describe("instances flow", () => {
 				"Oracle instances now expose minimal trend analytics, preset windows, and capacity readouts on the detail page, and they contribute to fleet health and engine coverage on the overview. Cards, charts, and signal leaders still follow the engines listed in overview coverage.",
 			label: "Capability boundary",
 			value: "Fleet health + trends available",
+		});
+	});
+
+	it("normalizes instance filter defaults and overrides", () => {
+		expect(buildInstanceListFilterValues()).toEqual({
+			environment: "",
+			label: "",
+			name: "",
+			status: "",
+		});
+		expect(
+			buildInstanceListFilterValues({
+				environment: " prod ",
+				label: " primary ",
+				name: " analytics ",
+				status: "failed",
+			}),
+		).toEqual({
+			environment: "prod",
+			label: "primary",
+			name: "analytics",
+			status: "failed",
 		});
 	});
 });

@@ -54,22 +54,21 @@
 | Gap | 当前判断 | 为什么还算 gap |
 |---|---|---|
 | 用户/角色管理产品面 | 部分缺失 | 当前有 seed users、session、roles、permissions、RBAC enforcement，但没有完整的用户/角色管理 API 与 UI |
-| 实例列表筛选 | 缺失 | `list_instances` 当前没有按名称、环境、标签、状态的显式过滤 contract，页面也没有筛选控件 |
-| 告警列表筛选 | 缺失 | 当前 alert queue 是展示面，没有按状态、级别、时间、实例的明确筛选面 |
+| 实例列表筛选 | 已完成 | `Epic 10 / child #1` 已为 `/control/instances`、typed client 和 `/instances` 页面补齐名称、环境、标签、状态筛选 |
+| 告警列表筛选 | 已完成 | `Epic 10 / child #1` 已为 `/alerts`、typed client 和 `/alerts` 页面补齐状态、级别、时间、实例筛选 |
 | 审计日志持久化与查询 | 部分缺失 | 当前有 audit hooks，但 runtime 仍以 `InMemoryAuditRepository` 为主，不是正式的 PostgreSQL audit 产品面 |
 | TPS 指标显式交付 | 缺失 | 当前显式交付的是 QPS、网络、uptime、replication lag、buffer-pool / Oracle sessions 等，未看到独立 TPS contract |
 | 实例角色/版本显式展示 | 部分缺失 | validation 中已有 server version，但详情页当前主要展示连接信息、validation status 和 trends，没有把“角色/版本”作为正式 readout 收口 |
 
-## Suggested Next Move
+## Current Closeout Track
 
-当前 repo 不再适合继续沿用“原始 PRD 还没做完”的思路推进。更合适的后续动作只有两种：
+当前 repo 已经不再停留在“建议新开 debt epic”的阶段，而是已经进入实际执行中的 `Epic 10: PRD Debt and Control-Plane Closeout`。
 
-1. 如果目标是收干净 phase-one：
-   - 新开一个 `PRD debt / control-plane completeness` epic
-   - 重点只做用户/角色管理、筛选面、审计持久化、剩余 MySQL detail semantics
-2. 如果目标是继续做产品演进：
-   - 先做 roadmap extension
-   - 再从新的 product gap 出发选择下一个 active epic
+当前 closeout track 的剩余目标是：
+
+1. 审计日志持久化与最小查询面
+2. 用户/角色管理产品面
+3. TPS 与实例角色/版本显式展示
 
 ## Bottom Line
 

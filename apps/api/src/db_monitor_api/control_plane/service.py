@@ -70,8 +70,27 @@ class AssetService:
             raise AssetNotFoundError(f"Unknown instance: {instance_id}")
         return instance
 
-    def list_instances(self, *, organization_id: str) -> tuple[MonitoredInstance, ...]:
-        return self.repository.list_instances(organization_id=organization_id)
+    def list_instances(
+        self,
+        *,
+        organization_id: str,
+        environment: str | None = None,
+        label: str | None = None,
+        name: str | None = None,
+        status: ValidationStatus | None = None,
+    ) -> tuple[MonitoredInstance, ...]:
+        instances = self.repository.list_instances(organization_id=organization_id)
+        return tuple(
+            instance
+            for instance in instances
+            if _matches_instance_filters(
+                instance=instance,
+                environment=environment,
+                label=label,
+                name=name,
+                status=status,
+            )
+        )
 
     def validate_instance(
         self,
@@ -149,3 +168,26 @@ class SettingsService:
             resource="settings",
         )
         return setting
+
+
+def _matches_instance_filters(
+    *,
+    instance: MonitoredInstance,
+    environment: str | None,
+    label: str | None,
+    name: str | None,
+    status: ValidationStatus | None,
+) -> bool:
+    if name is not None and name.strip():
+        if name.strip().casefold() not in instance.name.casefold():
+            return False
+    if environment is not None and environment.strip():
+        if instance.environment.casefold() != environment.strip().casefold():
+            return False
+    if label is not None and label.strip():
+        normalized_labels = {entry.casefold() for entry in instance.labels}
+        if label.strip().casefold() not in normalized_labels:
+            return False
+    if status is not None and instance.validation.status is not status:
+        return False
+    return True

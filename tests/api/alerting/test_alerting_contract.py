@@ -486,6 +486,121 @@ def test_alerting_contract_rejects_rule_for_instance_engine_mismatch() -> None:
     }
 
 
+def test_alerting_contract_filters_alerts_by_status_severity_instance_and_time() -> None:
+    anchor = sample_anchor()
+    alerting_repository = InMemoryAlertingRepository()
+    control_plane_repository = InMemoryControlPlaneRepository()
+    control_plane_repository.create_instance(
+        build_instance(
+            created_at=anchor,
+            instance_id="inst-alert-primary",
+            name="primary-alert-instance",
+        )
+    )
+    control_plane_repository.create_instance(
+        build_instance(
+            created_at=anchor + timedelta(seconds=1),
+            instance_id="inst-alert-replica",
+            name="replica-alert-instance",
+        )
+    )
+    alerting_repository.upsert_alert(
+        AlertRecord(
+            alert_id="alert-open-critical",
+            acknowledged_at=None,
+            acknowledged_by_user_id=None,
+            current_value=12.0,
+            engine=DatabaseEngine.MYSQL,
+            instance_id="inst-alert-primary",
+            last_evaluated_at=anchor,
+            metric_name="mysql_replication_lag_seconds",
+            opened_at=anchor,
+            owner_assigned_at=None,
+            owner_user_id=None,
+            organization_id="org-internal",
+            resolved_at=None,
+            rule_id="rule-open-critical",
+            rule_name="Open Critical Lag",
+            severity=RuleSeverity.CRITICAL,
+            status=AlertStatus.OPEN,
+            threshold=5.0,
+        )
+    )
+    alerting_repository.upsert_alert(
+        AlertRecord(
+            alert_id="alert-ack-warning",
+            acknowledged_at=anchor + timedelta(minutes=6),
+            acknowledged_by_user_id="user-ops",
+            current_value=7.0,
+            engine=DatabaseEngine.MYSQL,
+            instance_id="inst-alert-replica",
+            last_evaluated_at=anchor + timedelta(minutes=6),
+            metric_name="mysql_replication_lag_seconds",
+            opened_at=anchor + timedelta(minutes=5),
+            owner_assigned_at=None,
+            owner_user_id=None,
+            organization_id="org-internal",
+            resolved_at=None,
+            rule_id="rule-ack-warning",
+            rule_name="Acknowledged Warning Lag",
+            severity=RuleSeverity.WARNING,
+            status=AlertStatus.ACKNOWLEDGED,
+            threshold=5.0,
+        )
+    )
+    alerting_repository.upsert_alert(
+        AlertRecord(
+            alert_id="alert-resolved-critical",
+            acknowledged_at=None,
+            acknowledged_by_user_id=None,
+            current_value=0.0,
+            engine=DatabaseEngine.MYSQL,
+            instance_id="inst-alert-primary",
+            last_evaluated_at=anchor + timedelta(minutes=11),
+            metric_name="mysql_replication_lag_seconds",
+            opened_at=anchor + timedelta(minutes=10),
+            owner_assigned_at=None,
+            owner_user_id=None,
+            organization_id="org-internal",
+            resolved_at=anchor + timedelta(minutes=12),
+            rule_id="rule-resolved-critical",
+            rule_name="Resolved Critical Lag",
+            severity=RuleSeverity.CRITICAL,
+            status=AlertStatus.RESOLVED,
+            threshold=5.0,
+        )
+    )
+    app = create_app(
+        runtime=build_local_runtime(
+            alerting_repository=alerting_repository,
+            control_plane_repository=control_plane_repository,
+            mysql_validator=StaticMySQLConnectionValidator(),
+        )
+    )
+
+    with TestClient(app) as client:
+        _login_admin(client)
+        warning_response = client.get("/alerts", params={"severity": "warning"})
+        acknowledged_response = client.get("/alerts", params={"status": "acknowledged"})
+        instance_response = client.get("/alerts", params={"instance": "replica"})
+        time_response = client.get(
+            "/alerts",
+            params={
+                "opened_after": (anchor + timedelta(minutes=4)).isoformat(timespec="minutes"),
+                "opened_before": (anchor + timedelta(minutes=6)).isoformat(timespec="minutes"),
+            },
+        )
+
+    assert warning_response.status_code == 200
+    assert [alert["alert_id"] for alert in warning_response.json()] == ["alert-ack-warning"]
+    assert acknowledged_response.status_code == 200
+    assert [alert["alert_id"] for alert in acknowledged_response.json()] == ["alert-ack-warning"]
+    assert instance_response.status_code == 200
+    assert [alert["alert_id"] for alert in instance_response.json()] == ["alert-ack-warning"]
+    assert time_response.status_code == 200
+    assert [alert["alert_id"] for alert in time_response.json()] == ["alert-ack-warning"]
+
+
 def _login_admin(client: TestClient) -> None:
     response = client.post(
         "/auth/login",

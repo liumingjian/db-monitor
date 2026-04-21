@@ -40,15 +40,21 @@
 | 07 | Oracle Data Plane and Minimum Insights | Done | Oracle 已不再停留在 validation-only，最小 collector / analytics / web detail / signoff 闭环已完成 |
 | 08 | Engine-Aware Overview and Fleet Diagnostics | Done | engine-aware overview payload、web surface、presets 与根级 signoff 已闭环，mixed-engine fleet baseline 已成立 |
 | 09 | Multi-Engine Alerting and Rule Semantics | Done | multi-engine rule contract、API、pipeline、web、notifier 与 root signoff 已闭环；当前 roadmap 已耗尽，后续必须先做 close-out 与 roadmap extension |
+| 10 | PRD Debt and Control-Plane Closeout | Active | roadmap extension 已完成，当前目标不是继续扩产品边界，而是把原始 PRD 剩余的控制面欠账收口成一轮有边界的 debt pass |
 
 ## Current Status
 
-- 截至 `2026-04-21`，roadmap 中 01-09 已全部 `Done`
-- 当前没有 active epic；如果继续进入产品实现，必须先基于显式 repo gap 扩展 roadmap
+- 截至 `2026-04-21`，roadmap 中 01-09 已全部 `Done`，`Epic 10` 已作为显式 roadmap extension 被激活
+- 当前 active epic 是 `PRD Debt and Control-Plane Closeout`；它只服务于原始 `PRD.md` 的剩余欠账收口，不代表新的产品扩张阶段
 - 本轮 close-out 额外补了一份 [docs/prd-closeout.md](docs/prd-closeout.md)，用于解释：
   - 原始 `PRD.md` 的 phase-one 需求哪些已经完成
   - 哪些能力已经明显超出原始 PRD
   - 当前仍未补齐的 repo gap 是什么
+- 当前 debt epic 已冻结的 gap 范围是：
+  - 实例列表与告警列表筛选
+  - 审计日志持久化与查询面
+  - 用户/角色管理产品面
+  - TPS 与实例角色/版本显式展示
 
 ## Epic 01: MySQL-First Phase One Control Plane
 
@@ -366,6 +372,43 @@
 
 - 团队可以用统一但诚实的方式为多引擎配置最小规则与告警语义
 - MySQL 现有 alert maturity 主链未被回退
+
+## Epic 10: PRD Debt and Control-Plane Closeout
+
+### Goal
+
+- 把原始 `PRD.md` 仍然留在仓库里的 control-plane 欠账收口到可验证的产品面，同时不回退 01-09 已完成的多引擎、组织治理和运维闭环
+
+### Why It Is Next
+
+- `docs/prd-closeout.md` 已明确证明：当前主误差不是“phase-one 主链还没做出来”，而是少数 PRD 欠账仍然没有产品化收口
+- 这些欠账集中在控制面与展示层，适合通过一轮有边界的 debt pass 关闭，而不需要重新发明新的产品方向
+- roadmap 01-09 已全部完成，因此继续实现前必须先把 closeout gap materialize 成新的 active epic
+
+### Activation Gates
+
+- post-Epic-09 close-out review 已完成，并明确禁止在 roadmap 耗尽后直接进入新的实现
+- `docs/prd-closeout.md` 已把 remaining gaps 收敛到实例/告警筛选、审计持久化、用户/角色管理、实例 detail semantics
+- 当前仓库的多引擎与 organization baseline 已稳定，允许在不扩 scope 的前提下回补原始 PRD 欠账
+
+### Top-Level Scope
+
+- 为实例列表和告警列表提供显式 query contract、typed client 和 web filter surface
+- 把审计日志从运行时内存钩子推进到 PostgreSQL 持久化与最小查询面
+- 为用户、角色和权限补齐最小可运营的 API 与 UI
+- 为实例详情补齐 TPS 以及角色/版本显式展示
+
+### Non-Goals
+
+- 不新增第三阶段产品方向
+- 不重写现有 auth / organization / alert maturity / analytics 基线
+- 不把 closeout 借机扩成分页、报表系统或复杂 IAM 平台
+
+### Done-When
+
+- `docs/prd-closeout.md` 里列出的 remaining gaps 都有明确代码与验证证据
+- 原始 `PRD.md` 中剩余的 phase-one 控制面欠账已不再需要单独解释“为什么还没做”
+- repo-root gate 能证明 closeout 没有回退现有主链
 
 ## Close-Out Review Template
 

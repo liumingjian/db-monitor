@@ -47,6 +47,13 @@ export interface InstanceFormValues {
 	readonly username: string;
 }
 
+export interface InstanceListFilterValues {
+	readonly environment: string;
+	readonly label: string;
+	readonly name: string;
+	readonly status: "" | "failed" | "passed";
+}
+
 export interface RuleFormValues {
 	readonly engine: "mysql" | "oracle";
 	readonly instance_ids: string;
@@ -55,6 +62,14 @@ export interface RuleFormValues {
 	readonly operator: (typeof RULE_OPERATORS)[number];
 	readonly severity: (typeof RULE_SEVERITIES)[number];
 	readonly threshold: string;
+}
+
+export interface AlertListFilterValues {
+	readonly instance: string;
+	readonly opened_after: string;
+	readonly opened_before: string;
+	readonly severity: "" | "critical" | "warning";
+	readonly status: "" | "acknowledged" | "open" | "resolved";
 }
 
 export type InsightTone = "steady" | "watch" | "risk";
@@ -82,6 +97,7 @@ export interface DashboardReadout {
 export interface InstancesFlowModel {
 	readonly capacityReadout: readonly CapacityInsight[];
 	readonly detailSeries: readonly string[];
+	readonly filters: InstanceListFilterValues;
 	readonly formFields: typeof INSTANCE_FORM_FIELDS;
 	readonly formValues: InstanceFormValues;
 	readonly selectedInstance: InstanceResponse;
@@ -105,6 +121,7 @@ export interface DashboardModel {
 export interface OperationsModel {
 	readonly alertColumns: typeof ALERT_TABLE_COLUMNS;
 	readonly alertDetail: AlertDetailResponse;
+	readonly alertFilters: AlertListFilterValues;
 	readonly alerts: readonly AlertRecordResponse[];
 	readonly ruleCatalog: readonly AlertEngineCatalogResponse[];
 	readonly ruleColumns: typeof RULE_TABLE_COLUMNS;
@@ -131,6 +148,7 @@ export function buildDashboardModel(overview: OverviewResponse = PREVIEW_OVERVIE
 
 export function buildInstancesFlowModel(
 	options: {
+		readonly filters?: Partial<InstanceListFilterValues>;
 		readonly formValues?: InstanceFormValues;
 		readonly selectedInstance?: InstanceResponse;
 		readonly tableRows?: readonly InstanceResponse[];
@@ -148,6 +166,7 @@ export function buildInstancesFlowModel(
 		capacityReadout:
 			trend === null ? [] : buildInstanceCapacityReadout(selectedInstance, trend),
 		detailSeries: trend === null ? [] : trend.charts.map((series) => series.metric_name),
+		filters: buildInstanceListFilterValues(options.filters),
 		formFields: INSTANCE_FORM_FIELDS,
 		formValues: options.formValues ?? PREVIEW_INSTANCE_FORM_VALUES,
 		selectedInstance,
@@ -160,6 +179,7 @@ export function buildInstancesFlowModel(
 export function buildOperationsModel(
 	options: {
 		readonly alertDetail?: AlertDetailResponse;
+		readonly alertFilters?: Partial<AlertListFilterValues>;
 		readonly alerts?: readonly AlertRecordResponse[];
 		readonly ruleCatalog?: readonly AlertEngineCatalogResponse[];
 		readonly ruleFormValues?: RuleFormValues;
@@ -170,6 +190,7 @@ export function buildOperationsModel(
 	return {
 		alertColumns: ALERT_TABLE_COLUMNS,
 		alertDetail: options.alertDetail ?? PREVIEW_ALERT_DETAIL,
+		alertFilters: buildAlertListFilterValues(options.alertFilters),
 		alerts: options.alerts ?? PREVIEW_ALERTS,
 		ruleCatalog: options.ruleCatalog ?? PREVIEW_RULE_CATALOG,
 		ruleColumns: RULE_TABLE_COLUMNS,
@@ -192,6 +213,29 @@ export function buildSmokeRouteSet(): readonly string[] {
 		"/rules",
 		"/settings",
 	];
+}
+
+export function buildInstanceListFilterValues(
+	filters: Partial<Record<keyof InstanceListFilterValues, string | undefined>> = {},
+): InstanceListFilterValues {
+	return {
+		environment: normalizeTextFilter(filters.environment),
+		label: normalizeTextFilter(filters.label),
+		name: normalizeTextFilter(filters.name),
+		status: normalizeEnumFilter(filters.status, ["failed", "passed"] as const),
+	};
+}
+
+export function buildAlertListFilterValues(
+	filters: Partial<Record<keyof AlertListFilterValues, string | undefined>> = {},
+): AlertListFilterValues {
+	return {
+		instance: normalizeTextFilter(filters.instance),
+		opened_after: normalizeTextFilter(filters.opened_after),
+		opened_before: normalizeTextFilter(filters.opened_before),
+		severity: normalizeEnumFilter(filters.severity, ["critical", "warning"] as const),
+		status: normalizeEnumFilter(filters.status, ["acknowledged", "open", "resolved"] as const),
+	};
 }
 
 export const MONITORING_CHART_FRAME = INSTANCE_CHART_FRAME;
@@ -227,6 +271,19 @@ export function getInstanceConnectionLabel(instance: InstanceResponse): string {
 
 export function supportsInstanceAnalytics(instance: InstanceResponse): boolean {
 	return instance.engine === "mysql" || instance.engine === "oracle";
+}
+
+function normalizeTextFilter(value: string | undefined): string {
+	return value?.trim() ?? "";
+}
+
+function normalizeEnumFilter<const TAllowed extends readonly string[]>(
+	value: string | undefined,
+	allowed: TAllowed,
+): TAllowed[number] | "" {
+	return value !== undefined && allowed.includes(value as TAllowed[number])
+		? (value as TAllowed[number])
+		: "";
 }
 
 function buildOverviewCapacityInsights(overview: OverviewResponse): readonly CapacityInsight[] {

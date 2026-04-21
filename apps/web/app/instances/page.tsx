@@ -1,6 +1,7 @@
 import { AppChrome } from "../../src/components/app-chrome";
 import { createInstanceAction } from "../../src/monitoring-actions";
 import {
+	buildInstanceListFilterValues,
 	buildInstanceCapabilityBoundary,
 	buildInstancesFlowModel,
 	getInstanceConnectionLabel,
@@ -12,11 +13,28 @@ const ENGINE_OPTIONS = [
 	{ description: "Onboarding, validation, fleet health visibility, and minimal detail trends are available. Overview cards and leaders follow fleet coverage.", label: "Oracle", value: "oracle" },
 ] as const;
 
-export default async function InstancesPage() {
+interface InstancesPageProps {
+	readonly searchParams: Promise<{
+		readonly environment?: string;
+		readonly label?: string;
+		readonly name?: string;
+		readonly status?: string;
+	}>;
+}
+
+export default async function InstancesPage({ searchParams }: InstancesPageProps) {
 	const session = await requireServerSession("/instances");
+	const params = await searchParams;
+	const filters = buildInstanceListFilterValues(params);
 	const apiClient = await createServerApiClient();
 	const model = buildInstancesFlowModel({
-		tableRows: await apiClient.listInstances(),
+		filters,
+		tableRows: await apiClient.listInstances({
+			environment: emptyToUndefined(filters.environment),
+			label: emptyToUndefined(filters.label),
+			name: emptyToUndefined(filters.name),
+			status: emptyToUndefined(filters.status),
+		}),
 	});
 
 	return (
@@ -75,9 +93,72 @@ export default async function InstancesPage() {
 				</section>
 				<section className="space-y-3">
 					<h2 className="text-2xl font-semibold">Fleet inventory</h2>
+					<form
+						className="grid gap-3 rounded-[1.2rem] border border-black/5 bg-white p-4 md:grid-cols-2"
+						method="get"
+					>
+						<label className="grid gap-2" htmlFor="name">
+							<span className="text-sm font-medium">Name</span>
+							<input
+								className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
+								defaultValue={model.filters.name}
+								id="name"
+								name="name"
+								placeholder="prod-primary"
+							/>
+						</label>
+						<label className="grid gap-2" htmlFor="environment">
+							<span className="text-sm font-medium">Environment</span>
+							<input
+								className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
+								defaultValue={model.filters.environment}
+								id="environment"
+								name="environment"
+								placeholder="prod"
+							/>
+						</label>
+						<label className="grid gap-2" htmlFor="label">
+							<span className="text-sm font-medium">Label</span>
+							<input
+								className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
+								defaultValue={model.filters.label}
+								id="label"
+								name="label"
+								placeholder="primary"
+							/>
+						</label>
+						<label className="grid gap-2" htmlFor="status">
+							<span className="text-sm font-medium">Validation status</span>
+							<select
+								className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
+								defaultValue={model.filters.status}
+								id="status"
+								name="status"
+							>
+								<option value="">All states</option>
+								<option value="passed">passed</option>
+								<option value="failed">failed</option>
+							</select>
+						</label>
+						<div className="flex flex-wrap items-center gap-3 md:col-span-2">
+							<button
+								className="rounded-[1rem] bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white"
+								type="submit"
+							>
+								Apply filters
+							</button>
+							<a className="text-sm font-medium text-[var(--accent)]" href="/instances">
+								Clear
+							</a>
+							<p className="text-sm text-[var(--muted)]">
+								Showing {model.tableRows.length} matching instance
+								{model.tableRows.length === 1 ? "" : "s"}.
+							</p>
+						</div>
+					</form>
 					{model.tableRows.length === 0 ? (
 						<p className="rounded-[1.2rem] border border-dashed border-black/10 bg-[var(--panel)] p-4 text-sm text-[var(--muted)]">
-							No monitored instances have been onboarded yet.
+							No monitored instances matched the current filter window.
 						</p>
 					) : null}
 					{model.tableRows.map((instance) => (
@@ -120,4 +201,8 @@ function getInstanceFieldValue(
 	key: string,
 ): string {
 	return model.formValues[key as keyof typeof model.formValues] ?? "";
+}
+
+function emptyToUndefined<T extends string>(value: T | ""): T | undefined {
+	return value.length === 0 ? undefined : (value as T);
 }

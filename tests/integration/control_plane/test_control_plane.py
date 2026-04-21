@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import timedelta
 
 from fastapi.testclient import TestClient
@@ -234,3 +235,71 @@ def test_control_plane_routes_scope_instances_and_settings_to_active_organizatio
         ]
         assert external_detail_response.status_code == 404
         assert external_detail_response.json() == {"detail": "Unknown instance: inst-external"}
+
+
+def test_control_plane_routes_filter_instances_by_prd_closeout_fields() -> None:
+    anchor = utc_now()
+    repository = InMemoryControlPlaneRepository()
+    repository.create_instance(
+        build_instance(
+            created_at=anchor,
+            instance_id="inst-prod-primary",
+            name="prod-primary",
+            status=ValidationStatus.PASSED,
+        )
+    )
+    repository.create_instance(
+        replace(
+            build_instance(
+                created_at=anchor + timedelta(seconds=1),
+                instance_id="inst-stage-replica",
+                name="stage-replica",
+                status=ValidationStatus.FAILED,
+            ),
+            environment="stage",
+        )
+    )
+    repository.create_instance(
+        build_instance(
+            created_at=anchor + timedelta(seconds=2),
+            instance_id="inst-prod-analytics",
+            name="prod-analytics",
+            status=ValidationStatus.PASSED,
+        )
+    )
+    app = create_app(
+        runtime=build_local_runtime(
+            control_plane_repository=repository,
+            mysql_validator=StaticMySQLConnectionValidator(),
+            oracle_validator=StaticOracleConnectionValidator(),
+        )
+    )
+
+    with TestClient(app) as client:
+        login_response = client.post(
+            "/auth/login",
+            json={"password": "admin-password", "username": "admin"},
+        )
+
+        assert login_response.status_code == 200
+
+        prod_response = client.get("/control/instances", params={"environment": "prod"})
+        failed_response = client.get("/control/instances", params={"status": "failed"})
+        named_response = client.get("/control/instances", params={"name": "analytics"})
+        label_response = client.get("/control/instances", params={"label": "primary"})
+
+    assert prod_response.status_code == 200
+    assert [item["instance_id"] for item in prod_response.json()] == [
+        "inst-prod-primary",
+        "inst-prod-analytics",
+    ]
+    assert failed_response.status_code == 200
+    assert [item["instance_id"] for item in failed_response.json()] == ["inst-stage-replica"]
+    assert named_response.status_code == 200
+    assert [item["instance_id"] for item in named_response.json()] == ["inst-prod-analytics"]
+    assert label_response.status_code == 200
+    assert [item["instance_id"] for item in label_response.json()] == [
+        "inst-prod-primary",
+        "inst-stage-replica",
+        "inst-prod-analytics",
+    ]

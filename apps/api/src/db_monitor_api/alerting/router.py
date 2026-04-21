@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from db_monitor_api.alerting.domain import (
@@ -6,6 +8,7 @@ from db_monitor_api.alerting.domain import (
     AlertHistoryEvent,
     AlertRecord,
     AlertRule,
+    AlertStatus,
     RuleOperator,
     RuleSeverity,
 )
@@ -150,13 +153,23 @@ def list_rule_catalog(
 
 @router.get("/alerts", response_model=list[AlertRecordResponse])
 def list_alerts(
+    alert_status: AlertStatus | None = Query(default=None, alias="status"),
+    severity: RuleSeverity | None = None,
+    instance: str | None = None,
+    opened_after: datetime | None = None,
+    opened_before: datetime | None = None,
     context: AuthContext = Depends(require_permission_dependency(Permission.RULES_READ, "alerts")),
     runtime: AppRuntime = Depends(get_runtime),
 ) -> list[AlertRecordResponse]:
     return [
         _build_alert_response(alert)
         for alert in runtime.alerting_service.list_alerts(
-            organization_id=context.active_organization.organization_id
+            instance=instance,
+            opened_after=opened_after,
+            opened_before=opened_before,
+            organization_id=context.active_organization.organization_id,
+            severity=severity,
+            status=alert_status,
         )
     ]
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from db_monitor_api.auth.domain import AuthContext, Permission
@@ -8,6 +8,7 @@ from db_monitor_api.control_plane.domain import (
     InstanceConnectionConfig,
     MonitoredInstance,
     SystemSetting,
+    ValidationStatus,
 )
 from db_monitor_api.control_plane.service import AssetNotFoundError, AssetValidationError
 from db_monitor_api.dependencies import get_runtime, require_permission_dependency
@@ -124,6 +125,10 @@ def create_mysql_instance(
 @router.get("/control/instances", response_model=list[InstanceResponse])
 @router.get("/control/mysql-instances", response_model=list[InstanceResponse], include_in_schema=False)
 def list_instances(
+    name: str | None = None,
+    environment: str | None = None,
+    label: str | None = None,
+    validation_status: ValidationStatus | None = Query(default=None, alias="status"),
     context: AuthContext = Depends(
         require_permission_dependency(Permission.INSTANCES_READ, "instances")
     ),
@@ -132,7 +137,11 @@ def list_instances(
     return [
         _build_instance_response(instance)
         for instance in runtime.asset_service.list_instances(
-            organization_id=context.active_organization.organization_id
+            environment=environment,
+            label=label,
+            name=name,
+            organization_id=context.active_organization.organization_id,
+            status=validation_status,
         )
     ]
 

@@ -84,6 +84,13 @@ export interface CreateInstanceRequest {
 
 export type CreateMySQLInstanceRequest = Omit<CreateInstanceRequest, "engine">;
 
+export interface ListInstancesFilters {
+	readonly environment?: string;
+	readonly label?: string;
+	readonly name?: string;
+	readonly status?: "failed" | "passed";
+}
+
 export interface SystemSettingResponse {
 	readonly key: string;
 	readonly updated_at: string;
@@ -187,6 +194,14 @@ export interface CreateAlertRuleRequest {
 	readonly threshold: number;
 }
 
+export interface ListAlertsFilters {
+	readonly instance?: string;
+	readonly opened_after?: string;
+	readonly opened_before?: string;
+	readonly severity?: "critical" | "warning";
+	readonly status?: "acknowledged" | "open" | "resolved";
+}
+
 export interface AlertRecordResponse {
 	readonly alert_id: string;
 	readonly acknowledged_at: string | null;
@@ -250,9 +265,9 @@ export interface ApiClient {
 	getMySQLInstance(instanceId: string): Promise<InstanceResponse>;
 	getInstanceTrends(instanceId: string, window: TimeWindow): Promise<InstanceTrendResponse>;
 	getOverview(window: TimeWindow): Promise<OverviewResponse>;
-	listInstances(): Promise<readonly InstanceResponse[]>;
-	listMySQLInstances(): Promise<readonly InstanceResponse[]>;
-	listAlerts(): Promise<readonly AlertRecordResponse[]>;
+	listInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
+	listMySQLInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
+	listAlerts(filters?: ListAlertsFilters): Promise<readonly AlertRecordResponse[]>;
 	listRuleCatalog(): Promise<readonly AlertEngineCatalogResponse[]>;
 	listRules(): Promise<readonly AlertRuleResponse[]>;
 	listSettings(): Promise<readonly SystemSettingResponse[]>;
@@ -265,7 +280,7 @@ export interface ApiClient {
 	updateSetting(key: string, value: string): Promise<SystemSettingResponse>;
 }
 
-export const API_CONTRACT_VERSION = "0.7.0";
+export const API_CONTRACT_VERSION = "0.8.0";
 export const apiClientPackageName = "@db-monitor/api-client";
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -309,9 +324,14 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 		getInstanceTrends: (instanceId, window) =>
 			request<InstanceTrendResponse>(`/analytics/instances/${instanceId}/trends?window=${window}`),
 		getOverview: (window) => request<OverviewResponse>(`/analytics/overview?window=${window}`),
-		listInstances: () => request<readonly InstanceResponse[]>("/control/instances"),
-		listMySQLInstances: () => request<readonly InstanceResponse[]>("/control/mysql-instances"),
-		listAlerts: () => request<readonly AlertRecordResponse[]>("/alerts"),
+		listInstances: (filters) =>
+			request<readonly InstanceResponse[]>(`/control/instances${buildQueryString(filters)}`),
+		listMySQLInstances: (filters) =>
+			request<readonly InstanceResponse[]>(
+				`/control/mysql-instances${buildQueryString(filters)}`,
+			),
+		listAlerts: (filters) =>
+			request<readonly AlertRecordResponse[]>(`/alerts${buildQueryString(filters)}`),
 		listRuleCatalog: () => request<readonly AlertEngineCatalogResponse[]>("/alerts/rule-catalog"),
 		listRules: () => request<readonly AlertRuleResponse[]>("/alerts/rules"),
 		listSettings: () => request<readonly SystemSettingResponse[]>("/control/settings"),
@@ -330,6 +350,27 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 				method: "PUT",
 			}),
 	};
+}
+
+function buildQueryString(
+	filters: ListAlertsFilters | ListInstancesFilters | undefined,
+): string {
+	if (filters === undefined) {
+		return "";
+	}
+	const params = new URLSearchParams();
+	for (const [key, rawValue] of Object.entries(filters)) {
+		if (rawValue === undefined) {
+			continue;
+		}
+		const value = String(rawValue).trim();
+		if (value.length === 0) {
+			continue;
+		}
+		params.set(key, value);
+	}
+	const queryString = params.toString();
+	return queryString.length === 0 ? "" : `?${queryString}`;
 }
 
 function buildRequester(config: ApiClientConfig) {
