@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+	--surface: #f3efe7;
+	--panel: #f7f4ee;
+	--panel-strong: #fffaf1;
+	--ink: #172033;
+	--muted: #5c6577;
+	--accent: #c25b2e;
+}
+
+html {
+	background: radial-gradient(circle at top right, rgba(194, 91, 46, 0.18), transparent 28rem),
+		linear-gradient(180deg, #fbf7ef 0%, #f2ede4 100%);
+}
+
+body {
+	color: var(--ink);
+	font-family: var(--font-body), "IBM Plex Sans", sans-serif;
+	min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+	font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@db-monitor/workspace",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter web build",
+    "dev:deps:down": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/dev-down.ps1",
+    "dev:deps:up": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/dev-up.ps1",
+    "lint": "pnpm exec biome check apps/web/app apps/web/src apps/web/tests apps/web/next-env.d.ts apps/web/next.config.ts apps/web/package.json apps/web/tsconfig.json apps/web/vitest.config.ts packages/api-client/src packages/api-client/package.json packages/api-client/tsconfig.json packages/ui/src packages/ui/package.json packages/ui/tsconfig.json",
+    "openapi:check": "uv run python scripts/check_openapi.py contracts/openapi.snapshot.json",
+    "openapi:update": "uv run python scripts/export_openapi.py contracts/openapi.snapshot.json",
+    "smoke": "pnpm smoke:web",
+    "smoke:web": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-web-smoke.ps1",
+    "test": "pnpm --filter web test",
+    "test:alert-maturity:signoff": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-alert-maturity-signoff.ps1",
+    "test:alert-pipeline:postgres": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-alert-pipeline-postgres.ps1",
+    "test:api:readiness": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-api-runtime-readiness.ps1",
+    "test:analytics:clickhouse": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-analytics-clickhouse.ps1",
+    "test:background-processes": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-background-processes.ps1",
+    "test:control-plane:oracle": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-control-plane-oracle.ps1",
+    "test:control-plane:postgres": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-control-plane-postgres.ps1",
+    "test:hardening:signoff": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-hardening-signoff.ps1",
+    "test:integration": "uv run pytest tests/integration",
+    "test:metrics-pipeline:live": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-metrics-pipeline-live.ps1",
+    "test:recovery-paths": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-recovery-paths.ps1",
+    "test:schema:bootstrap": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-schema-bootstrap.ps1",
+    "typecheck": "pnpm exec tsc --noEmit -p packages/api-client/tsconfig.json && pnpm exec tsc --noEmit -p packages/ui/tsconfig.json && pnpm --filter web typecheck"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

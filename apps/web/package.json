@@ -1,0 +1,33 @@
+{
+	"name": "web",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "next build",
+		"dev": "next dev",
+		"lint": "biome check app src tests next-env.d.ts next.config.ts package.json tsconfig.json vitest.config.ts",
+		"smoke": "vitest run smoke",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit -p tsconfig.json"
+	},
+	"dependencies": {
+		"@db-monitor/api-client": "workspace:*",
+		"@db-monitor/ui": "workspace:*",
+		"@tanstack/react-query": "^5.99.2",
+		"echarts": "^6.0.0",
+		"next": "^16.2.4",
+		"react": "^19.2.5",
+		"react-dom": "^19.2.5"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@tailwindcss/postcss": "^4.2.2",
+		"@types/node": "^24.10.0",
+		"@types/react": "^19.2.5",
+		"@types/react-dom": "^19.2.3",
+		"postcss": "^8.5.10",
+		"tailwindcss": "^4.2.2",
+		"typescript": "^5.9.3",
+		"vitest": "^3.2.4"
+	}
+}

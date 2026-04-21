@@ -1,0 +1,80 @@
+name: db-monitor-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: db_monitor
+      POSTGRES_USER: db_monitor
+      POSTGRES_PASSWORD: db_monitor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3-alpine
+    environment:
+      CLICKHOUSE_DB: db_monitor
+      CLICKHOUSE_USER: db_monitor
+      CLICKHOUSE_PASSWORD: db_monitor
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+
+  redis:
+    image: redis:7.4-alpine
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    ports:
+      - "6379:6379"
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: mysql_probe
+      MYSQL_USER: db_monitor
+      MYSQL_PASSWORD: db_monitor
+      MYSQL_ROOT_PASSWORD: root
+    command:
+      - mysqld
+      - --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  oracle-xe:
+    image: wnameless/oracle-xe-11g-r2:latest
+    profiles:
+      - oracle
+    environment:
+      ORACLE_ALLOW_REMOTE: "true"
+    ports:
+      - "15211:1521"
+      - "18080:8080"
+    volumes:
+      - oracle-xe-data:/u01/app/oracle
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe; export PATH=$$ORACLE_HOME/bin:$$PATH; export LD_LIBRARY_PATH=$$ORACLE_HOME/lib; echo 'select 1 from dual;' | sqlplus -s system/oracle@//127.0.0.1:1521/XE >/dev/null 2>&1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 60s
+
+volumes:
+  clickhouse-data:
+  mysql-data:
+  oracle-xe-data:
+  postgres-data:

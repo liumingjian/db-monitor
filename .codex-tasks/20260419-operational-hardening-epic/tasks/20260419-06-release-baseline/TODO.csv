@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Define release start verify and rollback procedure,DONE,"Release/rollback procedure is explicit and maps to existing commands","uv run pytest tests/ops -k contract",2026-04-20T00:40:00+08:00,0,"Codified operator baseline around existing root commands instead of inventing a new deployment plane"
+2,Write operator baseline scripts or runbook artifacts,DONE,"Operators can start and verify the platform without tribal knowledge","uv run pytest tests/ops -k runbook",2026-04-20T00:40:00+08:00,0,"Added operator release baseline, release checklist, and rollback checklist under docs/"
+3,Bind release checklist to real gates,DONE,"Release checklist references concrete smoke and hardening gates","pnpm smoke",2026-04-20T00:40:00+08:00,0,"Runbook now binds dev-up/dev-down, smoke, and hardening gates to explicit release and rollback steps"
+4,Run release baseline validation,DONE,"Ops tests and smoke pass together","pnpm smoke && uv run pytest tests/ops",2026-04-20T00:40:00+08:00,0,"Validated ops contract tests and root smoke against the operator baseline"

@@ -1,0 +1,1819 @@
+{
+  "components": {
+    "schemas": {
+      "AddAlertNoteRequest": {
+        "properties": {
+          "note": {
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "AddAlertNoteRequest",
+        "type": "object"
+      },
+      "AlertDetailResponse": {
+        "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/AlertHistoryResponse"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "record": {
+            "$ref": "#/components/schemas/AlertRecordResponse"
+          }
+        },
+        "required": [
+          "history",
+          "record"
+        ],
+        "title": "AlertDetailResponse",
+        "type": "object"
+      },
+      "AlertEngineCatalogResponse": {
+        "properties": {
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/AlertMetricCatalogEntryResponse"
+            },
+            "title": "Metrics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "engine",
+          "metrics"
+        ],
+        "title": "AlertEngineCatalogResponse",
+        "type": "object"
+      },
+      "AlertHistoryResponse": {
+        "properties": {
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "occurred_at": {
+            "title": "Occurred At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alert_id",
+          "detail",
+          "event_type",
+          "occurred_at"
+        ],
+        "title": "AlertHistoryResponse",
+        "type": "object"
+      },
+      "AlertMetricCatalogEntryResponse": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "metric_name",
+          "unit"
+        ],
+        "title": "AlertMetricCatalogEntryResponse",
+        "type": "object"
+      },
+      "AlertRecordResponse": {
+        "properties": {
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
+          },
+          "acknowledged_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged By User Id"
+          },
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "string"
+          },
+          "current_value": {
+            "title": "Current Value",
+            "type": "number"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "last_evaluated_at": {
+            "title": "Last Evaluated At",
+            "type": "string"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "opened_at": {
+            "title": "Opened At",
+            "type": "string"
+          },
+          "owner_assigned_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Assigned At"
+          },
+          "owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner User Id"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "rule_name": {
+            "title": "Rule Name",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "alert_id",
+          "acknowledged_at",
+          "acknowledged_by_user_id",
+          "current_value",
+          "engine",
+          "instance_id",
+          "last_evaluated_at",
+          "metric_name",
+          "opened_at",
+          "owner_assigned_at",
+          "owner_user_id",
+          "resolved_at",
+          "rule_id",
+          "rule_name",
+          "severity",
+          "status",
+          "threshold"
+        ],
+        "title": "AlertRecordResponse",
+        "type": "object"
+      },
+      "AlertRuleResponse": {
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "instance_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Instance Ids",
+            "type": "array"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operator": {
+            "title": "Operator",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "created_at",
+          "enabled",
+          "engine",
+          "instance_ids",
+          "metric_name",
+          "name",
+          "operator",
+          "rule_id",
+          "severity",
+          "threshold"
+        ],
+        "title": "AlertRuleResponse",
+        "type": "object"
+      },
+      "AssignAlertOwnerRequest": {
+        "properties": {
+          "owner_user_id": {
+            "title": "Owner User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_user_id"
+        ],
+        "title": "AssignAlertOwnerRequest",
+        "type": "object"
+      },
+      "ChartPointResponse": {
+        "properties": {
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "value"
+        ],
+        "title": "ChartPointResponse",
+        "type": "object"
+      },
+      "CreateInstanceRequest": {
+        "properties": {
+          "connection": {
+            "$ref": "#/components/schemas/InstanceConnectionPayload"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection",
+          "engine",
+          "environment",
+          "name"
+        ],
+        "title": "CreateInstanceRequest",
+        "type": "object"
+      },
+      "CreateRuleRequest": {
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "instance_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Instance Ids",
+            "type": "array"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/RuleOperator"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/RuleSeverity"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "engine",
+          "metric_name",
+          "name",
+          "operator",
+          "severity",
+          "threshold"
+        ],
+        "title": "CreateRuleRequest",
+        "type": "object"
+      },
+      "DatabaseEngine": {
+        "enum": [
+          "mysql",
+          "oracle"
+        ],
+        "title": "DatabaseEngine",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InstanceConnectionPayload": {
+        "properties": {
+          "database": {
+            "description": "MySQL database name, or Oracle DSN/service name when engine=oracle.",
+            "title": "Database",
+            "type": "string"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "port": {
+            "default": 3306,
+            "description": "Explicit listener port. Oracle callers should provide 1521 or the real port.",
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "Port",
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "database",
+          "host",
+          "password",
+          "username"
+        ],
+        "title": "InstanceConnectionPayload",
+        "type": "object"
+      },
+      "InstanceMetadataResponse": {
+        "properties": {
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "environment",
+          "instance_id",
+          "labels",
+          "name",
+          "status"
+        ],
+        "title": "InstanceMetadataResponse",
+        "type": "object"
+      },
+      "InstanceResponse": {
+        "properties": {
+          "connection": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Connection",
+            "type": "object"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "engine": {
+            "title": "Engine",
+            "type": "string"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationResponse"
+          }
+        },
+        "required": [
+          "connection",
+          "created_at",
+          "engine",
+          "environment",
+          "instance_id",
+          "labels",
+          "name",
+          "validation"
+        ],
+        "title": "InstanceResponse",
+        "type": "object"
+      },
+      "InstanceTrendResponse": {
+        "properties": {
+          "bucket_seconds": {
+            "title": "Bucket Seconds",
+            "type": "integer"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/MetricCardResponse"
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/MetricSeriesResponse"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "instance": {
+            "$ref": "#/components/schemas/InstanceMetadataResponse"
+          },
+          "window": {
+            "title": "Window",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucket_seconds",
+          "cards",
+          "charts",
+          "generated_at",
+          "instance",
+          "window"
+        ],
+        "title": "InstanceTrendResponse",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "MetricCardResponse": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "label",
+          "metric_name",
+          "unit",
+          "value"
+        ],
+        "title": "MetricCardResponse",
+        "type": "object"
+      },
+      "MetricSeriesResponse": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/ChartPointResponse"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "metric_name",
+          "points",
+          "unit"
+        ],
+        "title": "MetricSeriesResponse",
+        "type": "object"
+      },
+      "OrganizationMembershipResponse": {
+        "properties": {
+          "organization": {
+            "$ref": "#/components/schemas/OrganizationResponse"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "organization",
+          "roles"
+        ],
+        "title": "OrganizationMembershipResponse",
+        "type": "object"
+      },
+      "OrganizationResponse": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "organization_id": {
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id",
+          "name",
+          "slug"
+        ],
+        "title": "OrganizationResponse",
+        "type": "object"
+      },
+      "OverviewCoverageResponse": {
+        "properties": {
+          "detail_analytics_engines": {
+            "items": {
+              "$ref": "#/components/schemas/DatabaseEngine"
+            },
+            "title": "Detail Analytics Engines",
+            "type": "array"
+          },
+          "fleet_health_engines": {
+            "items": {
+              "$ref": "#/components/schemas/DatabaseEngine"
+            },
+            "title": "Fleet Health Engines",
+            "type": "array"
+          },
+          "overview_instance_metric_engines": {
+            "items": {
+              "$ref": "#/components/schemas/DatabaseEngine"
+            },
+            "title": "Overview Instance Metric Engines",
+            "type": "array"
+          },
+          "overview_metric_engines": {
+            "items": {
+              "$ref": "#/components/schemas/DatabaseEngine"
+            },
+            "title": "Overview Metric Engines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "detail_analytics_engines",
+          "fleet_health_engines",
+          "overview_instance_metric_engines",
+          "overview_metric_engines"
+        ],
+        "title": "OverviewCoverageResponse",
+        "type": "object"
+      },
+      "OverviewEngineSummaryResponse": {
+        "properties": {
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "healthy_instances": {
+            "title": "Healthy Instances",
+            "type": "integer"
+          },
+          "total_instances": {
+            "title": "Total Instances",
+            "type": "integer"
+          },
+          "unhealthy_instances": {
+            "title": "Unhealthy Instances",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "engine",
+          "total_instances",
+          "healthy_instances",
+          "unhealthy_instances"
+        ],
+        "title": "OverviewEngineSummaryResponse",
+        "type": "object"
+      },
+      "OverviewInstanceResponse": {
+        "properties": {
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "qps": {
+            "title": "Qps",
+            "type": "number"
+          },
+          "replication_lag_seconds": {
+            "title": "Replication Lag Seconds",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "threads_connected": {
+            "title": "Threads Connected",
+            "type": "number"
+          },
+          "threads_running": {
+            "title": "Threads Running",
+            "type": "number"
+          }
+        },
+        "required": [
+          "environment",
+          "engine",
+          "instance_id",
+          "labels",
+          "name",
+          "qps",
+          "replication_lag_seconds",
+          "status",
+          "threads_connected",
+          "threads_running"
+        ],
+        "title": "OverviewInstanceResponse",
+        "type": "object"
+      },
+      "OverviewResponse": {
+        "properties": {
+          "bucket_seconds": {
+            "title": "Bucket Seconds",
+            "type": "integer"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/MetricCardResponse"
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/MetricSeriesResponse"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/OverviewCoverageResponse"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "instances": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewInstanceResponse"
+            },
+            "title": "Instances",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/OverviewSummaryResponse"
+          },
+          "window": {
+            "title": "Window",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucket_seconds",
+          "cards",
+          "charts",
+          "coverage",
+          "generated_at",
+          "instances",
+          "summary",
+          "window"
+        ],
+        "title": "OverviewResponse",
+        "type": "object"
+      },
+      "OverviewSummaryResponse": {
+        "properties": {
+          "engines": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewEngineSummaryResponse"
+            },
+            "title": "Engines",
+            "type": "array"
+          },
+          "healthy_instances": {
+            "title": "Healthy Instances",
+            "type": "integer"
+          },
+          "total_instances": {
+            "title": "Total Instances",
+            "type": "integer"
+          },
+          "unhealthy_instances": {
+            "title": "Unhealthy Instances",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "engines",
+          "total_instances",
+          "healthy_instances",
+          "unhealthy_instances"
+        ],
+        "title": "OverviewSummaryResponse",
+        "type": "object"
+      },
+      "RuleOperator": {
+        "enum": [
+          "gt",
+          "gte",
+          "lt",
+          "lte"
+        ],
+        "title": "RuleOperator",
+        "type": "string"
+      },
+      "RuleSeverity": {
+        "enum": [
+          "critical",
+          "warning"
+        ],
+        "title": "RuleSeverity",
+        "type": "string"
+      },
+      "SessionUserResponse": {
+        "properties": {
+          "active_organization": {
+            "$ref": "#/components/schemas/OrganizationResponse"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "organization_memberships": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembershipResponse"
+            },
+            "title": "Organization Memberships",
+            "type": "array"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "active_organization",
+          "display_name",
+          "organization_memberships",
+          "permissions",
+          "roles",
+          "user_id",
+          "username"
+        ],
+        "title": "SessionUserResponse",
+        "type": "object"
+      },
+      "SystemSettingResponse": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "updated_at",
+          "value"
+        ],
+        "title": "SystemSettingResponse",
+        "type": "object"
+      },
+      "TimeWindow": {
+        "enum": [
+          "15m",
+          "1h",
+          "6h",
+          "24h"
+        ],
+        "title": "TimeWindow",
+        "type": "string"
+      },
+      "UpdateSettingRequest": {
+        "properties": {
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "UpdateSettingRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationResponse": {
+        "properties": {
+          "checked_at": {
+            "title": "Checked At",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "server_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Version"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checked_at",
+          "detail",
+          "server_version",
+          "status"
+        ],
+        "title": "ValidationResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "db-monitor-api",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/alerts": {
+      "get": {
+        "operationId": "list_alerts_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertRecordResponse"
+                  },
+                  "title": "Response List Alerts Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Alerts"
+      }
+    },
+    "/alerts/rule-catalog": {
+      "get": {
+        "operationId": "list_rule_catalog_alerts_rule_catalog_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertEngineCatalogResponse"
+                  },
+                  "title": "Response List Rule Catalog Alerts Rule Catalog Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Rule Catalog"
+      }
+    },
+    "/alerts/rules": {
+      "get": {
+        "operationId": "list_rules_alerts_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertRuleResponse"
+                  },
+                  "title": "Response List Rules Alerts Rules Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Rules"
+      },
+      "post": {
+        "operationId": "create_rule_alerts_rules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Rule"
+      }
+    },
+    "/alerts/{alert_id}": {
+      "get": {
+        "operationId": "get_alert_alerts__alert_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Alert"
+      }
+    },
+    "/alerts/{alert_id}/acknowledge": {
+      "post": {
+        "operationId": "acknowledge_alert_alerts__alert_id__acknowledge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Acknowledge Alert"
+      }
+    },
+    "/alerts/{alert_id}/notes": {
+      "post": {
+        "operationId": "add_alert_note_alerts__alert_id__notes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddAlertNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Alert Note"
+      }
+    },
+    "/alerts/{alert_id}/owner": {
+      "put": {
+        "operationId": "assign_alert_owner_alerts__alert_id__owner_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignAlertOwnerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assign Alert Owner"
+      }
+    },
+    "/analytics/instances/{instance_id}/trends": {
+      "get": {
+        "operationId": "get_instance_trends_analytics_instances__instance_id__trends_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TimeWindow",
+              "default": "1h"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceTrendResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance Trends"
+      }
+    },
+    "/analytics/overview": {
+      "get": {
+        "operationId": "get_overview_analytics_overview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TimeWindow",
+              "default": "1h"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Overview"
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login"
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout"
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "me_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Me"
+      }
+    },
+    "/control/instances": {
+      "get": {
+        "operationId": "list_instances_control_instances_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstanceResponse"
+                  },
+                  "title": "Response List Instances Control Instances Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Instances"
+      },
+      "post": {
+        "operationId": "create_instance_control_instances_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInstanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Instance"
+      }
+    },
+    "/control/instances/{instance_id}": {
+      "get": {
+        "operationId": "get_instance_control_instances__instance_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance"
+      }
+    },
+    "/control/instances/{instance_id}/validate": {
+      "post": {
+        "operationId": "validate_instance_control_instances__instance_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Instance"
+      }
+    },
+    "/control/settings": {
+      "get": {
+        "operationId": "list_settings_control_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SystemSettingResponse"
+                  },
+                  "title": "Response List Settings Control Settings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Settings"
+      }
+    },
+    "/control/settings/{key}": {
+      "put": {
+        "operationId": "update_setting_control_settings__key__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Setting"
+      }
+    },
+    "/health/live": {
+      "get": {
+        "operationId": "live_health_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Live Health Live Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Live",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "ready_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}

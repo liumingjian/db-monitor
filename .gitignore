@@ -5,8 +5,18 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.next/
+coverage/
+dist/
+node_modules/
+.DS_Store
+test-results/
+.tmp-smoke-*.log
 
 lepus-v3.8/logs/
 lepus-v3.8/etc/config.ini
 lepus-v3.8/web/application/config/database.php
-
