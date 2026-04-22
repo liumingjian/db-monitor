@@ -50,7 +50,10 @@ export default async function RulesPage() {
 						<datalist id="supported-rule-metrics">
 							{model.ruleCatalog.flatMap((catalog) =>
 								catalog.metrics.map((metric) => (
-									<option key={`${catalog.engine}-${metric.metric_name}`} value={metric.metric_name} />
+									<option
+										key={`${catalog.engine}-${metric.metric_name}`}
+										value={metric.metric_name}
+									/>
 								)),
 							)}
 						</datalist>
@@ -103,7 +106,10 @@ export default async function RulesPage() {
 						</p>
 						<div className="mt-4 grid gap-4 md:grid-cols-2">
 							{model.ruleCatalog.map((catalog) => (
-								<div className="rounded-[1rem] border border-black/5 bg-white/80 p-4" key={catalog.engine}>
+								<div
+									className="rounded-[1rem] border border-black/5 bg-white/80 p-4"
+									key={catalog.engine}
+								>
 									<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
 										{formatDatabaseEngine(catalog.engine)}
 									</p>

@@ -28,6 +28,7 @@ class ConnectionValidation:
     detail: str
     server_version: str | None
     status: ValidationStatus
+    server_role: str | None = None
 
 
 @dataclass(frozen=True)

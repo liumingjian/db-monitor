@@ -41,6 +41,24 @@ export interface SessionUser {
 	readonly username: string;
 }
 
+export interface ManagedUserResponse {
+	readonly active_organization_id: string;
+	readonly display_name: string;
+	readonly effective_permissions: readonly string[];
+	readonly roles: readonly string[];
+	readonly user_id: string;
+	readonly username: string;
+}
+
+export interface RoleCatalogEntryResponse {
+	readonly permissions: readonly string[];
+	readonly role: string;
+}
+
+export interface UpdateUserRolesRequest {
+	readonly roles: readonly string[];
+}
+
 export type TimeWindow = "15m" | "1h" | "6h" | "24h";
 
 export interface ValidationResponse {
@@ -121,12 +139,9 @@ export interface OverviewInstanceResponse {
 	readonly engine: DatabaseEngine;
 	readonly instance_id: string;
 	readonly labels: readonly string[];
+	readonly metrics: readonly MetricCardResponse[];
 	readonly name: string;
-	readonly qps: number;
-	readonly replication_lag_seconds: number;
 	readonly status: string;
-	readonly threads_connected: number;
-	readonly threads_running: number;
 }
 
 export interface OverviewResponse {
@@ -165,6 +180,8 @@ export interface InstanceTrendResponse {
 		readonly instance_id: string;
 		readonly labels: readonly string[];
 		readonly name: string;
+		readonly server_role: string | null;
+		readonly server_version: string | null;
 		readonly status: string;
 	};
 	readonly window: TimeWindow;
@@ -270,7 +287,9 @@ export interface ApiClient {
 	listAlerts(filters?: ListAlertsFilters): Promise<readonly AlertRecordResponse[]>;
 	listRuleCatalog(): Promise<readonly AlertEngineCatalogResponse[]>;
 	listRules(): Promise<readonly AlertRuleResponse[]>;
+	listRoleCatalog(): Promise<readonly RoleCatalogEntryResponse[]>;
 	listSettings(): Promise<readonly SystemSettingResponse[]>;
+	listUsers(): Promise<readonly ManagedUserResponse[]>;
 	login(credentials: {
 		readonly password: string;
 		readonly username: string;
@@ -278,9 +297,10 @@ export interface ApiClient {
 	logout(): Promise<void>;
 	me(): Promise<SessionUser>;
 	updateSetting(key: string, value: string): Promise<SystemSettingResponse>;
+	updateUserRoles(userId: string, request: UpdateUserRolesRequest): Promise<ManagedUserResponse>;
 }
 
-export const API_CONTRACT_VERSION = "0.8.0";
+export const API_CONTRACT_VERSION = "0.10.0";
 export const apiClientPackageName = "@db-monitor/api-client";
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -327,14 +347,14 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 		listInstances: (filters) =>
 			request<readonly InstanceResponse[]>(`/control/instances${buildQueryString(filters)}`),
 		listMySQLInstances: (filters) =>
-			request<readonly InstanceResponse[]>(
-				`/control/mysql-instances${buildQueryString(filters)}`,
-			),
+			request<readonly InstanceResponse[]>(`/control/mysql-instances${buildQueryString(filters)}`),
 		listAlerts: (filters) =>
 			request<readonly AlertRecordResponse[]>(`/alerts${buildQueryString(filters)}`),
 		listRuleCatalog: () => request<readonly AlertEngineCatalogResponse[]>("/alerts/rule-catalog"),
 		listRules: () => request<readonly AlertRuleResponse[]>("/alerts/rules"),
+		listRoleCatalog: () => request<readonly RoleCatalogEntryResponse[]>("/auth/roles"),
 		listSettings: () => request<readonly SystemSettingResponse[]>("/control/settings"),
+		listUsers: () => request<readonly ManagedUserResponse[]>("/auth/users"),
 		login: (credentials) =>
 			request<SessionUser>("/auth/login", {
 				body: JSON.stringify(credentials),
@@ -349,12 +369,15 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 				body: JSON.stringify({ value }),
 				method: "PUT",
 			}),
+		updateUserRoles: (userId, payload) =>
+			request<ManagedUserResponse>(`/auth/users/${userId}/roles`, {
+				body: JSON.stringify(payload),
+				method: "PUT",
+			}),
 	};
 }
 
-function buildQueryString(
-	filters: ListAlertsFilters | ListInstancesFilters | undefined,
-): string {
+function buildQueryString(filters: ListAlertsFilters | ListInstancesFilters | undefined): string {
 	if (filters === undefined) {
 		return "";
 	}

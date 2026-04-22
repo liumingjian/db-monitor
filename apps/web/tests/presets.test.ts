@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	OVERVIEW_PRESETS,
-	buildInstancePresets,
-} from "../src/analytics-presets";
+import { OVERVIEW_PRESETS, buildInstancePresets } from "../src/analytics-presets";
 
 describe("analytics presets", () => {
 	it("keeps overview presets route-backed and tied to stable windows", () => {
@@ -27,22 +24,19 @@ describe("analytics presets", () => {
 	it("builds instance presets from the canonical detail route", () => {
 		expect(buildInstancePresets("inst-prod-primary")).toEqual([
 			{
-				description:
-					"15m instance pulse for hot-path triage and immediate workload direction.",
+				description: "15m instance pulse for hot-path triage and immediate workload direction.",
 				href: "/instances/inst-prod-primary?window=15m",
 				label: "Hot Path",
 				window: "15m",
 			},
 			{
-				description:
-					"6h balance check for concurrency, wait pressure, and engine stability.",
+				description: "6h balance check for concurrency, wait pressure, and engine stability.",
 				href: "/instances/inst-prod-primary?window=6h",
 				label: "Stability Sweep",
 				window: "6h",
 			},
 			{
-				description:
-					"24h drift view for slow saturation and recurring workload pressure.",
+				description: "24h drift view for slow saturation and recurring workload pressure.",
 				href: "/instances/inst-prod-primary?window=24h",
 				label: "Daily Drift",
 				window: "24h",

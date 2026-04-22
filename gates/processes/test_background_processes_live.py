@@ -159,6 +159,7 @@ def _seed_validated_instance(postgres_dsn: str) -> None:
             instance_id=TEST_INSTANCE_ID,
             labels=("primary", "live-gate"),
             name="prod-primary-live",
+            organization_id="org-internal",
             validation=ConnectionValidation(
                 checked_at=datetime.now(tz=UTC) - timedelta(minutes=1),
                 detail="Seeded for background process live gate.",

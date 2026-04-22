@@ -3,7 +3,7 @@ from importlib import import_module
 import os
 import subprocess
 from types import ModuleType
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 from db_monitor_api.auth.domain import utc_now
 from db_monitor_api.control_plane.domain import (
@@ -38,6 +38,27 @@ class SqlPlusProbeSettings:
 
 class OracleConnectionValidator(Protocol):
     def validate(self, config: InstanceConnectionConfig) -> ConnectionValidation:
+        ...
+
+
+class OracleCursor(Protocol):
+    def execute(self, statement: str) -> object:
+        ...
+
+    def fetchone(self) -> Any:
+        ...
+
+    def close(self) -> None:
+        ...
+
+
+class OracleConnection(Protocol):
+    version: object
+
+    def cursor(self) -> OracleCursor:
+        ...
+
+    def close(self) -> None:
         ...
 
 
@@ -101,7 +122,9 @@ def _missing_python_driver_validation() -> ConnectionValidation:
         checked_at=utc_now(),
         detail=(
             "Oracle validation requires the python-oracledb or cx_Oracle package "
-            "plus a reachable DSN/service name."
+            "plus a reachable DSN/service name. For local Oracle 11g/XE workflows, "
+            f"configure {ORACLE_SQLPLUS_DOCKER_CONTAINER_ENV} to enable the sqlplus "
+            "docker fallback."
         ),
         server_version=None,
         status=ValidationStatus.FAILED,
@@ -114,8 +137,8 @@ def _validate_with_python_driver(
     driver: ModuleType,
     timeout_seconds: int,
 ) -> ConnectionValidation:
-    connection = None
-    cursor = None
+    connection: OracleConnection | None = None
+    cursor: OracleCursor | None = None
     try:
         connect_kwargs: dict[str, object] = {
             "user": config.username,
@@ -124,15 +147,16 @@ def _validate_with_python_driver(
         }
         if driver.__name__ == "oracledb":
             connect_kwargs["tcp_connect_timeout"] = timeout_seconds
-        connection = driver.connect(**connect_kwargs)
+        connection = cast(OracleConnection, driver.connect(**connect_kwargs))
         cursor = connection.cursor()
         cursor.execute("SELECT 1 FROM dual")
         cursor.fetchone()
         server_version = getattr(connection, "version", None)
+        server_role = _read_oracle_role(cursor)
     except Exception as error:
         return ConnectionValidation(
             checked_at=utc_now(),
-            detail=str(error),
+            detail=_oracle_driver_error_detail(error),
             server_version=None,
             status=ValidationStatus.FAILED,
         )
@@ -147,6 +171,7 @@ def _validate_with_python_driver(
         detail="Oracle connection validated successfully using the supplied DSN/service name.",
         server_version=None if server_version is None else str(server_version),
         status=ValidationStatus.PASSED,
+        server_role=server_role,
     )
 
 
@@ -250,3 +275,26 @@ def _sqlplus_error_detail(completed: subprocess.CompletedProcess[str]) -> str:
     if stdout:
         return stdout
     return "sqlplus probe failed without output."
+
+
+def _read_oracle_role(cursor: OracleCursor) -> str | None:
+    try:
+        cursor.execute("SELECT DATABASE_ROLE FROM V$DATABASE")
+        row = cursor.fetchone()
+    except Exception:
+        return None
+    if row is None:
+        return None
+    value = row[0] if isinstance(row, tuple) else row
+    return str(value).strip().lower().replace("_", " ")
+
+
+def _oracle_driver_error_detail(error: Exception) -> str:
+    detail = str(error)
+    if "DPY-3010" in detail:
+        return (
+            f"{detail} Oracle 11g/XE is not supported by python-oracledb thin mode; "
+            f"configure {ORACLE_SQLPLUS_DOCKER_CONTAINER_ENV} for the sqlplus docker "
+            "fallback or use a thick-compatible Oracle driver."
+        )
+    return detail

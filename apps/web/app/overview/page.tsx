@@ -3,12 +3,8 @@ import { AnalyticsPresetNav } from "../../src/components/analytics-preset-nav";
 import { AppChrome } from "../../src/components/app-chrome";
 import { MetricChart } from "../../src/components/metric-chart";
 import { TimeWindowNav } from "../../src/components/time-window-nav";
-import { buildDashboardModel, type InsightTone } from "../../src/monitoring-ui";
-import {
-	createServerApiClient,
-	parseTimeWindow,
-	requireServerSession,
-} from "../../src/server-api";
+import { type InsightTone, buildDashboardModel } from "../../src/monitoring-ui";
+import { createServerApiClient, parseTimeWindow, requireServerSession } from "../../src/server-api";
 
 interface OverviewPageProps {
 	readonly searchParams: Promise<{
@@ -47,10 +43,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 						observation windows.
 					</p>
 					<div className="mt-4">
-						<AnalyticsPresetNav
-							currentWindow={model.overview.window}
-							presets={OVERVIEW_PRESETS}
-						/>
+						<AnalyticsPresetNav currentWindow={model.overview.window} presets={OVERVIEW_PRESETS} />
 					</div>
 				</div>
 				<div className="rounded-[1.6rem] border border-black/5 bg-white p-5">
@@ -124,9 +117,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 						</div>
 						<div className="rounded-[1rem] bg-white px-4 py-3">
 							<p className="text-sm text-[var(--muted)]">Engines observed</p>
-							<p className="mt-2 text-2xl font-semibold">
-								{model.engineSummaries.length}
-							</p>
+							<p className="mt-2 text-2xl font-semibold">{model.engineSummaries.length}</p>
 						</div>
 					</div>
 					<div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -168,9 +159,9 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 						</p>
 						{model.capacityLeaders.length === 0 ? (
 							<p className="mt-4 rounded-[1.2rem] bg-white px-4 py-4 text-sm text-[var(--muted)]">
-								No overview signal leaders are populated for the observed engines yet.
-								Use the coverage boundary above and open individual instances for
-								supported detail analytics.
+								No overview signal leaders are populated for the observed engines yet. Use the
+								coverage boundary above and open individual instances for supported detail
+								analytics.
 							</p>
 						) : (
 							<div className="mt-4 space-y-3">
@@ -179,13 +170,9 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 										<div className="flex items-start justify-between gap-3">
 											<div>
 												<p className="text-sm font-semibold">{leader.title}</p>
-												<p className="mt-1 text-sm text-[var(--muted)]">
-													{leader.instanceName}
-												</p>
+												<p className="mt-1 text-sm text-[var(--muted)]">{leader.instanceName}</p>
 											</div>
-											<p className="text-sm font-semibold text-[var(--accent)]">
-												{leader.value}
-											</p>
+											<p className="text-sm font-semibold text-[var(--accent)]">{leader.value}</p>
 										</div>
 										<p className="mt-3 text-sm text-[var(--muted)]">{leader.detail}</p>
 									</div>

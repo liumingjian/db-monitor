@@ -23,7 +23,10 @@ export async function POST(request: Request): Promise<Response> {
 		throw new Error("Backend login did not return the db monitor session cookie.");
 	}
 	const redirectTarget = readOptionalTextField(formData, "next") ?? "/overview";
-	const redirectResponse = NextResponse.redirect(new URL(redirectTarget, request.url), 303);
+	const redirectResponse = new NextResponse(null, {
+		headers: { location: redirectTarget },
+		status: 303,
+	});
 	redirectResponse.cookies.set(SESSION_COOKIE_NAME, cookieValue, {
 		httpOnly: true,
 		path: "/",

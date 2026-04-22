@@ -14,7 +14,12 @@ type CookieStore = Awaited<ReturnType<typeof cookies>>;
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 export const API_BASE_URL_ENV = "DB_MONITOR_API_BASE_URL";
 export const DEFAULT_TIME_WINDOW: TimeWindow = "1h";
-export const APPROVED_TIME_WINDOWS = ["15m", "1h", "6h", "24h"] as const satisfies readonly TimeWindow[];
+export const APPROVED_TIME_WINDOWS = [
+	"15m",
+	"1h",
+	"6h",
+	"24h",
+] as const satisfies readonly TimeWindow[];
 
 export async function createServerApiClient(): Promise<ApiClient> {
 	const cookieHeader = buildCookieHeader(await cookies());

@@ -8,10 +8,7 @@ interface AnalyticsPresetNavProps {
 	readonly presets: readonly AnalyticsPreset[];
 }
 
-export function AnalyticsPresetNav({
-	currentWindow,
-	presets,
-}: AnalyticsPresetNavProps) {
+export function AnalyticsPresetNav({ currentWindow, presets }: AnalyticsPresetNavProps) {
 	return (
 		<div className="grid gap-3 md:grid-cols-3">
 			{presets.map((preset) => {
@@ -30,9 +27,7 @@ export function AnalyticsPresetNav({
 							{preset.label}
 						</p>
 						<p className="mt-3 text-sm font-semibold text-black">{preset.window}</p>
-						<p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-							{preset.description}
-						</p>
+						<p className="mt-2 text-sm leading-6 text-[var(--muted)]">{preset.description}</p>
 					</Link>
 				);
 			})}

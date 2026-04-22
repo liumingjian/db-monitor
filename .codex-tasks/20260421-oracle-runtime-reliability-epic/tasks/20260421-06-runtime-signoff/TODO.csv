@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Run runtime contract and doctor gates,DONE,"Runtime contract tests and doctor command pass against the new baseline","pnpm test:oracle-runtime:doctor",2026-04-21T11:40:00+08:00,0,"Focused contract tests and the root doctor command both passed"
+2,Run Oracle live control-plane signoff,DONE,"Oracle live gate and related regressions pass from the repo root","pnpm test:control-plane:oracle && pnpm test:control-plane:postgres",2026-04-21T11:40:00+08:00,0,"Both Oracle and Postgres control-plane gates passed from the repo root"
+3,Close the epic and synchronize parent truth,DONE,"Parent epic truth is updated after signoff passes","bash -lc \"grep -q 'Oracle runtime signoff' .codex-tasks/20260421-oracle-runtime-reliability-epic/tasks/20260421-06-runtime-signoff/PROGRESS.md\"",2026-04-21T11:40:00+08:00,0,"Root runtime signoff passed and parent/roadmap truth were synchronized"

@@ -5,9 +5,11 @@ import secrets
 from db_monitor_api.auth.domain import (
     AuthContext,
     AuditEntry,
+    ManagedUser,
     Organization,
     PasswordDigest,
     Permission,
+    RoleCatalogEntry,
     ROLE_PERMISSIONS,
     Session,
     UserRecord,
@@ -15,8 +17,8 @@ from db_monitor_api.auth.domain import (
 )
 from db_monitor_api.auth.repository import (
     AuditRepository,
-    InMemorySessionRepository,
-    InMemoryUserRepository,
+    SessionRepository,
+    UserRepository,
 )
 
 HASH_ITERATIONS = 120_000
@@ -28,6 +30,14 @@ class AuthenticationError(Exception):
 
 
 class PermissionDenied(Exception):
+    pass
+
+
+class ManagedUserNotFoundError(Exception):
+    pass
+
+
+class UnknownRoleError(Exception):
     pass
 
 
@@ -92,8 +102,8 @@ class AuditService:
 class AuthService:
     audit_service: AuditService
     password_hasher: PasswordHasher
-    session_repository: InMemorySessionRepository
-    user_repository: InMemoryUserRepository
+    session_repository: SessionRepository
+    user_repository: UserRepository
 
     def login(self, *, password: str, username: str) -> AuthContext:
         user_record = self.user_repository.get_by_username(username)
@@ -143,6 +153,51 @@ class AuthService:
             raise AuthenticationError("User is not available for the active session.")
         return _build_auth_context(session=session, user_record=user_record)
 
+    def list_managed_users(self, *, organization_id: str) -> tuple[ManagedUser, ...]:
+        return tuple(
+            _build_managed_user(user_record=user_record, organization_id=organization_id)
+            for user_record in self.user_repository.list_by_organization(
+                organization_id=organization_id
+            )
+        )
+
+    def list_role_catalog(self) -> tuple[RoleCatalogEntry, ...]:
+        return tuple(
+            RoleCatalogEntry(
+                permissions=_permissions_for_roles(frozenset({role})),
+                role=role,
+            )
+            for role in sorted(ROLE_PERMISSIONS)
+        )
+
+    def update_user_roles(
+        self,
+        *,
+        actor_user_id: str,
+        organization_id: str,
+        roles: frozenset[str],
+        target_user_id: str,
+    ) -> ManagedUser:
+        _require_known_roles(roles)
+        user_record = self.user_repository.update_roles(
+            organization_id=organization_id,
+            roles=roles,
+            user_id=target_user_id,
+        )
+        if user_record is None:
+            raise ManagedUserNotFoundError(f"Unknown user: {target_user_id}")
+        self.audit_service.record(
+            action="users.roles.update",
+            actor_user_id=actor_user_id,
+            organization_id=organization_id,
+            outcome="allowed",
+            resource=f"user:{target_user_id}",
+        )
+        return _build_managed_user(
+            user_record=user_record,
+            organization_id=organization_id,
+        )
+
 
 @dataclass(frozen=True)
 class AuthorizationService:
@@ -186,6 +241,33 @@ def _permissions_for_roles(roles: frozenset[str]) -> frozenset[Permission]:
     return frozenset(permissions)
 
 
+def _build_managed_user(
+    *,
+    organization_id: str,
+    user_record: UserRecord,
+) -> ManagedUser:
+    roles = _require_membership_roles(
+        organization_id=organization_id,
+        user_record=user_record,
+    )
+    return ManagedUser(
+        active_organization_id=user_record.user.active_organization_id,
+        display_name=user_record.user.display_name,
+        effective_permissions=_permissions_for_roles(roles),
+        roles=roles,
+        user_id=user_record.user.user_id,
+        username=user_record.user.username,
+    )
+
+
+def _require_known_roles(roles: frozenset[str]) -> None:
+    unknown_roles = sorted(role for role in roles if role not in ROLE_PERMISSIONS)
+    if unknown_roles:
+        raise UnknownRoleError(
+            f"Unknown roles: {', '.join(unknown_roles)}"
+        )
+
+
 def _require_active_organization(
     *,
     active_organization_id: str,
@@ -195,3 +277,14 @@ def _require_active_organization(
         if membership.organization.organization_id == active_organization_id:
             return membership.organization
     raise AuthenticationError("User is not available for the active organization session.")
+
+
+def _require_membership_roles(
+    *,
+    organization_id: str,
+    user_record: UserRecord,
+) -> frozenset[str]:
+    for membership in user_record.user.organization_memberships:
+        if membership.organization.organization_id == organization_id:
+            return membership.roles
+    raise ManagedUserNotFoundError(f"Unknown user organization scope: {user_record.user.user_id}")

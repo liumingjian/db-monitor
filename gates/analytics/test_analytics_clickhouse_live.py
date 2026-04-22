@@ -195,6 +195,7 @@ def _build_instance(*, anchor: datetime, instance_id: str) -> MySQLInstance:
         instance_id=instance_id,
         labels=("primary",),
         name=instance_id,
+        organization_id="org-internal",
         validation=ConnectionValidation(
             checked_at=anchor,
             detail="ok",

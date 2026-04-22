@@ -1,0 +1,14 @@
+.agents
+.claude
+.codex-tasks
+.git
+.mypy_cache
+.playwright
+.playwright-cli
+.pytest_cache
+.ruff_cache
+.venv
+.tmp-smoke-*.err.log
+.tmp-smoke-*.out.log
+node_modules
+test-results

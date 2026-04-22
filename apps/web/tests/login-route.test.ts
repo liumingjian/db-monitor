@@ -43,7 +43,7 @@ describe("login route", () => {
 		const response = await POST(request);
 
 		expect(response.status).toBe(303);
-		expect(response.headers.get("location")).toBe("http://127.0.0.1:38101/overview");
+		expect(response.headers.get("location")).toBe("/overview");
 		expect(response.headers.get("set-cookie")).toContain("dbmon_session=session-123");
 	});
 });

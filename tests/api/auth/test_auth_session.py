@@ -83,3 +83,74 @@ def test_non_admin_is_denied_audit_history(client: TestClient, runtime: AppRunti
     assert response.json() == {"detail": "Missing permission: settings:write"}
     assert runtime.audit_repository.entries[-1].action == "audit.denied"
     assert runtime.audit_repository.entries[-1].outcome == "denied"
+
+
+def test_admin_can_update_existing_user_roles_and_audit_change(
+    client: TestClient,
+    runtime: AppRuntime,
+) -> None:
+    login_response = client.post(
+        "/auth/login",
+        json={"password": "admin-password", "username": "admin"},
+    )
+
+    assert login_response.status_code == 200
+
+    update_response = client.put(
+        "/auth/users/user-viewer/roles",
+        json={"roles": ["operator"]},
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json() == {
+        "active_organization_id": "org-internal",
+        "display_name": "Read Only User",
+        "effective_permissions": [
+            "instances:read",
+            "instances:write",
+            "rules:read",
+            "rules:write",
+            "settings:read",
+        ],
+        "roles": ["operator"],
+        "user_id": "user-viewer",
+        "username": "viewer",
+    }
+    assert runtime.audit_repository.entries[-1].action == "users.roles.update"
+    assert runtime.audit_repository.entries[-1].resource == "user:user-viewer"
+
+    relogin_response = client.post(
+        "/auth/login",
+        json={"password": "viewer-password", "username": "viewer"},
+    )
+
+    assert relogin_response.status_code == 200
+
+    me_response = client.get("/auth/me")
+
+    assert me_response.status_code == 200
+    assert me_response.json()["roles"] == ["operator"]
+    assert me_response.json()["permissions"] == [
+        "instances:read",
+        "instances:write",
+        "rules:read",
+        "rules:write",
+        "settings:read",
+    ]
+
+
+def test_role_update_rejects_unknown_roles(client: TestClient) -> None:
+    login_response = client.post(
+        "/auth/login",
+        json={"password": "admin-password", "username": "admin"},
+    )
+
+    assert login_response.status_code == 200
+
+    response = client.put(
+        "/auth/users/user-viewer/roles",
+        json={"roles": ["super-admin"]},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Unknown roles: super-admin"}

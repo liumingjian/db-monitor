@@ -94,5 +94,21 @@ class AuthContext:
     user: User
 
 
+@dataclass(frozen=True)
+class ManagedUser:
+    active_organization_id: str
+    display_name: str
+    effective_permissions: frozenset[Permission]
+    roles: frozenset[str]
+    user_id: str
+    username: str
+
+
+@dataclass(frozen=True)
+class RoleCatalogEntry:
+    permissions: frozenset[Permission]
+    role: str
+
+
 def utc_now() -> datetime:
     return datetime.now(tz=UTC)

@@ -40,21 +40,33 @@
 | 07 | Oracle Data Plane and Minimum Insights | Done | Oracle 已不再停留在 validation-only，最小 collector / analytics / web detail / signoff 闭环已完成 |
 | 08 | Engine-Aware Overview and Fleet Diagnostics | Done | engine-aware overview payload、web surface、presets 与根级 signoff 已闭环，mixed-engine fleet baseline 已成立 |
 | 09 | Multi-Engine Alerting and Rule Semantics | Done | multi-engine rule contract、API、pipeline、web、notifier 与 root signoff 已闭环；当前 roadmap 已耗尽，后续必须先做 close-out 与 roadmap extension |
-| 10 | PRD Debt and Control-Plane Closeout | Active | roadmap extension 已完成，当前目标不是继续扩产品边界，而是把原始 PRD 剩余的控制面欠账收口成一轮有边界的 debt pass |
+| 10 | PRD Debt and Control-Plane Closeout | Done | 原始 PRD 最后一批控制面欠账已通过 closeout epic 与 repo-root signoff 收口；若继续推进，需先进入新的 roadmap close-out / extension |
+| 11 | Multi-Engine Fleet Metric Parity and Overview Convergence | Done | mixed-engine fleet overview 的 cards/charts/instance metrics/leaders 已收敛到诚实可验证的 parity baseline，并通过 root signoff |
+| 12 | Oracle Runtime Reliability and Live-Gate Productionization | Done | Oracle runtime/live-gate 已收口为 doctor、signoff、operator baseline、diagnostics 与 rollback 的可复用基线 |
+| 13 | Production Launch Readiness and Deployment Baseline | Done | release gate、deployment baseline、env/signoff contract 与 root launch signoff 已收口为内部单环境可投产基线 |
+| 14 | Scale, High Availability, and Disaster Recovery Hardening | Conditional Next | 只有在 Epic 13 完成且真实上线需求开始集中在容量、故障域和恢复能力时，才值得进入更重的 HA/DR hardening |
 
 ## Current Status
 
-- 截至 `2026-04-21`，roadmap 中 01-09 已全部 `Done`，`Epic 10` 已作为显式 roadmap extension 被激活
-- 当前 active epic 是 `PRD Debt and Control-Plane Closeout`；它只服务于原始 `PRD.md` 的剩余欠账收口，不代表新的产品扩张阶段
+- 截至 `2026-04-22`，roadmap 中 01-13 已全部 `Done`
+- 当前没有 active epic；若继续推进，必须先做 post-Epic-13 close-out review，再判断是否存在足够强的 scale / HA / DR 证据支持激活 `Epic 14`
 - 本轮 close-out 额外补了一份 [docs/prd-closeout.md](docs/prd-closeout.md)，用于解释：
   - 原始 `PRD.md` 的 phase-one 需求哪些已经完成
   - 哪些能力已经明显超出原始 PRD
-  - 当前仍未补齐的 repo gap 是什么
-- 当前 debt epic 已冻结的 gap 范围是：
-  - 实例列表与告警列表筛选
-  - 审计日志持久化与查询面
-  - 用户/角色管理产品面
-  - TPS 与实例角色/版本显式展示
+  - 为什么后续开发已经不再是 PRD debt closeout，而是新的 roadmap extension
+- Epic 11 已收口的 gap 包括：
+  - overview fleet cards / charts 已可对 MySQL + Oracle 做 engine-aware 聚合
+  - overview instance metrics / signal leaders 已不再依赖 MySQL-only snapshot 字段
+  - full mixed-engine coverage 的 web capability boundary 已停止停留在 baseline-only 叙事
+- Epic 12 已收口的 gap 包括：
+  - Oracle runtime 已具备 root-level doctor/signoff 入口
+  - operator 已拥有 Oracle runtime/live-gate baseline、checklists 与 rollback guidance
+  - live-gate failure isolation 已具备 repo-local diagnostics surface
+- Epic 13 已收口的 gap 包括：
+  - `pnpm test:hardening:signoff` 已恢复为绿色，当前分支重新满足 repo-root hardening gate
+  - `docs/operator-release-baseline.md` 已从最小 operator 说明升级为 internal production launch baseline，并补齐 environment / acceptance 资产
+  - root-level `pnpm test:launch-readiness:signoff` 已存在并通过，能串联 hardening、Oracle runtime 与 diff hygiene
+  - 当前仓库对“内部单环境可投产”的边界已收敛为 repo-local docs / scripts / tests / signoff，而不再依赖口头经验
 
 ## Epic 01: MySQL-First Phase One Control Plane
 
@@ -410,6 +422,157 @@
 - 原始 `PRD.md` 中剩余的 phase-one 控制面欠账已不再需要单独解释“为什么还没做”
 - repo-root gate 能证明 closeout 没有回退现有主链
 
+## Epic 11: Multi-Engine Fleet Metric Parity and Overview Convergence
+
+### Goal
+
+- 把 mixed-engine overview 从“baseline 已成立但核心 fleet metrics 仍偏 MySQL-only”推进到一个诚实、可验证的 parity baseline
+
+### Why It Is Active Next
+
+- `docs/prd-closeout.md` 已证明 phase-one 主线和原始控制面欠账都已收口，当前主误差不再是 PRD debt
+- 当前仓库中最显式的剩余 gap 已集中在：
+  - `apps/api/src/db_monitor_api/analytics/service.py` 仍把 `OVERVIEW_METRIC_ENGINES` 与 `OVERVIEW_INSTANCE_METRIC_ENGINES` 锁在 `mysql`
+  - overview cards / charts 仍只聚合 MySQL throughput、threads、buffer-pool、replication 语义
+  - web capability boundary 与 diagnostics 仍明确提示 mixed-engine fleet 只达到 baseline，而非 parity
+- 相比之下，Oracle runtime reliability 是更偏 release / live-evidence 的 follow-up；当前更直接的产品误差仍在 fleet overview 语义层
+
+### Activation Gates
+
+- Epic 10 已完成，且 `docs/prd-closeout.md` 明确说明下一步应进入新的 roadmap extension
+- Oracle detail analytics、engine-aware overview baseline 和 multi-engine alerting 已稳定，不再阻塞 overview parity
+- 当前仓库中对 “overview parity 尚未完成” 的代码与文案 seam 已能直接定位
+
+### Top-Level Scope
+
+- 为 overview cards / charts 建立最小 engine-aware parity contract
+- 把 overview instance metric coverage 与 signal leader semantics 从 MySQL-only 推进到 mixed-engine truth
+- 收敛 web capability boundary、coverage readout、capacity insight 与 leader messaging
+- 用 targeted gate 与 root signoff 证明 MySQL 主链和 Oracle detail path 未被回退
+
+### Non-Goals
+
+- 不追求 Oracle 全量 BI 报表或所有指标的一次性 parity
+- 不重写 alerting、control-plane 或 auth / governance 主链
+- 不引入第三引擎或新的报表家族
+
+### Done-When
+
+- mixed-engine fleet overview 的 cards / charts / signal leaders 不再显式停留在 MySQL-only 假设
+- capability boundary 能诚实表达已支持的 parity 面，而不是继续把 Oracle 固定在 health-only / baseline 文案里
+- MySQL overview semantics、Oracle detail semantics 与现有根级门禁不回退
+
+## Epic 12: Oracle Runtime Reliability and Live-Gate Productionization
+
+### Goal
+
+- 在多引擎产品面进一步扩张之前，把 Oracle runtime 与 live-gate 证据链提升到更可持续、可重复的运维基线
+
+### Why It Is Conditional Next
+
+- 当前 repo 已有 Oracle live baseline，但并非每一轮后续 epic 都重跑；如果 Epic 11 收口后主误差转向“离线全绿但真实 Oracle 环境证据不够稳”，这会比继续扩产品面更优先
+- 这个方向的价值取决于 Epic 11 结束后的真实证据；如果 parity 期间已经顺手把 live evidence 重新夯实，它就不必立刻激活
+
+### Activation Gates
+
+- Epic 11 已完成，且 mixed-engine fleet parity 不再是主要产品误差
+- 离线门禁与 Oracle live gate 之间仍存在明显时滞、漂移或恢复成本
+- 团队确认下一步主要风险在 runtime confidence，而不是产品 contract 缺口
+
+### Top-Level Scope
+
+- Oracle live-gate 的复跑策略、证据记录与失败恢复
+- runtime prerequisites、operator runbook 与最小 smoke / signoff 收口
+- 避免“测试全绿但真实 Oracle 依赖不可用”的假收敛
+
+### Non-Goals
+
+- 不扩展新的产品 surface
+- 不在这一轮重写整体 release / deployment family
+- 不把 runtime hardening 借机扩成新的多租户或多引擎 roadmap
+
+### Done-When
+
+- Oracle runtime / live-gate evidence 能稳定复用，不再依赖偶发性环境幸运
+- 团队知道何时必须跑 live gate、失败时如何恢复，以及哪些离线 green 不能替代真实 gate
+
+## Epic 13: Production Launch Readiness and Deployment Baseline
+
+### Goal
+
+- 把当前仓库从“产品与运行时能力基本齐备”推进到“可面向内部单环境投产的正式 launch baseline”
+
+### Why It Is Active Next
+
+- `docs/prd-closeout.md` 与 Epic 01-12 truth 已证明：当前主误差已经不再是产品功能缺口
+- `docs/operator-release-baseline.md` 仍明确写着“最小 operator 发布基线”，并且刻意不覆盖完整 `CI/CD`
+- 本轮 live evidence 表明：
+  - `pnpm test:oracle-runtime:signoff` 已通过，说明 Oracle runtime 不再是最强阻塞
+  - `pnpm test:hardening:signoff` 仍在 `pnpm lint` 处失败，当前分支还没达到仓库自己的 release gate
+  - repo 中尚未形成一套正式的 internal production deployment baseline / env contract / launch signoff 资产
+- 因此，下一轮最小而真实的价值不是继续加产品面，而是把“能不能稳妥上线”收口为可验证工程基线
+
+### Activation Gates
+
+- roadmap 01-12 已全部 `Done`，旧路线已经耗尽
+- 用户当前目标已经从“继续扩功能”切换为“面向投产上线做决策”
+- 当前 repo gap 已能明确定位到 release gate、deployment baseline、config/secrets contract 与 operator launch evidence
+
+### Top-Level Scope
+
+- 冻结内部单环境 production launch control contract
+- 恢复 branch / root 级 release 与 hardening gates
+- 交付 production deployment baseline、operator checklist、rollback/acceptance 资产
+- 收敛 launch config / secrets / signoff contract，并用 root gate 验证
+
+### Non-Goals
+
+- 不建设完整 CI/CD 平台
+- 不直接进入 Kubernetes、Terraform、多环境 promotion 或全自动发布编排
+- 不把 launch epic 偷换成新的产品功能开发
+- 不在没有真实上线需求的前提下提前扩成 HA/DR / 多地域课题
+
+### Done-When
+
+- repo-root release / hardening gates 回到可复用的绿色状态
+- 内部单环境部署所需的 baseline、checklist、rollback 与 acceptance 资产齐备
+- 团队知道要准备哪些环境变量、依赖、门禁和恢复动作，且这些要求已收敛到 repo-local truth source
+
+## Epic 14: Scale, High Availability, and Disaster Recovery Hardening
+
+### Goal
+
+- 在单环境投产基线稳定后，把系统推进到能承载更高故障域和恢复要求的运行级别
+
+### Why It Is Conditional Next
+
+- 当前产品目标首先是内部单租户上线，而不是一开始就建设高可用平台
+- 如果 Epic 13 完成后，真实阻塞开始集中在容量、备份恢复、故障域或节点级容错，这个方向才值得优先
+
+### Activation Gates
+
+- Epic 13 已完成，且 launch baseline 已被真实使用
+- 团队已经有明确的恢复目标、RTO/RPO 或故障域要求，而不是纯假设性担忧
+- 现有 deployment baseline 已不再是主要阻塞
+
+### Top-Level Scope
+
+- backup / restore / drill baseline
+- 关键状态面的 failure-domain hardening
+- 关键运行链路的 HA / recovery / load signoff
+- 更明确的 operator escalation / incident baseline
+
+### Non-Goals
+
+- 不扩新的产品 surface
+- 不在 launch baseline 还未稳定时直接叠加复杂架构
+- 不把真实恢复演练替换成只看单次离线绿灯
+
+### Done-When
+
+- 团队对备份恢复、单点失效与关键负载有明确且可验证的运行基线
+- 规模和故障域问题不再依赖口头经验，而有 repo-local signoff 与 operator 资产支撑
+
 ## Close-Out Review Template
 
 每个 active epic 结束时，都要回答以下问题，再决定是否按默认顺序推进：
@@ -419,9 +582,9 @@
 3. 当前数据模型、API 契约和运行模型，哪些已经稳定，哪些仍在抖动？
 4. 是否存在足够强的证据，支持跳过 `Default Next` 而进入某个 `Conditional Next`？
 
-如果没有强证据，默认进入 `Epic 02: Operational Hardening and Delivery Readiness`。
+如果没有强证据，默认进入当前 roadmap 中已经冻结好的 `Default Next`；如果没有 `Default Next`，则先进入 roadmap extension。
 
-如果 01-06 都已 `Done`，则默认动作不再是“自动跳到下一个旧 epic”，而是：
+如果当前 roadmap 已被全部关闭，则默认动作不再是“自动跳到下一个旧 epic”，而是：
 
 1. 先写明旧 roadmap 已经耗尽
 2. 再基于显式 repo gap 扩展 roadmap

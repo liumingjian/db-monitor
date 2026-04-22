@@ -531,6 +531,28 @@
             "title": "Name",
             "type": "string"
           },
+          "server_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Role"
+          },
+          "server_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Version"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -541,6 +563,8 @@
           "instance_id",
           "labels",
           "name",
+          "server_role",
+          "server_version",
           "status"
         ],
         "title": "InstanceMetadataResponse",
@@ -665,6 +689,50 @@
           "username"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "ManagedUserResponse": {
+        "properties": {
+          "active_organization_id": {
+            "title": "Active Organization Id",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "effective_permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Effective Permissions",
+            "type": "array"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "active_organization_id",
+          "display_name",
+          "effective_permissions",
+          "roles",
+          "user_id",
+          "username"
+        ],
+        "title": "ManagedUserResponse",
         "type": "object"
       },
       "MetricCardResponse": {
@@ -856,29 +924,20 @@
             "title": "Labels",
             "type": "array"
           },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricCardResponse"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
           "name": {
             "title": "Name",
             "type": "string"
           },
-          "qps": {
-            "title": "Qps",
-            "type": "number"
-          },
-          "replication_lag_seconds": {
-            "title": "Replication Lag Seconds",
-            "type": "number"
-          },
           "status": {
             "title": "Status",
             "type": "string"
-          },
-          "threads_connected": {
-            "title": "Threads Connected",
-            "type": "number"
-          },
-          "threads_running": {
-            "title": "Threads Running",
-            "type": "number"
           }
         },
         "required": [
@@ -886,12 +945,9 @@
           "engine",
           "instance_id",
           "labels",
+          "metrics",
           "name",
-          "qps",
-          "replication_lag_seconds",
-          "status",
-          "threads_connected",
-          "threads_running"
+          "status"
         ],
         "title": "OverviewInstanceResponse",
         "type": "object"
@@ -980,6 +1036,27 @@
           "unhealthy_instances"
         ],
         "title": "OverviewSummaryResponse",
+        "type": "object"
+      },
+      "RoleCatalogEntryResponse": {
+        "properties": {
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "permissions",
+          "role"
+        ],
+        "title": "RoleCatalogEntryResponse",
         "type": "object"
       },
       "RuleOperator": {
@@ -1095,6 +1172,19 @@
           "value"
         ],
         "title": "UpdateSettingRequest",
+        "type": "object"
+      },
+      "UpdateUserRolesRequest": {
+        "properties": {
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "title": "UpdateUserRolesRequest",
         "type": "object"
       },
       "ValidationError": {
@@ -1758,6 +1848,99 @@
           }
         },
         "summary": "Me"
+      }
+    },
+    "/auth/roles": {
+      "get": {
+        "operationId": "list_roles_auth_roles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoleCatalogEntryResponse"
+                  },
+                  "title": "Response List Roles Auth Roles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Roles"
+      }
+    },
+    "/auth/users": {
+      "get": {
+        "operationId": "list_users_auth_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ManagedUserResponse"
+                  },
+                  "title": "Response List Users Auth Users Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Users"
+      }
+    },
+    "/auth/users/{user_id}/roles": {
+      "put": {
+        "operationId": "update_user_roles_auth_users__user_id__roles_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRolesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update User Roles"
       }
     },
     "/control/instances": {

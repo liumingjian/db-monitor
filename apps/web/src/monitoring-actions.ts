@@ -32,6 +32,16 @@ export async function updateSettingAction(formData: FormData): Promise<void> {
 	redirect("/settings");
 }
 
+export async function updateUserRolesAction(formData: FormData): Promise<void> {
+	const apiClient = await createServerApiClient();
+	const userId = readTextField(formData, "user_id");
+	await apiClient.updateUserRoles(userId, {
+		roles: readTextValues(formData, "roles"),
+	});
+	revalidatePath("/settings");
+	redirect("/settings");
+}
+
 export async function acknowledgeAlertAction(formData: FormData): Promise<void> {
 	const apiClient = await createServerApiClient();
 	const alertId = readTextField(formData, "alert_id");
@@ -127,6 +137,13 @@ function readTextField(formData: FormData, key: string): string {
 		throw new Error(`Missing form field: ${key}`);
 	}
 	return value.trim();
+}
+
+function readTextValues(formData: FormData, key: string): string[] {
+	return formData
+		.getAll(key)
+		.flatMap((value) => (typeof value === "string" ? [value.trim()] : []))
+		.filter((value) => value.length > 0);
 }
 
 function revalidateAlertPaths(alertId: string): void {

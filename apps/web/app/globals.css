@@ -16,12 +16,12 @@ html {
 
 body {
 	color: var(--ink);
-	font-family: var(--font-body), "IBM Plex Sans", sans-serif;
+	font-family: "IBM Plex Sans", sans-serif;
 	min-height: 100vh;
 }
 
 h1,
 h2,
 h3 {
-	font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
+	font-family: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
 }

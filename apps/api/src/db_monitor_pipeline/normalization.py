@@ -5,6 +5,8 @@ from datetime import datetime
 from db_monitor_api.control_plane.domain import DatabaseEngine
 from db_monitor_pipeline.domain import CollectionJob, MetricKind, MetricSample
 
+MYSQL_TRANSACTION_SOURCE_KEYS = ("Com_commit", "Com_rollback")
+
 
 @dataclass(frozen=True)
 class MetricDefinition:
@@ -17,6 +19,7 @@ MYSQL_APPROVED_METRICS: tuple[MetricDefinition, ...] = (
     MetricDefinition(MetricKind.GAUGE, "mysql_threads_connected", "Threads_connected"),
     MetricDefinition(MetricKind.GAUGE, "mysql_threads_running", "Threads_running"),
     MetricDefinition(MetricKind.COUNTER, "mysql_queries_total", "Questions"),
+    MetricDefinition(MetricKind.COUNTER, "mysql_transactions_total", "Transactions"),
     MetricDefinition(MetricKind.COUNTER, "mysql_bytes_received_total", "Bytes_received"),
     MetricDefinition(MetricKind.COUNTER, "mysql_bytes_sent_total", "Bytes_sent"),
     MetricDefinition(
@@ -89,6 +92,8 @@ def _build_metric_sample(
     raw_metrics: Mapping[str, str],
 ) -> MetricSample | None:
     raw_value = raw_metrics.get(definition.source_key)
+    if raw_value is None and definition.metric_name == "mysql_transactions_total":
+        raw_value = _coerce_mysql_transaction_total(raw_metrics)
     if raw_value is None:
         return None
     return MetricSample(
@@ -101,3 +106,15 @@ def _build_metric_sample(
         metric_name=definition.metric_name,
         metric_value=float(raw_value),
     )
+
+
+def _coerce_mysql_transaction_total(raw_metrics: Mapping[str, str]) -> str | None:
+    total = 0.0
+    seen = False
+    for key in MYSQL_TRANSACTION_SOURCE_KEYS:
+        value = raw_metrics.get(key)
+        if value is None:
+            continue
+        total += float(value)
+        seen = True
+    return str(total) if seen else None

@@ -4,12 +4,12 @@ import { AppChrome } from "../../../src/components/app-chrome";
 import { MetricChart } from "../../../src/components/metric-chart";
 import { TimeWindowNav } from "../../../src/components/time-window-nav";
 import {
+	type InsightTone,
 	MONITORING_CHART_FRAME,
 	buildInstanceCapabilityBoundary,
 	buildInstancesFlowModel,
 	getInstanceConnectionLabel,
 	supportsInstanceAnalytics,
-	type InsightTone,
 } from "../../../src/monitoring-ui";
 import {
 	createServerApiClient,
@@ -65,9 +65,19 @@ export default async function InstanceDetailPage({
 						{getInstanceConnectionLabel(model.selectedInstance)}:{" "}
 						{model.selectedInstance.connection.database}
 					</p>
-					<p className="mt-2 text-sm text-[var(--muted)]">
-						Validation status: {model.selectedInstance.validation.status}
-					</p>
+				</div>
+				<div className="grid gap-4 md:grid-cols-3">
+					{model.detailReadouts.map((readout) => (
+						<div
+							className="rounded-[1.2rem] border border-black/5 bg-white px-4 py-4"
+							key={readout.title}
+						>
+							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
+								{readout.title}
+							</p>
+							<p className="mt-3 text-xl font-semibold">{readout.value}</p>
+						</div>
+					))}
 				</div>
 				<div className="rounded-[1.2rem] border border-black/5 bg-white px-5 py-4">
 					<div>
@@ -75,9 +85,7 @@ export default async function InstanceDetailPage({
 							{capabilityBoundary.label}
 						</p>
 						<p className="mt-3 text-xl font-semibold">{capabilityBoundary.value}</p>
-						<p className="mt-2 text-sm text-[var(--muted)]">
-							{capabilityBoundary.detail}
-						</p>
+						<p className="mt-2 text-sm text-[var(--muted)]">{capabilityBoundary.detail}</p>
 					</div>
 				</div>
 				{analyticsEnabled && model.trend !== null ? (
@@ -88,7 +96,8 @@ export default async function InstanceDetailPage({
 									Trend Window
 								</p>
 								<p className="mt-2 text-sm text-[var(--muted)]">
-									Inspect this instance across approved observation windows without changing the route family.
+									Inspect this instance across approved observation windows without changing the
+									route family.
 								</p>
 							</div>
 							<TimeWindowNav
@@ -101,7 +110,8 @@ export default async function InstanceDetailPage({
 								Preset views
 							</p>
 							<p className="mt-2 text-sm text-[var(--muted)]">
-								Reopen this instance with a stable route and observation window for common triage loops.
+								Reopen this instance with a stable route and observation window for common triage
+								loops.
 							</p>
 							<div className="mt-4">
 								<AnalyticsPresetNav
@@ -149,7 +159,8 @@ export default async function InstanceDetailPage({
 								{MONITORING_CHART_FRAME.title}
 							</p>
 							<p className="mt-2 text-sm text-[var(--muted)]">
-								Observed window: <span className="font-semibold text-black">{model.trend.window}</span>
+								Observed window:{" "}
+								<span className="font-semibold text-black">{model.trend.window}</span>
 							</p>
 							<div className="mt-4">
 								<MetricChart

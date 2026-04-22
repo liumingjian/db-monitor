@@ -10,6 +10,7 @@ from db_monitor_api.control_plane.domain import (
 )
 
 DEFAULT_MYSQL_TIMEOUT_SECONDS = 5
+MYSQL_ROLE_QUERY = "SELECT @@global.read_only"
 
 
 class MySQLConnectionValidator(Protocol):
@@ -35,7 +36,9 @@ class PyMySQLConnectionValidator:
             ) as connection:
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT VERSION()")
-                    row = cursor.fetchone()
+                    version_row = cursor.fetchone()
+                    cursor.execute(MYSQL_ROLE_QUERY)
+                    role_row = cursor.fetchone()
         except (OSError, pymysql.MySQLError) as error:
             return ConnectionValidation(
                 checked_at=utc_now(),
@@ -44,10 +47,17 @@ class PyMySQLConnectionValidator:
                 status=ValidationStatus.FAILED,
             )
 
-        server_version = None if row is None else str(row[0])
+        server_version = None if version_row is None else str(version_row[0])
         return ConnectionValidation(
             checked_at=utc_now(),
             detail="Connection validated successfully.",
             server_version=server_version,
             status=ValidationStatus.PASSED,
+            server_role=_resolve_mysql_server_role(role_row),
         )
+
+
+def _resolve_mysql_server_role(row: tuple[object, ...] | None) -> str | None:
+    if row is None or len(row) == 0:
+        return None
+    return "replica" if str(row[0]) == "1" else "primary"

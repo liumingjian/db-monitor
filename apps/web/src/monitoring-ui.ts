@@ -26,11 +26,11 @@ import {
 	PREVIEW_ALERT_DETAIL,
 	PREVIEW_INSTANCE,
 	PREVIEW_INSTANCE_FORM_VALUES,
-	PREVIEW_ORACLE_INSTANCE_TREND,
 	PREVIEW_INSTANCE_TREND,
+	PREVIEW_ORACLE_INSTANCE_TREND,
 	PREVIEW_OVERVIEW,
-	PREVIEW_RULE_CATALOG,
 	PREVIEW_RULES,
+	PREVIEW_RULE_CATALOG,
 	PREVIEW_RULE_FORM_VALUES,
 	PREVIEW_SETTINGS,
 } from "./monitoring-preview";
@@ -94,8 +94,14 @@ export interface DashboardReadout {
 	readonly value: string;
 }
 
+export interface InstanceDetailReadout {
+	readonly title: string;
+	readonly value: string;
+}
+
 export interface InstancesFlowModel {
 	readonly capacityReadout: readonly CapacityInsight[];
+	readonly detailReadouts: readonly InstanceDetailReadout[];
 	readonly detailSeries: readonly string[];
 	readonly filters: InstanceListFilterValues;
 	readonly formFields: typeof INSTANCE_FORM_FIELDS;
@@ -163,8 +169,8 @@ export function buildInstancesFlowModel(
 				: PREVIEW_INSTANCE_TREND
 			: options.trend;
 	return {
-		capacityReadout:
-			trend === null ? [] : buildInstanceCapacityReadout(selectedInstance, trend),
+		capacityReadout: trend === null ? [] : buildInstanceCapacityReadout(selectedInstance, trend),
+		detailReadouts: buildInstanceDetailReadouts(selectedInstance, trend),
 		detailSeries: trend === null ? [] : trend.charts.map((series) => series.metric_name),
 		filters: buildInstanceListFilterValues(options.filters),
 		formFields: INSTANCE_FORM_FIELDS,
@@ -252,9 +258,9 @@ export function buildInstanceCapabilityBoundary(
 	if (instance.engine === "oracle") {
 		return {
 			detail:
-				"Oracle instances now expose minimal trend analytics, preset windows, and capacity readouts on the detail page, and they contribute to fleet health and engine coverage on the overview. Cards, charts, and signal leaders still follow the engines listed in overview coverage.",
+				"Oracle instances now expose mixed-engine fleet cards, charts, and signal leaders on the overview while retaining engine-specific trend analytics, preset windows, and capacity readouts on the detail page.",
 			label: "Capability boundary",
-			value: "Fleet health + trends available",
+			value: "Fleet + detail analytics",
 		};
 	}
 	return {
@@ -271,6 +277,26 @@ export function getInstanceConnectionLabel(instance: InstanceResponse): string {
 
 export function supportsInstanceAnalytics(instance: InstanceResponse): boolean {
 	return instance.engine === "mysql" || instance.engine === "oracle";
+}
+
+function buildInstanceDetailReadouts(
+	instance: InstanceResponse,
+	trend: InstanceTrendResponse | null,
+): readonly InstanceDetailReadout[] {
+	return [
+		{
+			title: "Validation status",
+			value: instance.validation.status,
+		},
+		{
+			title: "Server role",
+			value: trend?.instance.server_role ?? "unavailable",
+		},
+		{
+			title: "Server version",
+			value: trend?.instance.server_version ?? instance.validation.server_version ?? "unavailable",
+		},
+	];
 }
 
 function normalizeTextFilter(value: string | undefined): string {
@@ -296,7 +322,8 @@ function buildOverviewCapacityInsights(overview: OverviewResponse): readonly Cap
 				value: "Health-only view",
 			},
 			{
-				detail: "Open individual instances to inspect supported trend analytics and engine-specific readouts.",
+				detail:
+					"Open individual instances to inspect supported trend analytics and engine-specific readouts.",
 				title: "Detail analytics",
 				tone: "steady",
 				value: formatEngineCoverageValue(overview.coverage.detail_analytics_engines),
@@ -311,16 +338,15 @@ function buildOverviewCapacityInsights(overview: OverviewResponse): readonly Cap
 	}
 
 	const metricScopeLabel = formatEngineCoverageValue(overview.coverage.overview_metric_engines);
-	const metricInstances = getOverviewMetricInstances(overview);
 	const inbound = getCardMetricValue(overview.cards, "mysql_bytes_received_per_second");
 	const outbound = getCardMetricValue(overview.cards, "mysql_bytes_sent_per_second");
 	const bufferPoolReads = getCardMetricValue(
 		overview.cards,
 		"mysql_innodb_buffer_pool_reads_per_second",
 	);
-	const lagLeader = selectTopInstance(
-		metricInstances,
-		(instance) => instance.replication_lag_seconds,
+	const lagLeader = selectTopInstanceByMetric(
+		getOverviewMetricInstancesByEngine(overview, "mysql"),
+		"mysql_replication_lag_seconds",
 	);
 
 	if (hasPartialOverviewMetricCoverage(overview)) {
@@ -337,55 +363,169 @@ function buildOverviewCapacityInsights(overview: OverviewResponse): readonly Cap
 		];
 	}
 
+	if (overview.coverage.overview_metric_engines.length === 1) {
+		return overview.coverage.overview_metric_engines[0] === "oracle"
+			? buildOracleOverviewInsights(overview)
+			: buildMySQLOverviewInsights(overview);
+	}
+
 	return [
-		buildTrafficDirectionInsight(inbound, outbound),
-		buildEnginePressureInsight(bufferPoolReads),
-		buildReplicaHeadroomInsight(lagLeader),
+		...buildMySQLOverviewInsights(overview, { prefixTitles: true }),
+		...buildOracleOverviewInsights(overview, { prefixTitles: true }),
 	];
 }
 
 function buildOverviewCapacityLeaders(overview: OverviewResponse): readonly CapacityLeader[] {
-	const metricInstances = getOverviewMetricInstances(overview);
-	if (metricInstances.length === 0) {
+	if (overview.coverage.overview_instance_metric_engines.length === 0) {
 		return [];
 	}
-	const partialCoverage = hasPartialOverviewMetricCoverage(overview);
-	const metricScopeLabel = formatEngineCoverageValue(overview.coverage.overview_metric_engines);
+	const prefixTitles =
+		hasPartialOverviewMetricCoverage(overview) ||
+		overview.coverage.overview_instance_metric_engines.length > 1;
 
+	return overview.coverage.overview_instance_metric_engines.flatMap((engine) =>
+		engine === "oracle"
+			? buildOracleOverviewLeaders(overview, { prefixTitles })
+			: buildMySQLOverviewLeaders(overview, { prefixTitles }),
+	);
+}
+
+function buildMySQLOverviewInsights(
+	overview: OverviewResponse,
+	options: {
+		readonly prefixTitles?: boolean;
+	} = {},
+): readonly CapacityInsight[] {
+	const prefix = options.prefixTitles ? "MySQL " : "";
+	const subject = options.prefixTitles ? "MySQL fleet" : "Fleet";
+	const inbound = getCardMetricValue(overview.cards, "mysql_bytes_received_per_second");
+	const outbound = getCardMetricValue(overview.cards, "mysql_bytes_sent_per_second");
+	const bufferPoolReads = getCardMetricValue(
+		overview.cards,
+		"mysql_innodb_buffer_pool_reads_per_second",
+	);
+	const lagLeader = selectTopInstanceByMetric(
+		getOverviewMetricInstancesByEngine(overview, "mysql"),
+		"mysql_replication_lag_seconds",
+	);
+	return [
+		buildTrafficDirectionInsight(inbound, outbound, {
+			subject,
+			title: prefix.length === 0 ? "Traffic direction" : `${prefix}traffic direction`,
+		}),
+		buildEnginePressureInsight(bufferPoolReads, {
+			subject,
+			title: prefix.length === 0 ? "Engine pressure" : `${prefix}engine pressure`,
+		}),
+		buildReplicaHeadroomInsight(lagLeader, {
+			metricName: "mysql_replication_lag_seconds",
+			title: prefix.length === 0 ? "Replica headroom" : `${prefix}replica headroom`,
+		}),
+	];
+}
+
+function buildOracleOverviewInsights(
+	overview: OverviewResponse,
+	options: {
+		readonly prefixTitles?: boolean;
+	} = {},
+): readonly CapacityInsight[] {
+	const prefix = options.prefixTitles ? "Oracle " : "";
+	const userCalls = getCardMetricValue(overview.cards, "oracle_user_calls_per_second");
+	const physicalReads = getCardMetricValue(overview.cards, "oracle_physical_reads_per_second");
+	const sessionsTotal = getCardMetricValue(overview.cards, "oracle_sessions_total");
+	const sessionsActive = getCardMetricValue(overview.cards, "oracle_sessions_active");
+	const sessionWaits = getCardMetricValue(overview.cards, "oracle_session_waits");
+	const activeShare = sessionsTotal <= 0 ? 0 : Math.min(sessionsActive / sessionsTotal, 1);
+	return [
+		{
+			detail: `${formatMetricValue(userCalls, "calls/s")} user calls versus ${formatMetricValue(physicalReads, "reads/s")} physical reads in this window.`,
+			title: prefix.length === 0 ? "Workload direction" : `${prefix}workload direction`,
+			tone: "steady",
+			value: describeOracleWorkloadDirection(userCalls, physicalReads),
+		},
+		prefixInsightTitle(describeOracleEnginePressure(sessionWaits, physicalReads), prefix),
+		prefixInsightTitle(
+			describeOracleConcurrencyPosture(sessionsTotal, sessionsActive, activeShare),
+			prefix,
+		),
+	];
+}
+
+function buildMySQLOverviewLeaders(
+	overview: OverviewResponse,
+	options: {
+		readonly prefixTitles: boolean;
+	},
+): readonly CapacityLeader[] {
+	const instances = getOverviewMetricInstancesByEngine(overview, "mysql");
+	const prefix = options.prefixTitles ? "MySQL " : "";
 	return [
 		buildLeader({
-			detail: partialCoverage
-				? `Among ${metricScopeLabel} overview instances, queries are concentrating here fastest in the current window.`
+			detail: options.prefixTitles
+				? "Among MySQL overview instances, queries are concentrating here fastest in the current window."
 				: "Queries are concentrating here fastest in the current window.",
-			instance: selectTopInstance(metricInstances, (instance) => instance.qps),
-			title: partialCoverage ? `Highest ${metricScopeLabel} QPS` : "Highest QPS",
+			instance: selectTopInstanceByMetric(instances, "mysql_queries_per_second"),
+			metricName: "mysql_queries_per_second",
+			title: options.prefixTitles ? "Highest MySQL QPS" : "Highest QPS",
 			unit: "qps",
-			valueSelector: (instance) => instance.qps,
 		}),
 		buildLeader({
-			detail: partialCoverage
-				? `Among ${metricScopeLabel} overview instances, this node is carrying the densest active concurrency right now.`
+			detail: options.prefixTitles
+				? "Among MySQL overview instances, this node is carrying the densest active concurrency right now."
 				: "This instance is carrying the densest active concurrency right now.",
-			instance: selectTopInstance(metricInstances, (instance) => instance.threads_running),
-			title: partialCoverage
-				? `Most ${metricScopeLabel} Running Threads`
-				: "Most Running Threads",
+			instance: selectTopInstanceByMetric(instances, "mysql_threads_running"),
+			metricName: "mysql_threads_running",
+			title: options.prefixTitles ? "Most MySQL Running Threads" : "Most Running Threads",
 			unit: "threads",
-			valueSelector: (instance) => instance.threads_running,
 		}),
 		buildLeader({
-			detail: partialCoverage
-				? `Among ${metricScopeLabel} overview instances, replica freshness is loosest here, so this is the first place to investigate.`
+			detail: options.prefixTitles
+				? "Among MySQL overview instances, replica freshness is loosest here, so this is the first place to investigate."
 				: "Replica freshness is loosest here, so this is the first place to investigate.",
-			instance: selectTopInstance(
-				metricInstances,
-				(instance) => instance.replication_lag_seconds,
-			),
-			title: partialCoverage
-				? `Worst ${metricScopeLabel} Replication Lag`
-				: "Worst Replication Lag",
+			instance: selectTopInstanceByMetric(instances, "mysql_replication_lag_seconds"),
+			metricName: "mysql_replication_lag_seconds",
+			title: options.prefixTitles ? "Worst MySQL Replication Lag" : "Worst Replication Lag",
 			unit: "seconds",
-			valueSelector: (instance) => instance.replication_lag_seconds,
+		}),
+	].filter((leader): leader is CapacityLeader => leader !== null);
+}
+
+function buildOracleOverviewLeaders(
+	overview: OverviewResponse,
+	options: {
+		readonly prefixTitles: boolean;
+	},
+): readonly CapacityLeader[] {
+	const instances = getOverviewMetricInstancesByEngine(overview, "oracle");
+	const prefix = options.prefixTitles ? "Oracle " : "";
+	return [
+		buildLeader({
+			detail: options.prefixTitles
+				? "Among Oracle overview instances, user call pressure is concentrating here fastest in the current window."
+				: "User call pressure is concentrating here fastest in the current window.",
+			instance: selectTopInstanceByMetric(instances, "oracle_user_calls_per_second"),
+			metricName: "oracle_user_calls_per_second",
+			title: options.prefixTitles ? "Highest Oracle User Calls" : "Highest User Calls",
+			unit: "calls/s",
+		}),
+		buildLeader({
+			detail: options.prefixTitles
+				? "Among Oracle overview instances, this node is carrying the densest active session set right now."
+				: "This instance is carrying the densest active session set right now.",
+			instance: selectTopInstanceByMetric(instances, "oracle_sessions_active"),
+			metricName: "oracle_sessions_active",
+			title: options.prefixTitles ? "Most Oracle Active Sessions" : "Most Active Sessions",
+			unit: "sessions",
+		}),
+		buildLeader({
+			detail: options.prefixTitles
+				? "Among Oracle overview instances, session wait pressure is highest here, so this is the first place to investigate."
+				: "Session wait pressure is highest here, so this is the first place to investigate.",
+			instance: selectTopInstanceByMetric(instances, "oracle_session_waits"),
+			metricName: "oracle_session_waits",
+			title: options.prefixTitles ? "Highest Oracle Session Waits" : "Highest Session Waits",
+			unit: "sessions",
 		}),
 	].filter((leader): leader is CapacityLeader => leader !== null);
 }
@@ -396,15 +536,11 @@ function buildInstanceCapacityReadout(
 ): readonly CapacityInsight[] {
 	if (instance.engine === "oracle") {
 		const userCalls = getCardMetricValue(trend.cards, "oracle_user_calls_per_second");
-		const physicalReads = getCardMetricValue(
-			trend.cards,
-			"oracle_physical_reads_per_second",
-		);
+		const physicalReads = getCardMetricValue(trend.cards, "oracle_physical_reads_per_second");
 		const sessionsTotal = getCardMetricValue(trend.cards, "oracle_sessions_total");
 		const sessionsActive = getCardMetricValue(trend.cards, "oracle_sessions_active");
 		const sessionWaits = getCardMetricValue(trend.cards, "oracle_session_waits");
-		const activeShare =
-			sessionsTotal <= 0 ? 0 : Math.min(sessionsActive / sessionsTotal, 1);
+		const activeShare = sessionsTotal <= 0 ? 0 : Math.min(sessionsActive / sessionsTotal, 1);
 
 		return [
 			{
@@ -428,8 +564,7 @@ function buildInstanceCapacityReadout(
 	const replicationLag = getCardMetricValue(trend.cards, "mysql_replication_lag_seconds");
 	const threadsConnected = getCardMetricValue(trend.cards, "mysql_threads_connected");
 	const threadsRunning = getCardMetricValue(trend.cards, "mysql_threads_running");
-	const runningShare =
-		threadsConnected <= 0 ? 0 : Math.min(threadsRunning / threadsConnected, 1);
+	const runningShare = threadsConnected <= 0 ? 0 : Math.min(threadsRunning / threadsConnected, 1);
 
 	return [
 		{
@@ -516,12 +651,15 @@ function buildEnginePressureInsight(
 function buildReplicaHeadroomInsight(
 	lagLeader: OverviewResponse["instances"][number] | null,
 	options: {
+		readonly metricName: string;
 		readonly title: string;
 	} = {
+		metricName: "mysql_replication_lag_seconds",
 		title: "Replica headroom",
 	},
 ): CapacityInsight {
-	if (lagLeader === null || lagLeader.replication_lag_seconds <= 0) {
+	const lagValue = lagLeader === null ? 0 : getInstanceMetricValue(lagLeader, options.metricName);
+	if (lagLeader === null || lagValue <= 0) {
 		return {
 			detail: "No instance is reporting replica lag in the current observation window.",
 			title: options.title,
@@ -529,16 +667,16 @@ function buildReplicaHeadroomInsight(
 			value: "Fresh replicas",
 		};
 	}
-	if (lagLeader.replication_lag_seconds >= 5) {
+	if (lagValue >= 5) {
 		return {
-			detail: `${lagLeader.name} is lagging by ${formatMetricValue(lagLeader.replication_lag_seconds, "seconds")}.`,
+			detail: `${lagLeader.name} is lagging by ${formatMetricValue(lagValue, "seconds")}.`,
 			title: options.title,
 			tone: "risk",
 			value: "Replica lag risk",
 		};
 	}
 	return {
-		detail: `${lagLeader.name} is the current lag leader at ${formatMetricValue(lagLeader.replication_lag_seconds, "seconds")}.`,
+		detail: `${lagLeader.name} is the current lag leader at ${formatMetricValue(lagValue, "seconds")}.`,
 		title: options.title,
 		tone: "watch",
 		value: "Replica lag visible",
@@ -573,10 +711,7 @@ function describeDetailEnginePressure(
 	};
 }
 
-function describeOracleWorkloadDirection(
-	userCalls: number,
-	physicalReads: number,
-): string {
+function describeOracleWorkloadDirection(userCalls: number, physicalReads: number): string {
 	if (userCalls > 0 && userCalls >= physicalReads * 1.25) {
 		return "Call-heavy";
 	}
@@ -685,20 +820,26 @@ function describeTrafficDirection(inbound: number, outbound: number): string {
 function buildOverviewHeroMetrics(
 	overview: OverviewResponse,
 ): readonly { readonly label: string; readonly value: number }[] {
-	if (!hasPartialOverviewMetricCoverage(overview)) {
-		return overview.cards.map((card) => ({ label: card.label, value: card.value }));
-	}
-	const metricScopeLabel = formatEngineCoverageValue(overview.coverage.overview_metric_engines);
 	return overview.cards.map((card) => ({
-		label: `${metricScopeLabel} ${card.label}`,
+		label: formatOverviewMetricLabel(card.label, card.metric_name, overview),
 		value: card.value,
 	}));
 }
 
-function buildOverviewChartFrame(
-	overview: OverviewResponse,
-): typeof OVERVIEW_CHART_FRAME {
+function buildOverviewChartFrame(overview: OverviewResponse): typeof OVERVIEW_CHART_FRAME {
 	if (!hasPartialOverviewMetricCoverage(overview)) {
+		if (overview.coverage.overview_metric_engines.length > 1) {
+			return {
+				...OVERVIEW_CHART_FRAME,
+				title: "Mixed-Engine Fleet Activity",
+			};
+		}
+		if (overview.coverage.overview_metric_engines[0] === "oracle") {
+			return {
+				...OVERVIEW_CHART_FRAME,
+				title: "Oracle Fleet Activity",
+			};
+		}
 		return OVERVIEW_CHART_FRAME;
 	}
 	const metricScopeLabel = formatEngineCoverageValue(overview.coverage.overview_metric_engines);
@@ -708,9 +849,7 @@ function buildOverviewChartFrame(
 	};
 }
 
-function buildOverviewCapabilityBoundary(
-	overview: OverviewResponse,
-): InstanceCapabilityBoundary {
+function buildOverviewCapabilityBoundary(overview: OverviewResponse): InstanceCapabilityBoundary {
 	const detailCoverage = formatEngineCoverageValue(overview.coverage.detail_analytics_engines);
 	const fleetHealthCoverage = formatEngineCoverageValue(overview.coverage.fleet_health_engines);
 	const overviewMetricCoverage = formatEngineCoverageValue(
@@ -738,9 +877,7 @@ function buildOverviewCapabilityBoundary(
 	};
 }
 
-function buildOverviewCoverageReadout(
-	overview: OverviewResponse,
-): readonly DashboardReadout[] {
+function buildOverviewCoverageReadout(overview: OverviewResponse): readonly DashboardReadout[] {
 	return [
 		{
 			detail: "Per-instance trend analytics and capacity readouts.",
@@ -760,9 +897,7 @@ function buildOverviewCoverageReadout(
 	];
 }
 
-function buildOverviewEngineSummaries(
-	overview: OverviewResponse,
-): readonly DashboardReadout[] {
+function buildOverviewEngineSummaries(overview: OverviewResponse): readonly DashboardReadout[] {
 	return overview.summary.engines.map((summary) => ({
 		detail:
 			summary.unhealthy_instances > 0
@@ -807,12 +942,19 @@ function getOverviewMetricInstances(
 	overview: OverviewResponse,
 ): readonly OverviewResponse["instances"][number][] {
 	const metricEngines = new Set(overview.coverage.overview_instance_metric_engines);
-	return overview.instances.filter((instance) => metricEngines.has(instance.engine));
+	return overview.instances.filter(
+		(instance) => metricEngines.has(instance.engine) && instance.metrics.length > 0,
+	);
 }
 
-function formatEngineCoverageValue(
-	engines: readonly InstanceResponse["engine"][],
-): string {
+function getOverviewMetricInstancesByEngine(
+	overview: OverviewResponse,
+	engine: InstanceResponse["engine"],
+): readonly OverviewResponse["instances"][number][] {
+	return getOverviewMetricInstances(overview).filter((instance) => instance.engine === engine);
+}
+
+function formatEngineCoverageValue(engines: readonly InstanceResponse["engine"][]): string {
 	if (engines.length === 0) {
 		return "Not yet available";
 	}
@@ -834,15 +976,13 @@ export function formatDatabaseEngine(engine: InstanceResponse["engine"]): string
 	return engine === "oracle" ? "Oracle" : "MySQL";
 }
 
-function buildLeader(
-	options: {
-		readonly detail: string;
-		readonly instance: OverviewResponse["instances"][number] | null;
-		readonly title: string;
-		readonly unit: string;
-		readonly valueSelector: (instance: OverviewResponse["instances"][number]) => number;
-	},
-): CapacityLeader | null {
+function buildLeader(options: {
+	readonly detail: string;
+	readonly instance: OverviewResponse["instances"][number] | null;
+	readonly metricName: string;
+	readonly title: string;
+	readonly unit: string;
+}): CapacityLeader | null {
 	if (options.instance === null) {
 		return null;
 	}
@@ -850,7 +990,10 @@ function buildLeader(
 		detail: options.detail,
 		instanceName: options.instance.name,
 		title: options.title,
-		value: formatMetricValue(options.valueSelector(options.instance), options.unit),
+		value: formatMetricValue(
+			getInstanceMetricValue(options.instance, options.metricName),
+			options.unit,
+		),
 	};
 }
 
@@ -864,6 +1007,51 @@ function selectTopInstance(
 		}
 		return current;
 	}, null);
+}
+
+function selectTopInstanceByMetric(
+	instances: readonly OverviewResponse["instances"][number][],
+	metricName: string,
+): OverviewResponse["instances"][number] | null {
+	return selectTopInstance(instances, (instance) => getInstanceMetricValue(instance, metricName));
+}
+
+function getInstanceMetricValue(
+	instance: OverviewResponse["instances"][number],
+	metricName: string,
+): number {
+	return instance.metrics.find((metric) => metric.metric_name === metricName)?.value ?? 0;
+}
+
+function formatOverviewMetricLabel(
+	label: string,
+	metricName: string,
+	overview: OverviewResponse,
+): string {
+	if (!shouldPrefixOverviewMetricLabels(overview)) {
+		return label;
+	}
+	return `${formatOverviewMetricEngine(metricName)} ${label}`;
+}
+
+function shouldPrefixOverviewMetricLabels(overview: OverviewResponse): boolean {
+	return (
+		hasPartialOverviewMetricCoverage(overview) ||
+		overview.coverage.overview_metric_engines.length > 1
+	);
+}
+
+function formatOverviewMetricEngine(metricName: string): string {
+	return metricName.startsWith("oracle_") ? "Oracle" : "MySQL";
+}
+
+function prefixInsightTitle(insight: CapacityInsight, prefix: string): CapacityInsight {
+	return prefix.length === 0
+		? insight
+		: {
+				...insight,
+				title: `${prefix}${insight.title.charAt(0).toLowerCase()}${insight.title.slice(1)}`,
+			};
 }
 
 function getCardMetricValue(
