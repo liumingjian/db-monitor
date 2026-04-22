@@ -2,11 +2,7 @@ import Link from "next/link";
 
 import type { TablespaceHistoryEntryResponse } from "@db-monitor/api-client";
 
-import {
-	bandLabel,
-	formatBytes,
-	type TablespaceRow,
-} from "../../../../src/tablespaces-ui";
+import { type TablespaceRow, bandLabel, formatBytes } from "../../../../src/tablespaces-ui";
 import { TablespaceBar } from "./tablespace-bar";
 import { TablespaceSparkline } from "./tablespace-sparkline";
 
@@ -16,11 +12,7 @@ interface TablespaceTableProps {
 	readonly sparklineByName: ReadonlyMap<string, readonly TablespaceHistoryEntryResponse[]>;
 }
 
-export function TablespaceTable({
-	instanceId,
-	rows,
-	sparklineByName,
-}: TablespaceTableProps) {
+export function TablespaceTable({ instanceId, rows, sparklineByName }: TablespaceTableProps) {
 	return (
 		<div className="overflow-x-auto rounded-2xl border border-black/10 bg-white">
 			<table className="min-w-full text-left text-sm">
@@ -87,8 +79,8 @@ function TablespaceRowView({ history, instanceId, row }: TablespaceRowViewProps)
 						row.band === "critical"
 							? "text-red-500"
 							: row.band === "warning"
-							? "text-amber-500"
-							: "text-emerald-500"
+								? "text-amber-500"
+								: "text-emerald-500"
 					}
 				>
 					{bandLabel(row.band)}

@@ -1,7 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 import {
 	KILL_ERROR_FALLBACK,
@@ -90,7 +90,10 @@ async function safeReadDetail(response: Response): Promise<string | null> {
 	}
 }
 
-function buildError(code: KillProcessErrorCode, detail: string | null = null): KillProcessResultErr {
+function buildError(
+	code: KillProcessErrorCode,
+	detail: string | null = null,
+): KillProcessResultErr {
 	return {
 		code,
 		message: detail ?? KILL_ERROR_FALLBACK[code],

@@ -511,13 +511,10 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 				`/instances/${instanceId}/slow-queries${buildQueryString(filters)}`,
 			),
 		killProcess: (instanceId, processId, payload) =>
-			request<KillProcesslistResponse>(
-				`/instances/${instanceId}/processlist/${processId}/kill`,
-				{
-					body: JSON.stringify(payload ?? {}),
-					method: "POST",
-				},
-			),
+			request<KillProcesslistResponse>(`/instances/${instanceId}/processlist/${processId}/kill`, {
+				body: JSON.stringify(payload ?? {}),
+				method: "POST",
+			}),
 		listTablespaces: (instanceId, filters) =>
 			request<TablespaceSnapshotResponse>(
 				`/instances/${instanceId}/tablespaces${buildQueryString(filters)}`,

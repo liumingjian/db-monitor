@@ -7,11 +7,7 @@ import type {
 
 export type EnabledTriState = "inherit" | "on" | "off";
 
-export const ENABLED_TRI_STATES: readonly EnabledTriState[] = [
-	"inherit",
-	"on",
-	"off",
-] as const;
+export const ENABLED_TRI_STATES: readonly EnabledTriState[] = ["inherit", "on", "off"] as const;
 
 export const ENABLED_TRI_STATE_LABELS: Readonly<Record<EnabledTriState, string>> = {
 	inherit: "继承默认",
@@ -72,9 +68,7 @@ export class OverrideValidationError extends Error {
 	}
 }
 
-export function toDraftRows(
-	overrides: readonly RuleOverrideResponse[],
-): OverrideDraftRow[] {
+export function toDraftRows(overrides: readonly RuleOverrideResponse[]): OverrideDraftRow[] {
 	return overrides.map((override, index) => ({
 		clientId: `existing-${override.instance_id}-${index}`,
 		enabled: toEnabledTriState(override.enabled),
@@ -117,9 +111,7 @@ function ensureNoDuplicateInstances(rows: readonly OverrideDraftRow[]): void {
 			continue;
 		}
 		if (seen.has(row.instanceId)) {
-			throw new OverrideValidationError(
-				`同一实例重复配置 override：${row.instanceId}`,
-			);
+			throw new OverrideValidationError(`同一实例重复配置 override：${row.instanceId}`);
 		}
 		seen.add(row.instanceId);
 	}

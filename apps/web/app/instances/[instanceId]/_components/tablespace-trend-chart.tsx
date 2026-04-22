@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { TablespaceHistoryEntryResponse } from "@db-monitor/api-client";
 import * as echarts from "echarts";
+import { useEffect, useRef } from "react";
 
 import { HISTORY_ALERT_LINE_PERCENT } from "../../../../src/tablespaces-ui";
 
@@ -29,7 +29,13 @@ export function TablespaceTrendChart({ history, tablespaceName }: TablespaceTren
 		};
 	}, [history, tablespaceName]);
 
-	return <div aria-label={`${tablespaceName} 30 天使用率趋势`} className="h-96 w-full" ref={containerRef} />;
+	return (
+		<div
+			aria-label={`${tablespaceName} 30 天使用率趋势`}
+			className="h-96 w-full"
+			ref={containerRef}
+		/>
+	);
 }
 
 interface ChartOptionInput {

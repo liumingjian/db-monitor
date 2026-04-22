@@ -1,6 +1,6 @@
 """Unit tests for MySQL slow query collector + scheduler (ADR-0007)."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 from urllib.parse import parse_qs, urlsplit
@@ -343,7 +343,7 @@ def test_pymysql_collector_maps_performance_schema_rows(
     from db_monitor_pipeline.slow_query import PyMySQLSlowQueryCollector
 
     class FakeCursor:
-        def __init__(self, rows: list[Mapping[str, Any]]) -> None:
+        def __init__(self, rows: Sequence[Mapping[str, Any]]) -> None:
             self._rows = rows
             self.executed: list[tuple[str, tuple[object, ...]]] = []
 
@@ -357,7 +357,7 @@ def test_pymysql_collector_maps_performance_schema_rows(
         def execute(self, query: str, params: tuple[object, ...] = ()) -> None:
             self.executed.append((query, params))
 
-        def fetchall(self) -> list[Mapping[str, Any]]:
+        def fetchall(self) -> Sequence[Mapping[str, Any]]:
             return self._rows
 
     class FakeConnection:

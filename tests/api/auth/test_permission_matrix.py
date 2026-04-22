@@ -27,8 +27,10 @@ def test_viewer_role_does_not_hold_instances_action_permission() -> None:
 
 
 def test_instances_action_is_distinct_from_instances_write() -> None:
-    assert Permission.INSTANCES_ACTION is not Permission.INSTANCES_WRITE
-    assert Permission.INSTANCES_ACTION.value != Permission.INSTANCES_WRITE.value
+    action: Permission = Permission.INSTANCES_ACTION
+    write: Permission = Permission.INSTANCES_WRITE
+    assert action is not write
+    assert action.value != write.value
 
 
 def test_role_permissions_catalog_contains_all_known_roles() -> None:

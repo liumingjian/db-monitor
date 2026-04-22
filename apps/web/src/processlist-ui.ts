@@ -63,9 +63,7 @@ export function buildProcesslistFilterValues(
 	};
 }
 
-export function toProcesslistApiFilters(
-	filters: ProcesslistFilterValues,
-): ListProcesslistFilters {
+export function toProcesslistApiFilters(filters: ProcesslistFilterValues): ListProcesslistFilters {
 	const minTime = parsePositiveInt(filters.minTimeSeconds);
 	const limit = parsePositiveInt(filters.limit);
 	return {

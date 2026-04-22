@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from typing import Any, Literal
 from urllib.parse import parse_qs, urlsplit
@@ -266,7 +266,7 @@ def test_pymysql_collector_maps_show_processlist_rows(
     from db_monitor_pipeline.processlist import PyMySQLProcesslistCollector
 
     class FakeCursor:
-        def __init__(self, rows: list[Mapping[str, Any]]) -> None:
+        def __init__(self, rows: Sequence[Mapping[str, Any]]) -> None:
             self._rows = rows
             self.executed: list[str] = []
 
@@ -280,7 +280,7 @@ def test_pymysql_collector_maps_show_processlist_rows(
         def execute(self, query: str) -> None:
             self.executed.append(query)
 
-        def fetchall(self) -> list[Mapping[str, Any]]:
+        def fetchall(self) -> Sequence[Mapping[str, Any]]:
             return self._rows
 
     class FakeConnection:

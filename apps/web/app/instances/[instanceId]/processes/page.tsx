@@ -1,6 +1,3 @@
-import { ProcesslistEmptyStateBanner } from "../_components/processlist-empty-state";
-import { ProcesslistFilterForm } from "../_components/processlist-filter-form";
-import { ProcesslistTable } from "../_components/processlist-table";
 import {
 	buildProcesslistFilterValues,
 	buildProcesslistViewModel,
@@ -8,6 +5,9 @@ import {
 	toProcesslistApiFilters,
 } from "../../../../src/processlist-ui";
 import { createServerApiClient } from "../../../../src/server-api";
+import { ProcesslistEmptyStateBanner } from "../_components/processlist-empty-state";
+import { ProcesslistFilterForm } from "../_components/processlist-filter-form";
+import { ProcesslistTable } from "../_components/processlist-table";
 
 interface ProcessesPageProps {
 	readonly params: Promise<{

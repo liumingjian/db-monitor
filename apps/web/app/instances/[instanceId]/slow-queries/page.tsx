@@ -1,12 +1,12 @@
-import { SlowQueryEmptyStateBanner } from "../_components/slow-query-empty-state";
-import { SlowQueryFilterForm } from "../_components/slow-query-filter-form";
-import { SlowQueryTable } from "../_components/slow-query-table";
+import { createServerApiClient } from "../../../../src/server-api";
 import {
 	buildSlowQueryFilterValues,
 	buildSlowQueryViewModel,
 	toSlowQueryApiFilters,
 } from "../../../../src/slow-queries-ui";
-import { createServerApiClient } from "../../../../src/server-api";
+import { SlowQueryEmptyStateBanner } from "../_components/slow-query-empty-state";
+import { SlowQueryFilterForm } from "../_components/slow-query-filter-form";
+import { SlowQueryTable } from "../_components/slow-query-table";
 
 interface SlowQueriesPageProps {
 	readonly params: Promise<{

@@ -129,7 +129,7 @@ def resolve_processlist_interval_seconds(
 
 def _row_to_entry(row: Mapping[str, object]) -> ProcesslistEntry:
     return ProcesslistEntry(
-        process_id=int(_require(row, "Id")),
+        process_id=int(_as_str(_require(row, "Id"))),
         user=_as_str(row.get("User")),
         host=_as_str(row.get("Host")),
         db=_as_str(row.get("db")),

@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from db_monitor_api.alerting.domain import (

@@ -31,9 +31,7 @@ const SAMPLE_ENTRY: SlowQueryEntryResponse = {
 	user: "app",
 };
 
-function buildSnapshot(
-	entries: readonly SlowQueryEntryResponse[],
-): SlowQuerySnapshotResponse {
+function buildSnapshot(entries: readonly SlowQueryEntryResponse[]): SlowQuerySnapshotResponse {
 	return {
 		entries,
 		window: {
@@ -43,10 +41,7 @@ function buildSnapshot(
 	};
 }
 
-function buildInstance(
-	status: string,
-	detail = "ok",
-): InstanceResponse {
+function buildInstance(status: string, detail = "ok"): InstanceResponse {
 	return {
 		...PREVIEW_INSTANCE,
 		validation: { ...PREVIEW_INSTANCE.validation, detail, status },
@@ -127,10 +122,7 @@ describe("slow query view model empty state", () => {
 
 	it("surfaces performance_schema 未启用 when validation detail hints PS disabled", () => {
 		const model = buildSlowQueryViewModel(
-			buildInstance(
-				"passed",
-				"连接校验通过；performance_schema=ON 未启用，请开启后重试。",
-			),
+			buildInstance("passed", "连接校验通过；performance_schema=ON 未启用，请开启后重试。"),
 			buildSnapshot([]),
 			EMPTY_SLOW_QUERY_FILTERS,
 		);
@@ -175,21 +167,17 @@ describe("slow query view model empty state", () => {
 describe("performance schema hint detection", () => {
 	it("returns canonical Chinese hint when detail mentions performance_schema=ON", () => {
 		expect(
-			detectPsHint(
-				buildInstance("passed", "连接校验通过；performance_schema=ON 未启用。"),
-			),
+			detectPsHint(buildInstance("passed", "连接校验通过；performance_schema=ON 未启用。")),
 		).toBe(PS_DISABLED_HINT_MESSAGE);
 	});
 
 	it("passes through history_long_size hint verbatim", () => {
-		const detail =
-			"连接校验通过；events_statements_history_long_size=1024 低于建议阈值 10000。";
+		const detail = "连接校验通过；events_statements_history_long_size=1024 低于建议阈值 10000。";
 		expect(detectPsHint(buildInstance("passed", detail))).toBe(detail);
 	});
 
 	it("passes through performance_schema 探测失败 detail verbatim", () => {
-		const detail =
-			"连接校验通过；performance_schema 探测失败：MySQLError(...)";
+		const detail = "连接校验通过；performance_schema 探测失败：MySQLError(...)";
 		expect(detectPsHint(buildInstance("passed", detail))).toBe(detail);
 	});
 

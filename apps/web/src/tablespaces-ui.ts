@@ -95,7 +95,7 @@ export function sparklineSvgPath(points: readonly SparklinePoint[]): string {
 		return "";
 	}
 	if (points.length === 1) {
-		return `M 0 50 L 100 50`;
+		return "M 0 50 L 100 50";
 	}
 	const firstTs = points[0].timestamp;
 	const lastTs = points[points.length - 1].timestamp;

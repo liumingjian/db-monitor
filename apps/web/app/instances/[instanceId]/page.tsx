@@ -89,8 +89,8 @@ export default async function InstanceDetailPage({
 								Trend Window
 							</p>
 							<p className="mt-2 text-sm text-[var(--muted)]">
-								Inspect this instance across approved observation windows without changing the
-								route family.
+								Inspect this instance across approved observation windows without changing the route
+								family.
 							</p>
 						</div>
 						<TimeWindowNav

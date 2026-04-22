@@ -271,7 +271,7 @@ def _row_to_event(row: Mapping[str, Any]) -> SlowQueryEvent:
     timer_wait_picoseconds = int(row.get("TIMER_WAIT") or 0)
     started_at = _resolve_started_at(row)
     return SlowQueryEvent(
-        event_id=int(_require(row, "EVENT_ID")),
+        event_id=int(_as_str(_require(row, "EVENT_ID"))),
         thread_id=int(row.get("THREAD_ID") or 0),
         user=_as_str(row.get("USER")),
         host=_as_str(row.get("HOST")),

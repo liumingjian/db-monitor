@@ -45,11 +45,7 @@ export function RuleEditForm({ initialRows, instances, ruleId }: RuleEditFormPro
 						+ 添加覆盖
 					</button>
 				</div>
-				<OverrideTable
-					instances={instances}
-					onChange={(next) => setRows(next)}
-					rows={rows}
-				/>
+				<OverrideTable instances={instances} onChange={(next) => setRows(next)} rows={rows} />
 			</div>
 			<UpdateResultBanner state={state} />
 			<button
@@ -72,13 +68,11 @@ interface OverrideTableProps {
 function OverrideTable({ instances, onChange, rows }: OverrideTableProps) {
 	if (rows.length === 0) {
 		return (
-			<p className="mt-3 text-sm text-[var(--muted)]">
-				尚无实例覆盖，点击“+ 添加覆盖”开始配置。
-			</p>
+			<p className="mt-3 text-sm text-[var(--muted)]">尚无实例覆盖，点击“+ 添加覆盖”开始配置。</p>
 		);
 	}
 	return (
-		<table className="mt-3 w-full border-collapse text-sm" role="table">
+		<table className="mt-3 w-full border-collapse text-sm">
 			<thead>
 				<tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
 					<th className="py-2 pr-3">实例</th>

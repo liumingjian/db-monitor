@@ -37,12 +37,9 @@ export default async function RuleEditPage({ params, searchParams }: RuleEditPag
 						</p>
 					</div>
 					{saved === "1" ? (
-						<p
-							className="rounded-[0.8rem] border border-green-500/30 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700"
-							role="status"
-						>
+						<output className="rounded-[0.8rem] border border-green-500/30 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
 							已保存覆盖配置
-						</p>
+						</output>
 					) : null}
 				</header>
 				<RuleEditForm

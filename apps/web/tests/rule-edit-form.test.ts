@@ -133,9 +133,7 @@ describe("payload shape", () => {
 
 	it("rejects rows that do not select an instance", () => {
 		expect(() =>
-			toOverrideRequests([
-				{ clientId: "c1", enabled: "inherit", instanceId: "", threshold: "" },
-			]),
+			toOverrideRequests([{ clientId: "c1", enabled: "inherit", instanceId: "", threshold: "" }]),
 		).toThrow(OverrideValidationError);
 	});
 });

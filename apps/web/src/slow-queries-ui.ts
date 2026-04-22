@@ -128,7 +128,7 @@ function resolveEmptyState(input: EmptyStateInput): SlowQueryEmptyState | null {
 			title: "实例校验未通过",
 		};
 	}
-	if (input.psHint !== null && input.psHint.includes("performance_schema=ON")) {
+	if (input.psHint?.includes("performance_schema=ON")) {
 		return {
 			detail: PS_DISABLED_HINT_MESSAGE,
 			reason: "ps-disabled",

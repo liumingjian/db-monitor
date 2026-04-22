@@ -132,7 +132,7 @@ def resolve_tablespace_interval_seconds(
     raw_value = parameters.get(TABLESPACE_INTERVAL_PARAMETER_KEY)
     if raw_value is None:
         return DEFAULT_TABLESPACE_INTERVAL_SECONDS
-    parsed = int(raw_value)
+    parsed = int(str(raw_value))
     if parsed < MIN_TABLESPACE_INTERVAL_SECONDS:
         raise RuntimeError(
             f"tablespace_interval_seconds={parsed} violates minimum "
@@ -187,7 +187,7 @@ def _rows_to_entries(
     usage_rows: tuple[tuple[object, ...], ...],
     autoextend_rows: tuple[tuple[object, ...], ...],
 ) -> tuple[TablespaceEntry, ...]:
-    autoextend_by_name = {str(row[0]): int(row[1]) == 1 for row in autoextend_rows}
+    autoextend_by_name = {str(row[0]): int(str(row[1])) == 1 for row in autoextend_rows}
     entries = tuple(
         _build_entry(row=row, autoextend_by_name=autoextend_by_name) for row in usage_rows
     )
@@ -200,11 +200,11 @@ def _build_entry(
     autoextend_by_name: Mapping[str, bool],
 ) -> TablespaceEntry:
     name = str(row[0])
-    used_blocks = int(row[1])
-    total_blocks = int(row[2])
-    used_percent = float(row[3])
+    used_blocks = int(str(row[1]))
+    total_blocks = int(str(row[2]))
+    used_percent = float(str(row[3]))
     status = str(row[4])
-    block_size = int(row[5])
+    block_size = int(str(row[5]))
     return TablespaceEntry(
         tablespace_name=name,
         status=status,

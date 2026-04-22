@@ -7,14 +7,14 @@ import type {
 } from "@db-monitor/api-client";
 
 import {
+	USED_RATE_CRITICAL_THRESHOLD,
+	USED_RATE_WARNING_THRESHOLD,
 	buildSparklinePoints,
 	buildTablespaceViewModel,
 	classifyUsedRate,
 	formatBytes,
 	formatPercent,
 	sparklineSvgPath,
-	USED_RATE_CRITICAL_THRESHOLD,
-	USED_RATE_WARNING_THRESHOLD,
 } from "../src/tablespaces-ui";
 
 function buildEntry(overrides: Partial<TablespaceEntryResponse> = {}): TablespaceEntryResponse {
@@ -62,11 +62,7 @@ describe("buildTablespaceViewModel", () => {
 
 		const model = buildTablespaceViewModel(snapshot);
 
-		expect(model.rows.map((row) => row.tablespace_name)).toEqual([
-			"USERS",
-			"UNDOTBS",
-			"SYSAUX",
-		]);
+		expect(model.rows.map((row) => row.tablespace_name)).toEqual(["USERS", "UNDOTBS", "SYSAUX"]);
 		expect(model.rows[0].band).toBe("critical");
 		expect(model.rows[1].band).toBe("warning");
 		expect(model.rows[2].band).toBe("normal");

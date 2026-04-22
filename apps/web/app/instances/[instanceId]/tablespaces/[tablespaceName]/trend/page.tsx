@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { TablespaceTrendChart } from "../../../_components/tablespace-trend-chart";
-import { DEFAULT_HISTORY_DAYS } from "../../../../../../src/tablespaces-ui";
 import { createServerApiClient } from "../../../../../../src/server-api";
+import { DEFAULT_HISTORY_DAYS } from "../../../../../../src/tablespaces-ui";
+import { TablespaceTrendChart } from "../../../_components/tablespace-trend-chart";
 
 interface TablespaceTrendPageProps {
 	readonly params: Promise<{
@@ -31,9 +31,7 @@ export default async function TablespaceTrendPage({ params }: TablespaceTrendPag
 					<h2 className="text-2xl font-semibold" id="tablespace-trend-heading">
 						{tablespaceName}
 					</h2>
-					<p className="mt-1 text-sm text-[var(--muted)]">
-						近 {DEFAULT_HISTORY_DAYS} 天使用率趋势
-					</p>
+					<p className="mt-1 text-sm text-[var(--muted)]">近 {DEFAULT_HISTORY_DAYS} 天使用率趋势</p>
 				</div>
 				<Link
 					className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)] underline"

@@ -69,10 +69,7 @@ function SlowQuerySqlCell({ sqlText }: SlowQuerySqlCellProps) {
 	}
 	return (
 		<details className="max-w-[32rem] text-xs text-[var(--ink)]">
-			<summary
-				className="cursor-pointer truncate font-mono text-[var(--muted)]"
-				title={sqlText}
-			>
+			<summary className="cursor-pointer truncate font-mono text-[var(--muted)]" title={sqlText}>
 				{truncate(sqlText, 96)}
 			</summary>
 			<pre className="mt-2 whitespace-pre-wrap break-all rounded-[0.6rem] bg-[var(--panel)] p-3 font-mono text-xs text-[var(--ink)]">

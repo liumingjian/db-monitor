@@ -12,12 +12,7 @@ export function ProcesslistFilterForm({ action, filters }: ProcesslistFilterForm
 			className="grid gap-3 rounded-[1.2rem] border border-black/5 bg-[var(--panel)] p-4 md:grid-cols-3"
 			method="get"
 		>
-			<TextInput
-				defaultValue={filters.user}
-				label="User"
-				name="user"
-				placeholder="e.g. root"
-			/>
+			<TextInput defaultValue={filters.user} label="User" name="user" placeholder="e.g. root" />
 			<TextInput
 				defaultValue={filters.host}
 				label="Host"

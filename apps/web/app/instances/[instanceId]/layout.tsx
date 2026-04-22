@@ -42,9 +42,7 @@ interface InstanceTabsInput {
 	readonly engine: "mysql" | "oracle";
 }
 
-function buildInstanceTabs(
-	input: InstanceTabsInput,
-): readonly InstanceTabDescriptor[] {
+function buildInstanceTabs(input: InstanceTabsInput): readonly InstanceTabDescriptor[] {
 	const tabs: InstanceTabDescriptor[] = [
 		{
 			href: `/instances/${input.instanceId}`,

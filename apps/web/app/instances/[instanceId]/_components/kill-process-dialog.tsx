@@ -2,10 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import {
-	type KillProcessResult,
-	killProcessAction,
-} from "./kill-process-action";
+import { type KillProcessResult, killProcessAction } from "./kill-process-action";
 
 interface KillProcessDialogProps {
 	readonly instanceId: string;
@@ -95,12 +92,9 @@ function KillResultBanner({ state }: KillResultBannerProps) {
 	}
 	if (state.ok) {
 		return (
-			<p
-				className="rounded-[0.7rem] border border-green-500/30 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700"
-				role="status"
-			>
+			<output className="rounded-[0.7rem] border border-green-500/30 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
 				已发起 kill，{state.checkedAt}
-			</p>
+			</output>
 		);
 	}
 	return (
@@ -140,7 +134,7 @@ function useCloseOnSuccess(
 	onClose: () => void,
 ): void {
 	useEffect(() => {
-		if (state !== null && state.ok && open) {
+		if (state?.ok && open) {
 			onClose();
 		}
 	}, [state, open, onClose]);

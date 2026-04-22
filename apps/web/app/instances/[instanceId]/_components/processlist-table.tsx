@@ -29,7 +29,9 @@ export function ProcesslistTable({
 	monitorUsername,
 	validationPassed,
 }: ProcesslistTableProps) {
-	const headers = canKill ? [...BASE_COLUMN_HEADERS, { key: "actions", label: "Actions" }] : BASE_COLUMN_HEADERS;
+	const headers = canKill
+		? [...BASE_COLUMN_HEADERS, { key: "actions", label: "Actions" }]
+		: BASE_COLUMN_HEADERS;
 	return (
 		<div className="overflow-x-auto rounded-[1.2rem] border border-black/5 bg-white">
 			<table className="min-w-full border-collapse text-left text-sm">
@@ -69,12 +71,7 @@ interface ProcesslistTableRowProps {
 	readonly killState: KillRowState;
 }
 
-function ProcesslistTableRow({
-	canKill,
-	entry,
-	instanceId,
-	killState,
-}: ProcesslistTableRowProps) {
+function ProcesslistTableRow({ canKill, entry, instanceId, killState }: ProcesslistTableRowProps) {
 	return (
 		<tr className="border-t border-black/5">
 			<td className="px-4 py-3 font-mono text-xs text-[var(--ink)]">{entry.process_id}</td>
@@ -116,11 +113,7 @@ function KillCell({ entry, instanceId, killState }: KillCellProps) {
 		);
 	}
 	return (
-		<KillProcessDialog
-			instanceId={instanceId}
-			processId={entry.process_id}
-			user={entry.user}
-		/>
+		<KillProcessDialog instanceId={instanceId} processId={entry.process_id} user={entry.user} />
 	);
 }
 

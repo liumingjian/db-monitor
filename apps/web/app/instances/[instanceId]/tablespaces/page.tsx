@@ -1,8 +1,8 @@
 import type { TablespaceHistoryEntryResponse } from "@db-monitor/api-client";
 
-import { TablespaceTable } from "../_components/tablespace-table";
-import { buildTablespaceViewModel } from "../../../../src/tablespaces-ui";
 import { createServerApiClient } from "../../../../src/server-api";
+import { buildTablespaceViewModel } from "../../../../src/tablespaces-ui";
+import { TablespaceTable } from "../_components/tablespace-table";
 
 interface TablespacesPageProps {
 	readonly params: Promise<{
@@ -88,11 +88,10 @@ async function loadSparklineHistory(
 	const to = new Date(now).toISOString();
 	const pairs = await Promise.all(
 		input.tablespaceNames.map(async (name) => {
-			const response = await input.apiClient.getTablespaceHistory(
-				input.instanceId,
-				name,
-				{ from, to },
-			);
+			const response = await input.apiClient.getTablespaceHistory(input.instanceId, name, {
+				from,
+				to,
+			});
 			return [name, response.entries] as const;
 		}),
 	);

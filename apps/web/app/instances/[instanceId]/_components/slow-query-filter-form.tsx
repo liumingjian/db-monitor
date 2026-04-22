@@ -19,12 +19,7 @@ export function SlowQueryFilterForm({ action, filters }: SlowQueryFilterFormProp
 				name="minDurationMs"
 				placeholder="1000"
 			/>
-			<TextInput
-				defaultValue={filters.user}
-				label="User"
-				name="user"
-				placeholder="e.g. app"
-			/>
+			<TextInput defaultValue={filters.user} label="User" name="user" placeholder="e.g. app" />
 			<TextInput
 				defaultValue={filters.schema}
 				label="Schema"

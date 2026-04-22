@@ -1,8 +1,8 @@
 import type { TablespaceHistoryEntryResponse } from "@db-monitor/api-client";
 
 import {
-	buildSparklinePoints,
 	HISTORY_ALERT_LINE_PERCENT,
+	buildSparklinePoints,
 	sparklineSvgPath,
 } from "../../../../src/tablespaces-ui";
 
