@@ -21,6 +21,20 @@ from db_monitor_pipeline.processlist_scheduler import (
 from db_monitor_pipeline.queue import RedisCollectionTaskQueue
 from db_monitor_pipeline.scheduler import MetricsDispatchService
 from db_monitor_pipeline.sink import ClickHouseMetricSink
+from db_monitor_pipeline.slow_query import (
+    PyMySQLSlowQueryCollector,
+    RedisSlowQueryCursorStore,
+    SlowQueryWorker,
+)
+from db_monitor_pipeline.slow_query_scheduler import (
+    SlowQueryScheduler,
+    reduce_slow_query_cycle_to_run_result,
+)
+from db_monitor_pipeline.tablespace import PyOracleTablespaceCollector, TablespaceWorker
+from db_monitor_pipeline.tablespace_scheduler import (
+    TablespaceScheduler,
+    reduce_cycle_to_run_result as reduce_tablespace_cycle_to_run_result,
+)
 from db_monitor_pipeline.worker import (
     EngineAwareMetricsWorker,
     MySQLMetricsWorker,
@@ -80,16 +94,32 @@ class WorkerProcess:
     poll_seconds: float
     process_worker: ProcessWorker
     processlist_scheduler: ProcesslistScheduler | None = None
+    slow_query_scheduler: SlowQueryScheduler | None = None
+    tablespace_scheduler: TablespaceScheduler | None = None
     sleep: SleepFn = time.sleep
 
     def run_once(self) -> WorkerRunResult:
-        queue_result = self.process_worker.process_next()
-        if self.processlist_scheduler is None:
-            return queue_result
-        processlist_result = reduce_cycle_to_run_result(
-            self.processlist_scheduler.run_cycle(),
-        )
-        return _combine_worker_results(queue_result, processlist_result)
+        combined = self.process_worker.process_next()
+        if self.processlist_scheduler is not None:
+            combined = _combine_worker_results(
+                combined,
+                reduce_cycle_to_run_result(self.processlist_scheduler.run_cycle()),
+            )
+        if self.slow_query_scheduler is not None:
+            combined = _combine_worker_results(
+                combined,
+                reduce_slow_query_cycle_to_run_result(
+                    self.slow_query_scheduler.run_cycle(),
+                ),
+            )
+        if self.tablespace_scheduler is not None:
+            combined = _combine_worker_results(
+                combined,
+                reduce_tablespace_cycle_to_run_result(
+                    self.tablespace_scheduler.run_cycle(),
+                ),
+            )
+        return combined
 
     def run_loop(self, *, max_cycles: int | None) -> WorkerRunResult:
         return _run_loop(
@@ -189,6 +219,27 @@ def build_worker_process(settings: WorkerProcessSettings) -> WorkerProcess:
                 collector=PyMySQLProcesslistCollector(
                     timeout_seconds=MYSQL_PROCESSLIST_TIMEOUT_SECONDS,
                 ),
+                sink=sink,
+            ),
+        ),
+        slow_query_scheduler=SlowQueryScheduler(
+            control_plane_repository=control_plane_repository,
+            parameter_reader=PostgresInstanceParameterRepository(
+                postgres_dsn=settings.postgres_dsn,
+            ),
+            worker=SlowQueryWorker(
+                collector=PyMySQLSlowQueryCollector(),
+                cursor_store=RedisSlowQueryCursorStore(redis_url=settings.redis_url),
+                sink=sink,
+            ),
+        ),
+        tablespace_scheduler=TablespaceScheduler(
+            control_plane_repository=control_plane_repository,
+            parameter_reader=PostgresInstanceParameterRepository(
+                postgres_dsn=settings.postgres_dsn,
+            ),
+            worker=TablespaceWorker(
+                collector=PyOracleTablespaceCollector(),
                 sink=sink,
             ),
         ),

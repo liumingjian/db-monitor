@@ -166,7 +166,13 @@ def _reset_postgres_schema(postgres_dsn: str) -> None:
 def _reset_clickhouse_schema(settings: ApiSettings) -> None:
     database = _required_env(CLICKHOUSE_DATABASE_ENV)
     clickhouse = _clickhouse_settings(settings)
-    for table in ("schema_version", "metric_samples", "mysql_processlist"):
+    for table in (
+        "schema_version",
+        "metric_samples",
+        "mysql_processlist",
+        "mysql_slow_query_events",
+        "oracle_tablespaces",
+    ):
         _run_clickhouse_query(
             database=database,
             endpoint=clickhouse.endpoint,

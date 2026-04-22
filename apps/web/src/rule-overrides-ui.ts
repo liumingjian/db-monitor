@@ -83,6 +83,15 @@ export function toDraftRows(
 	}));
 }
 
+export function buildEmptyDraftRow(clientId: string): OverrideDraftRow {
+	return {
+		clientId,
+		enabled: "inherit",
+		instanceId: "",
+		threshold: "",
+	};
+}
+
 export function toOverrideRequest(row: OverrideDraftRow): RuleOverrideRequest {
 	if (row.instanceId.length === 0) {
 		throw new OverrideValidationError("override 行缺少 instance_id");

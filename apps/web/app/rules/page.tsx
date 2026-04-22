@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { RULE_OPERATORS, RULE_SEVERITIES } from "@db-monitor/ui";
 import { AppChrome } from "../../src/components/app-chrome";
 
@@ -135,7 +137,15 @@ export default async function RulesPage() {
 							className="rounded-[1.2rem] border border-black/5 bg-[var(--panel)] p-4"
 							key={rule.rule_id}
 						>
-							<p className="font-semibold">{rule.name}</p>
+							<div className="flex flex-wrap items-baseline justify-between gap-2">
+								<p className="font-semibold">{rule.name}</p>
+								<Link
+									className="rounded-[0.6rem] border border-[var(--accent)] bg-white px-3 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
+									href={`/rules/${rule.rule_id}`}
+								>
+									编辑
+								</Link>
+							</div>
 							<p className="text-sm text-[var(--muted)]">
 								{formatDatabaseEngine(rule.engine)} · {rule.metric_name}
 							</p>

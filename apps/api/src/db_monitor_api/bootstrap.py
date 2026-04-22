@@ -1,6 +1,5 @@
 from db_monitor_api.analytics.repository import (
     AnalyticsRepository,
-    ClickHouseAnalyticsRepository,
     InMemoryAnalyticsRepository,
 )
 from db_monitor_api.analytics.service import AnalyticsService
@@ -22,6 +21,13 @@ from db_monitor_api.auth.service import (
     PasswordHasher,
 )
 from db_monitor_api.auth.seed_users import default_seed_users
+from db_monitor_api.bootstrap_clickhouse import (
+    build_clickhouse_analytics_repository,
+    build_clickhouse_processlist_repository,
+    build_clickhouse_slow_query_repository,
+    build_clickhouse_tablespace_repository,
+    build_postgres_dependency_checks,
+)
 from db_monitor_api.control_plane.mysql_validation import (
     MySQLConnectionValidator,
     PyMySQLConnectionValidator,
@@ -36,13 +42,7 @@ from db_monitor_api.control_plane.repository import (
     InMemoryControlPlaneRepository,
 )
 from db_monitor_api.control_plane.service import AssetService, SettingsService
-from db_monitor_api.health import (
-    ClickHouseDependencyCheck,
-    DependencyCheck,
-    PostgresDependencyCheck,
-    ReadinessProbe,
-    StaticDependencyCheck,
-)
+from db_monitor_api.health import DependencyCheck, ReadinessProbe, StaticDependencyCheck
 from db_monitor_api.runtime import AppRuntime
 from db_monitor_api.runtime_views.kill import (
     ProcesslistKiller,
@@ -50,11 +50,20 @@ from db_monitor_api.runtime_views.kill import (
     PyMySQLProcesslistKiller,
 )
 from db_monitor_api.runtime_views.repository import (
-    ClickHouseProcesslistRepository,
     InMemoryProcesslistRepository,
     ProcesslistRepository,
 )
 from db_monitor_api.runtime_views.service import ProcesslistService
+from db_monitor_api.runtime_views.slow_query_repository import (
+    InMemorySlowQueryRepository,
+    SlowQueryRepository,
+)
+from db_monitor_api.runtime_views.slow_query_service import SlowQueryService
+from db_monitor_api.runtime_views.tablespace_repository import (
+    InMemoryTablespaceRepository,
+    TablespaceRepository,
+)
+from db_monitor_api.runtime_views.tablespace_service import TablespaceService
 from db_monitor_api.settings import ApiSettings, ClickHouseSettings, RuntimeMode
 from db_monitor_schema.runtime import verify_api_runtime_schema
 
@@ -81,6 +90,8 @@ def build_local_runtime(
     notifier: Notifier | None = None,
     processlist_repository: ProcesslistRepository | None = None,
     processlist_killer: ProcesslistKiller | None = None,
+    slow_query_repository: SlowQueryRepository | None = None,
+    tablespace_repository: TablespaceRepository | None = None,
 ) -> AppRuntime:
     return _build_runtime(
         analytics_repository=analytics_repository or InMemoryAnalyticsRepository(),
@@ -100,6 +111,8 @@ def build_local_runtime(
         processlist_repository=processlist_repository or InMemoryProcesslistRepository(),
         processlist_killer=processlist_killer or PyMySQLProcesslistKiller(),
         runtime_mode=RuntimeMode.LOCAL.value,
+        slow_query_repository=slow_query_repository or InMemorySlowQueryRepository(),
+        tablespace_repository=tablespace_repository or InMemoryTablespaceRepository(),
     )
 
 
@@ -115,14 +128,22 @@ def build_postgres_runtime(
     notifier: Notifier | None = None,
     processlist_repository: ProcesslistRepository | None = None,
     processlist_killer: ProcesslistKiller | None = None,
+    slow_query_repository: SlowQueryRepository | None = None,
+    tablespace_repository: TablespaceRepository | None = None,
 ) -> AppRuntime:
     verify_api_runtime_schema(
         analytics_repository=analytics_repository,
         clickhouse=clickhouse,
         postgres_dsn=postgres_dsn,
     )
-    resolved_analytics = analytics_repository or _build_clickhouse_analytics_repository(clickhouse)
-    resolved_processlist = processlist_repository or _build_clickhouse_processlist_repository(
+    resolved_analytics = analytics_repository or build_clickhouse_analytics_repository(clickhouse)
+    resolved_processlist = processlist_repository or build_clickhouse_processlist_repository(
+        clickhouse
+    )
+    resolved_slow_query = slow_query_repository or build_clickhouse_slow_query_repository(
+        clickhouse
+    )
+    resolved_tablespace = tablespace_repository or build_clickhouse_tablespace_repository(
         clickhouse
     )
     return _build_runtime(
@@ -131,7 +152,7 @@ def build_postgres_runtime(
         audit_repository=PostgresAuditRepository(postgres_dsn=postgres_dsn),
         control_plane_repository=PostgresControlPlaneRepository(postgres_dsn=postgres_dsn),
         dependency_checks=dependency_checks
-        or _build_postgres_dependency_checks(
+        or build_postgres_dependency_checks(
             analytics_repository=analytics_repository,
             clickhouse=clickhouse,
             postgres_dsn=postgres_dsn,
@@ -142,6 +163,8 @@ def build_postgres_runtime(
         processlist_repository=resolved_processlist,
         processlist_killer=processlist_killer or PyMySQLProcesslistKiller(),
         runtime_mode=RuntimeMode.POSTGRES.value,
+        slow_query_repository=resolved_slow_query,
+        tablespace_repository=resolved_tablespace,
     )
 
 
@@ -158,6 +181,8 @@ def _build_runtime(
     processlist_repository: ProcesslistRepository,
     processlist_killer: ProcesslistKiller,
     runtime_mode: str,
+    slow_query_repository: SlowQueryRepository,
+    tablespace_repository: TablespaceRepository,
 ) -> AppRuntime:
     password_hasher = PasswordHasher()
     audit_service = AuditService(audit_repository=audit_repository)
@@ -207,66 +232,12 @@ def _build_runtime(
             audit_service=audit_service,
             repository=control_plane_repository,
         ),
+        slow_query_service=SlowQueryService(
+            control_plane_repository=control_plane_repository,
+            slow_query_repository=slow_query_repository,
+        ),
+        tablespace_service=TablespaceService(
+            control_plane_repository=control_plane_repository,
+            tablespace_repository=tablespace_repository,
+        ),
     )
-
-
-def _build_clickhouse_analytics_repository(
-    clickhouse: ClickHouseSettings | None,
-) -> AnalyticsRepository:
-    if clickhouse is None:
-        raise RuntimeError(
-            "ClickHouse settings are required when no analytics repository is injected."
-        )
-    return ClickHouseAnalyticsRepository(
-        database=clickhouse.database,
-        endpoint=clickhouse.endpoint,
-        password=clickhouse.password,
-        username=clickhouse.username,
-    )
-
-
-def _build_clickhouse_processlist_repository(
-    clickhouse: ClickHouseSettings | None,
-) -> ProcesslistRepository:
-    if clickhouse is None:
-        raise RuntimeError(
-            "ClickHouse settings are required when no processlist repository is injected."
-        )
-    return ClickHouseProcesslistRepository(
-        database=clickhouse.database,
-        endpoint=clickhouse.endpoint,
-        password=clickhouse.password,
-        username=clickhouse.username,
-    )
-
-
-def _build_postgres_dependency_checks(
-    *,
-    analytics_repository: AnalyticsRepository | None,
-    clickhouse: ClickHouseSettings | None,
-    postgres_dsn: str,
-) -> tuple[DependencyCheck, ...]:
-    checks: list[DependencyCheck] = [PostgresDependencyCheck(postgres_dsn=postgres_dsn)]
-    if analytics_repository is None:
-        if clickhouse is None:
-            raise RuntimeError(
-                "ClickHouse settings are required when no analytics repository is injected."
-            )
-        checks.append(
-            ClickHouseDependencyCheck(
-                database=clickhouse.database,
-                endpoint=clickhouse.endpoint,
-                password=clickhouse.password,
-                username=clickhouse.username,
-            )
-        )
-        return tuple(checks)
-    checks.append(
-        StaticDependencyCheck(
-            detail="Custom analytics repository injected.",
-            name="analytics",
-        )
-    )
-    return tuple(checks)
-
-

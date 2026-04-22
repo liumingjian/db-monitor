@@ -8,6 +8,8 @@ from db_monitor_api.control_plane.service import AssetService, SettingsService
 from db_monitor_api.health import ReadinessProbe
 from db_monitor_api.runtime_views.kill import ProcesslistKillService
 from db_monitor_api.runtime_views.service import ProcesslistService
+from db_monitor_api.runtime_views.slow_query_service import SlowQueryService
+from db_monitor_api.runtime_views.tablespace_service import TablespaceService
 
 
 @dataclass(frozen=True)
@@ -24,3 +26,5 @@ class AppRuntime:
     readiness_probe: ReadinessProbe
     runtime_mode: str
     settings_service: SettingsService
+    slow_query_service: SlowQueryService
+    tablespace_service: TablespaceService

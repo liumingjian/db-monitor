@@ -332,6 +332,75 @@ export interface KillProcesslistResponse {
 	readonly notes: string | null;
 }
 
+export interface SlowQueryEntryResponse {
+	readonly event_id: number;
+	readonly started_at: string;
+	readonly user: string;
+	readonly schema_name: string;
+	readonly sql_text: string;
+	readonly digest: string;
+	readonly timer_wait_ms: number;
+	readonly rows_examined: number;
+	readonly rows_sent: number;
+	readonly rows_affected: number;
+	readonly errors: number;
+}
+
+export interface SlowQueryWindowResponse {
+	readonly from_at: string;
+	readonly to_at: string;
+}
+
+export interface SlowQuerySnapshotResponse {
+	readonly window: SlowQueryWindowResponse;
+	readonly entries: readonly SlowQueryEntryResponse[];
+}
+
+export interface ListSlowQueriesFilters {
+	readonly digest_prefix?: string;
+	readonly limit?: number;
+	readonly min_duration_ms?: number;
+	readonly schema?: string;
+	readonly started_after?: string;
+	readonly started_before?: string;
+	readonly user?: string;
+}
+
+export interface TablespaceEntryResponse {
+	readonly tablespace_name: string;
+	readonly status: string;
+	readonly used_bytes: number;
+	readonly total_bytes: number;
+	readonly used_rate_percent: number;
+	readonly autoextensible: boolean;
+}
+
+export interface TablespaceSnapshotResponse {
+	readonly snapshot_at: string | null;
+	readonly entries: readonly TablespaceEntryResponse[];
+}
+
+export interface TablespaceHistoryEntryResponse {
+	readonly collected_at: string;
+	readonly used_bytes: number;
+	readonly total_bytes: number;
+	readonly used_rate_percent: number;
+}
+
+export interface TablespaceHistoryResponse {
+	readonly entries: readonly TablespaceHistoryEntryResponse[];
+}
+
+export interface ListTablespacesFilters {
+	readonly collected_after?: string;
+	readonly collected_before?: string;
+}
+
+export interface TablespaceHistoryFilters {
+	readonly from: string;
+	readonly to: string;
+}
+
 export interface ApiClient {
 	readonly baseUrl: string;
 	readonly contractVersion: string;
@@ -350,11 +419,24 @@ export interface ApiClient {
 		instanceId: string,
 		filters?: ListProcesslistFilters,
 	): Promise<ProcesslistSnapshotResponse>;
+	getInstanceSlowQueries(
+		instanceId: string,
+		filters?: ListSlowQueriesFilters,
+	): Promise<SlowQuerySnapshotResponse>;
 	killProcess(
 		instanceId: string,
 		processId: number,
 		request?: KillProcesslistRequest,
 	): Promise<KillProcesslistResponse>;
+	listTablespaces(
+		instanceId: string,
+		filters?: ListTablespacesFilters,
+	): Promise<TablespaceSnapshotResponse>;
+	getTablespaceHistory(
+		instanceId: string,
+		tablespaceName: string,
+		filters: TablespaceHistoryFilters,
+	): Promise<TablespaceHistoryResponse>;
 	getInstanceTrends(instanceId: string, window: TimeWindow): Promise<InstanceTrendResponse>;
 	getOverview(window: TimeWindow): Promise<OverviewResponse>;
 	listInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
@@ -375,7 +457,7 @@ export interface ApiClient {
 	updateUserRoles(userId: string, request: UpdateUserRolesRequest): Promise<ManagedUserResponse>;
 }
 
-export const API_CONTRACT_VERSION = "0.12.0";
+export const API_CONTRACT_VERSION = "0.14.0";
 export const apiClientPackageName = "@db-monitor/api-client";
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -424,6 +506,10 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 			request<ProcesslistSnapshotResponse>(
 				`/instances/${instanceId}/processlist${buildQueryString(filters)}`,
 			),
+		getInstanceSlowQueries: (instanceId, filters) =>
+			request<SlowQuerySnapshotResponse>(
+				`/instances/${instanceId}/slow-queries${buildQueryString(filters)}`,
+			),
 		killProcess: (instanceId, processId, payload) =>
 			request<KillProcesslistResponse>(
 				`/instances/${instanceId}/processlist/${processId}/kill`,
@@ -431,6 +517,14 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 					body: JSON.stringify(payload ?? {}),
 					method: "POST",
 				},
+			),
+		listTablespaces: (instanceId, filters) =>
+			request<TablespaceSnapshotResponse>(
+				`/instances/${instanceId}/tablespaces${buildQueryString(filters)}`,
+			),
+		getTablespaceHistory: (instanceId, tablespaceName, filters) =>
+			request<TablespaceHistoryResponse>(
+				`/instances/${instanceId}/tablespaces/${encodeURIComponent(tablespaceName)}/history${buildQueryString(filters)}`,
 			),
 		getMySQLInstance: (instanceId) =>
 			request<InstanceResponse>(`/control/mysql-instances/${instanceId}`),
@@ -471,7 +565,14 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 }
 
 function buildQueryString(
-	filters: ListAlertsFilters | ListInstancesFilters | ListProcesslistFilters | undefined,
+	filters:
+		| ListAlertsFilters
+		| ListInstancesFilters
+		| ListProcesslistFilters
+		| ListSlowQueriesFilters
+		| ListTablespacesFilters
+		| TablespaceHistoryFilters
+		| undefined,
 ): string {
 	if (filters === undefined) {
 		return "";

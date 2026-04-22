@@ -6,7 +6,12 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from db_monitor_api.settings import ClickHouseSettings
-from db_monitor_pipeline.sink import CLICKHOUSE_METRICS_TABLE, CLICKHOUSE_MYSQL_PROCESSLIST_TABLE
+from db_monitor_pipeline.sink import (
+    CLICKHOUSE_METRICS_TABLE,
+    CLICKHOUSE_MYSQL_PROCESSLIST_TABLE,
+    CLICKHOUSE_MYSQL_SLOW_QUERY_EVENTS_TABLE,
+    CLICKHOUSE_ORACLE_TABLESPACES_TABLE,
+)
 from db_monitor_schema.contract import (
     CLICKHOUSE_SCHEMA_SCOPE,
     CLICKHOUSE_SCHEMA_VERSION,
@@ -17,6 +22,8 @@ from db_monitor_schema.contract import (
 CLICKHOUSE_REQUIRED_TABLES = (
     CLICKHOUSE_METRICS_TABLE,
     CLICKHOUSE_MYSQL_PROCESSLIST_TABLE,
+    CLICKHOUSE_MYSQL_SLOW_QUERY_EVENTS_TABLE,
+    CLICKHOUSE_ORACLE_TABLESPACES_TABLE,
     CLICKHOUSE_SCHEMA_VERSION_TABLE,
 )
 CLICKHOUSE_BOOTSTRAP_COMMAND = "uv run python -m db_monitor_schema bootstrap-clickhouse"
@@ -62,6 +69,46 @@ PARTITION BY toYYYYMMDD(collected_at)
 ORDER BY (instance_id, collected_at, process_id)
 TTL toDateTime(collected_at) + INTERVAL 7 DAY
 """
+_CREATE_MYSQL_SLOW_QUERY_EVENTS_SQL = f"""
+CREATE TABLE IF NOT EXISTS {CLICKHOUSE_MYSQL_SLOW_QUERY_EVENTS_TABLE} (
+    organization_id String,
+    instance_id String,
+    collected_at DateTime64(3, 'UTC'),
+    event_id UInt64,
+    thread_id UInt64,
+    user String,
+    host String,
+    schema_name String,
+    digest String,
+    digest_text String,
+    sql_text String,
+    timer_wait_ms Float64,
+    rows_examined UInt64,
+    rows_sent UInt64,
+    rows_affected UInt64,
+    errors UInt32,
+    started_at DateTime64(3, 'UTC')
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMMDD(started_at)
+ORDER BY (instance_id, started_at, event_id)
+TTL toDateTime(collected_at) + INTERVAL 7 DAY
+"""
+_CREATE_ORACLE_TABLESPACES_SQL = f"""
+CREATE TABLE IF NOT EXISTS {CLICKHOUSE_ORACLE_TABLESPACES_TABLE} (
+    organization_id String,
+    instance_id String,
+    collected_at DateTime64(3, 'UTC'),
+    tablespace_name String,
+    status LowCardinality(String),
+    used_bytes UInt64,
+    total_bytes UInt64,
+    used_rate_percent Float64,
+    autoextensible UInt8
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMMDD(collected_at)
+ORDER BY (instance_id, collected_at, tablespace_name)
+TTL toDateTime(collected_at) + INTERVAL 30 DAY
+"""
 
 
 def bootstrap_clickhouse_schema(*, settings: ClickHouseSettings) -> SchemaVersion:
@@ -80,6 +127,16 @@ def bootstrap_clickhouse_schema(*, settings: ClickHouseSettings) -> SchemaVersio
     _execute_clickhouse_query(
         database=database,
         query=_CREATE_MYSQL_PROCESSLIST_SQL,
+        settings=settings,
+    )
+    _execute_clickhouse_query(
+        database=database,
+        query=_CREATE_MYSQL_SLOW_QUERY_EVENTS_SQL,
+        settings=settings,
+    )
+    _execute_clickhouse_query(
+        database=database,
+        query=_CREATE_ORACLE_TABLESPACES_SQL,
         settings=settings,
     )
     _execute_clickhouse_query(

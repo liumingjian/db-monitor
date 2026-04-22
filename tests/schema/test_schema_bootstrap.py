@@ -163,6 +163,16 @@ def test_clickhouse_bootstrap_creates_database_tables_and_version_row(
     assert "PARTITION BY toYYYYMMDD(collected_at)" in executed_sql
     assert "ORDER BY (instance_id, collected_at, process_id)" in executed_sql
     assert "TTL toDateTime(collected_at) + INTERVAL 7 DAY" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS mysql_slow_query_events" in executed_sql
+    assert "PARTITION BY toYYYYMMDD(started_at)" in executed_sql
+    assert "ORDER BY (instance_id, started_at, event_id)" in executed_sql
+    assert "digest_text String" in executed_sql
+    assert "timer_wait_ms Float64" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS oracle_tablespaces" in executed_sql
+    assert "ORDER BY (instance_id, collected_at, tablespace_name)" in executed_sql
+    assert "TTL toDateTime(collected_at) + INTERVAL 30 DAY" in executed_sql
+    assert "autoextensible UInt8" in executed_sql
+    assert "used_rate_percent Float64" in executed_sql
     assert "INSERT INTO schema_version FORMAT JSONEachRow" in executed_sql
 
 
@@ -172,7 +182,13 @@ def test_clickhouse_contract_requires_bootstrapped_version(
     responses = iter(
         [
             '{"name":"db_monitor"}\n',
-            '{"name":"metric_samples"}\n{"name":"mysql_processlist"}\n{"name":"schema_version"}\n',
+            (
+                '{"name":"metric_samples"}\n'
+                '{"name":"mysql_processlist"}\n'
+                '{"name":"mysql_slow_query_events"}\n'
+                '{"name":"oracle_tablespaces"}\n'
+                '{"name":"schema_version"}\n'
+            ),
             "",
         ]
     )

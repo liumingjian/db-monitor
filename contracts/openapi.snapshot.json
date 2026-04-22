@@ -1355,6 +1355,107 @@
         "title": "SessionUserResponse",
         "type": "object"
       },
+      "SlowQueryEntryResponse": {
+        "properties": {
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "integer"
+          },
+          "rows_affected": {
+            "title": "Rows Affected",
+            "type": "integer"
+          },
+          "rows_examined": {
+            "title": "Rows Examined",
+            "type": "integer"
+          },
+          "rows_sent": {
+            "title": "Rows Sent",
+            "type": "integer"
+          },
+          "schema_name": {
+            "title": "Schema Name",
+            "type": "string"
+          },
+          "sql_text": {
+            "title": "Sql Text",
+            "type": "string"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "string"
+          },
+          "timer_wait_ms": {
+            "title": "Timer Wait Ms",
+            "type": "number"
+          },
+          "user": {
+            "title": "User",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "started_at",
+          "user",
+          "schema_name",
+          "sql_text",
+          "digest",
+          "timer_wait_ms",
+          "rows_examined",
+          "rows_sent",
+          "rows_affected",
+          "errors"
+        ],
+        "title": "SlowQueryEntryResponse",
+        "type": "object"
+      },
+      "SlowQuerySnapshotResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/SlowQueryEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "window": {
+            "$ref": "#/components/schemas/SlowQueryWindowResponse"
+          }
+        },
+        "required": [
+          "window",
+          "entries"
+        ],
+        "title": "SlowQuerySnapshotResponse",
+        "type": "object"
+      },
+      "SlowQueryWindowResponse": {
+        "properties": {
+          "from_at": {
+            "title": "From At",
+            "type": "string"
+          },
+          "to_at": {
+            "title": "To At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_at",
+          "to_at"
+        ],
+        "title": "SlowQueryWindowResponse",
+        "type": "object"
+      },
       "SystemSettingResponse": {
         "properties": {
           "key": {
@@ -1376,6 +1477,116 @@
           "value"
         ],
         "title": "SystemSettingResponse",
+        "type": "object"
+      },
+      "TablespaceEntryResponse": {
+        "properties": {
+          "autoextensible": {
+            "title": "Autoextensible",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "tablespace_name": {
+            "title": "Tablespace Name",
+            "type": "string"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          },
+          "used_bytes": {
+            "title": "Used Bytes",
+            "type": "integer"
+          },
+          "used_rate_percent": {
+            "title": "Used Rate Percent",
+            "type": "number"
+          }
+        },
+        "required": [
+          "tablespace_name",
+          "status",
+          "used_bytes",
+          "total_bytes",
+          "used_rate_percent",
+          "autoextensible"
+        ],
+        "title": "TablespaceEntryResponse",
+        "type": "object"
+      },
+      "TablespaceHistoryEntryResponse": {
+        "properties": {
+          "collected_at": {
+            "title": "Collected At",
+            "type": "string"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          },
+          "used_bytes": {
+            "title": "Used Bytes",
+            "type": "integer"
+          },
+          "used_rate_percent": {
+            "title": "Used Rate Percent",
+            "type": "number"
+          }
+        },
+        "required": [
+          "collected_at",
+          "used_bytes",
+          "total_bytes",
+          "used_rate_percent"
+        ],
+        "title": "TablespaceHistoryEntryResponse",
+        "type": "object"
+      },
+      "TablespaceHistoryResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/TablespaceHistoryEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "title": "TablespaceHistoryResponse",
+        "type": "object"
+      },
+      "TablespaceSnapshotResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/TablespaceEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "snapshot_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot At"
+          }
+        },
+        "required": [
+          "snapshot_at",
+          "entries"
+        ],
+        "title": "TablespaceSnapshotResponse",
         "type": "object"
       },
       "TimeWindow": {
@@ -2850,6 +3061,297 @@
           }
         },
         "summary": "Kill Instance Process"
+      }
+    },
+    "/instances/{instance_id}/slow-queries": {
+      "get": {
+        "operationId": "get_instance_slow_queries_instances__instance_id__slow_queries_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_duration_ms",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Duration Ms"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User"
+            }
+          },
+          {
+            "in": "query",
+            "name": "schema",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Schema"
+            }
+          },
+          {
+            "in": "query",
+            "name": "digest_prefix",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Digest Prefix"
+            }
+          },
+          {
+            "in": "query",
+            "name": "started_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Started After"
+            }
+          },
+          {
+            "in": "query",
+            "name": "started_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Started Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlowQuerySnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance Slow Queries"
+      }
+    },
+    "/instances/{instance_id}/tablespaces": {
+      "get": {
+        "operationId": "get_instance_tablespaces_instances__instance_id__tablespaces_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collected_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collected After"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collected_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collected Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablespaceSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance Tablespaces"
+      }
+    },
+    "/instances/{instance_id}/tablespaces/{tablespace_name}/history": {
+      "get": {
+        "operationId": "get_instance_tablespace_history_instances__instance_id__tablespaces__tablespace_name__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tablespace_name",
+            "required": true,
+            "schema": {
+              "title": "Tablespace Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablespaceHistoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance Tablespace History"
       }
     }
   }

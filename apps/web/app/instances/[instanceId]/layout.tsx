@@ -5,7 +5,7 @@ import {
 	type InstanceTabDescriptor,
 	InstanceTabNav,
 } from "../../../src/components/instance-tab-nav";
-import { requireServerSession } from "../../../src/server-api";
+import { createServerApiClient, requireServerSession } from "../../../src/server-api";
 
 interface InstanceDetailLayoutProps {
 	readonly children: ReactNode;
@@ -20,7 +20,12 @@ export default async function InstanceDetailLayout({
 }: InstanceDetailLayoutProps) {
 	const { instanceId } = await params;
 	const session = await requireServerSession(`/instances/${instanceId}`);
-	const tabs = buildInstanceTabs(instanceId);
+	const apiClient = await createServerApiClient();
+	const instance = await apiClient.getInstance(instanceId);
+	const tabs = buildInstanceTabs({
+		instanceId,
+		engine: instance.engine,
+	});
 
 	return (
 		<AppChrome session={session}>
@@ -32,17 +37,39 @@ export default async function InstanceDetailLayout({
 	);
 }
 
-function buildInstanceTabs(instanceId: string): readonly InstanceTabDescriptor[] {
-	return [
+interface InstanceTabsInput {
+	readonly instanceId: string;
+	readonly engine: "mysql" | "oracle";
+}
+
+function buildInstanceTabs(
+	input: InstanceTabsInput,
+): readonly InstanceTabDescriptor[] {
+	const tabs: InstanceTabDescriptor[] = [
 		{
-			href: `/instances/${instanceId}`,
+			href: `/instances/${input.instanceId}`,
 			label: "Overview",
 			segment: "overview",
 		},
 		{
-			href: `/instances/${instanceId}/processes`,
+			href: `/instances/${input.instanceId}/processes`,
 			label: "Processes",
 			segment: "processes",
 		},
 	];
+	if (input.engine === "mysql") {
+		tabs.push({
+			href: `/instances/${input.instanceId}/slow-queries`,
+			label: "Slow queries",
+			segment: "slow-queries",
+		});
+	}
+	if (input.engine === "oracle") {
+		tabs.push({
+			href: `/instances/${input.instanceId}/tablespaces`,
+			label: "表空间",
+			segment: "tablespaces",
+		});
+	}
+	return tabs;
 }

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export interface InstanceTabDescriptor {
 	readonly href: string;
 	readonly label: string;
-	readonly segment: "overview" | "processes";
+	readonly segment: "overview" | "processes" | "slow-queries" | "tablespaces";
 }
 
 interface InstanceTabNavProps {

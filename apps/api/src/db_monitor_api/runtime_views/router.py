@@ -48,7 +48,17 @@ class KillProcesslistResponse(BaseModel):
     notes: str | None
 
 
+_RUNTIME_SUBROUTERS_INCLUDED = False
+
+
 def build_runtime_router() -> APIRouter:
+    global _RUNTIME_SUBROUTERS_INCLUDED
+    from db_monitor_api.runtime_views import tablespaces  # noqa: F401
+    from db_monitor_api.runtime_views.slow_queries import router as slow_queries_router
+
+    if not _RUNTIME_SUBROUTERS_INCLUDED:
+        router.include_router(slow_queries_router)
+        _RUNTIME_SUBROUTERS_INCLUDED = True
     return router
 
 

@@ -19,6 +19,10 @@ test("phase-one release smoke flow", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "prod-primary" })).toBeVisible();
 	await expect(page.locator("canvas").first()).toBeVisible();
 
+	// Only Oracle instances surface the `表空间` tab (Epic 15 Slice 1 child #4).
+	// prod-primary is MySQL in the smoke fixture, so we assert the tab is absent.
+	await expect(page.getByRole("link", { name: "表空间" })).toHaveCount(0);
+
 	await page.getByRole("link", { name: "Processes" }).click();
 	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/processes$/);
 	await expect(page.getByRole("heading", { name: "Processes" })).toBeVisible();
@@ -31,6 +35,16 @@ test("phase-one release smoke flow", async ({ page }) => {
 	// (validation heading shows empty-state) and that no stray enabled Kill control leaks into DOM.
 	await expect(page.locator("table")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Kill" })).toHaveCount(0);
+
+	await page.getByRole("link", { name: "Slow queries" }).click();
+	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/slow-queries$/);
+	await expect(page.getByRole("heading", { name: "Slow queries" })).toBeVisible();
+	await page.getByLabel("Min duration (ms)").fill("1000");
+	await page.getByRole("button", { name: "Apply filters" }).click();
+	await expect(page).toHaveURL(
+		/\/instances\/inst-prod-primary\/slow-queries\?.*minDurationMs=1000/,
+	);
+	await expect(page.getByLabel("Min duration (ms)")).toHaveValue("1000");
 
 	await page.goto("/instances");
 	await page.getByLabel("Name", { exact: true }).fill("smoke-secondary");
