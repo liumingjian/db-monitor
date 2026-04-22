@@ -140,6 +140,9 @@ def _reset_live_state(env: dict[str, str]) -> None:
     with psycopg.connect(env["DB_MONITOR_POSTGRES_DSN"]) as connection:
         with connection.cursor() as cursor:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
+            cursor.execute("DROP TABLE IF EXISTS alert_rules")
+            cursor.execute("DROP TABLE IF EXISTS instance_parameters")
             cursor.execute("DROP TABLE IF EXISTS control_mysql_instances")
             cursor.execute("DROP TABLE IF EXISTS control_settings")
     bootstrap_postgres_schema(postgres_dsn=env["DB_MONITOR_POSTGRES_DSN"])

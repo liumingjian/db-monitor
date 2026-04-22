@@ -12,6 +12,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from db_monitor_api.analytics.repository import InMemoryAnalyticsRepository
+from db_monitor_api.runtime_views.repository import InMemoryProcesslistRepository
+from db_monitor_api.runtime_views.slow_query_repository import InMemorySlowQueryRepository
+from db_monitor_api.runtime_views.tablespace_repository import InMemoryTablespaceRepository
 from db_monitor_api.alerting.domain import (
     AlertEventType,
     AlertHistoryEvent,
@@ -60,6 +63,9 @@ def postgres_app(postgres_dsn: str) -> FastAPI:
             postgres_dsn=postgres_dsn,
             mysql_validator=StaticMySQLConnectionValidator(),
             oracle_validator=StaticOracleConnectionValidator(),
+            processlist_repository=InMemoryProcesslistRepository(),
+            slow_query_repository=InMemorySlowQueryRepository(),
+            tablespace_repository=InMemoryTablespaceRepository(),
         )
     )
 
@@ -254,6 +260,9 @@ def test_postgres_repository_persists_multi_engine_instances_and_settings(
         postgres_dsn=postgres_dsn,
         mysql_validator=StaticMySQLConnectionValidator(),
         oracle_validator=StaticOracleConnectionValidator(),
+        processlist_repository=InMemoryProcesslistRepository(),
+        slow_query_repository=InMemorySlowQueryRepository(),
+        tablespace_repository=InMemoryTablespaceRepository(),
     )
     assert reloaded_runtime.audit_repository.entries[-1].action == "rules.create"
 
@@ -325,7 +334,9 @@ def _reset_control_plane_tables(dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS audit_entries")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
+            cursor.execute("DROP TABLE IF EXISTS instance_parameters")
             cursor.execute("DROP TABLE IF EXISTS control_mysql_instances")
             cursor.execute("DROP TABLE IF EXISTS control_settings")
             cursor.execute("DROP TABLE IF EXISTS organization_memberships")

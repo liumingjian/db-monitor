@@ -162,6 +162,8 @@ def _reset_alert_tables(dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
+            cursor.execute("DROP TABLE IF EXISTS instance_parameters")
             cursor.execute("DROP TABLE IF EXISTS control_mysql_instances")
             cursor.execute("DROP TABLE IF EXISTS control_settings")

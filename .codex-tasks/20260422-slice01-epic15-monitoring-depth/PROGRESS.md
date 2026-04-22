@@ -9,10 +9,10 @@
 
 - 任务: Slice 1 / Epic 15 — Monitoring Depth & Rule Granularity
 - 形态: epic
-- 进度: 2/6
-- 当前: child #3 待启动 (MySQL slow query)
+- 进度: 6/6
+- 当前: Epic 15 CLOSED（三项 signoff 全绿）
 - 文件: `.codex-tasks/20260422-slice01-epic15-monitoring-depth/SUBTASKS.csv`
-- 下一步: 实施 child `#3`（`tasks/20260422-03-mysql-slow-query-shortwindow/SPEC.md`；独立于 child #1/#2）
+- 下一步: Epic 16（notifier reality）按 Transition Protocol 激活 —— 将 Epic 16 `SUBTASKS.csv #1` 从 PENDING 翻到 IN_PROGRESS
 
 ## Control Contract
 
@@ -41,6 +41,8 @@
 - 2026-04-22 Pre-flight 审计闭环：3 路 Explore subagent（采集层 / 控制面 / 前端 + schema + gates）+ 1 路 targeted probe（rule-engine 评估路径）完成，结论落 `docs/adr/0011-slice1-epic15-preflight-decisions.md`（accepted）——锁 D1 子路由 tab / D2 audit 命名 `<resource_plural>.<sub>.<verb>` / D3 `instance_parameters` JSONB 载体 / D5 acceptance 换口径（取代原 p95≤10% 硬边界，因无 baseline 不可验证）；EPIC.md / SUBTASKS.csv / child `#1`/#2/#3/#4/#5 SPEC 与 TODO 同步更新；child `#1` 解冻，可进入 TODO `#1`（`mysql_processlist` DDL + `instance_parameters` 表 migration）
 - 2026-04-22 child #1 CLOSED (6/6 TODOs DONE)：subagent 1 完成 schema / collector / API / OpenAPI snapshot（96 后端测试绿）；subagent 2 完成 web Processes tab（SSR 子路由 `app/instances/[instanceId]/layout.tsx` + `processes/page.tsx`、独立模型 `src/processlist-ui.ts`、8 列 + details info 悬浮、三档空态、筛选走 URL query）+ smoke (`pnpm smoke:web` 1 passed)；`pnpm --filter web typecheck` 0 errors；`pnpm --filter web test` 28/28；遗留：scheduler 集成未接入（真实采集链路独立决策项）
 - 2026-04-22 child #2 CLOSED (8/8 TODOs DONE)：subagent A 完成 backend：Permission.INSTANCES_ACTION、POST `/instances/{instance_id}/processlist/{process_id}/kill` 端点 + `ProcesslistKillService` + `PyMySQLProcesslistKiller` + 审计 `instances.process.kill` + 双保险 safety net（validation + monitor user）+ scheduler 接入（`ProcesslistScheduler` 纳入 `WorkerProcess.run_once()`，`DB_MONITOR_POSTGRES_DSN` 列为 worker 必选环境）+ OpenAPI snapshot 升 `0.11.0`；后端 140 tests 绿。subagent B 完成 web：`_components/kill-process-dialog.tsx`（client 组件，原生 `<dialog>` + React 19 `useActionState`）+ `kill-process-action.ts`（server action，直 fetch 保留 HTTP 状态码，翻译 401/403/404/409/502 → 中文 UX）+ `processlist-table.tsx` 新增 Actions 列（RBAC 渲染 + 双保险 disabled state）+ `processes/page.tsx` 拉 `apiClient.me()` 取 permissions + `src/processlist-ui.ts` 扩 pure helpers（`resolveKillRowState` / `hasKillPermission` / `mapKillStatusToCode` / `KILL_ERROR_FALLBACK`）+ `tests/processlist-ui.test.ts` 覆盖到 17 tests；`pnpm --filter web typecheck` 0 errors；`pnpm --filter web test` 37/37；`pnpm smoke:web` 1 passed（Playwright phase-one.spec.ts 追加了"Processes tab 空态下不泄漏 enabled Kill 按钮"断言）。scheduler 集成由 child #2 顺带落地（child #1 遗留项 closed）。
+- 2026-04-22 child #3/#4/#5 CLOSED (三路 worktree 并行)：child #3（MySQL slow query short-window）、child #4（Oracle tablespace view）、child #5（per-instance threshold overrides UI）分别在独立 worktree 完成后于主分支做 3-way merge（commit `a25939b`），API contract 升 `0.14.0`；三套新能力全部接入 `bootstrap.py` / `runtime.py` / `runtime_views/router.py` / `pipeline/processes.py` / `schema/clickhouse.py`；177 后端 unit + 72 web vitest + `pnpm openapi:check` 全部绿。
+- 2026-04-22 child #6 CLOSED (4/4 TODOs DONE)：`pnpm test:hardening:signoff` 首次跑出 5 处 FK drop-order bug（`rule_instance_overrides → alert_rules → instance_parameters → control_mysql_instances` 依赖序）与一个 `gates/schema/_worker_settings` 缺 `DB_MONITOR_POSTGRES_DSN` 的回归，按 Debug-First Policy 逐点 root-cause fix（`gates/alerting/` `gates/control_plane/` `gates/processes/` `gates/recovery/` `gates/schema/` `tests/integration/control_plane/`），最终 `pnpm test:hardening:signoff && pnpm test:schema:bootstrap && pnpm smoke:web` 三项 signoff 全绿；biome/mypy 硬化提取到独立 commit `5b149cb`；Close-Out Review 写入 child `#6` PROGRESS.md。Epic 15 关闭。
 
 ## Notes
 

@@ -101,6 +101,7 @@ def _worker_settings() -> WorkerProcessSettings:
             "DB_MONITOR_CLICKHOUSE_ENDPOINT": _required_env(CLICKHOUSE_ENDPOINT_ENV),
             "DB_MONITOR_CLICKHOUSE_PASSWORD": _required_env(CLICKHOUSE_PASSWORD_ENV),
             "DB_MONITOR_CLICKHOUSE_USERNAME": _required_env(CLICKHOUSE_USERNAME_ENV),
+            "DB_MONITOR_POSTGRES_DSN": _required_env(POSTGRES_DSN_ENV),
             "DB_MONITOR_REDIS_URL": "redis://127.0.0.1:6379/0",
         }
     )

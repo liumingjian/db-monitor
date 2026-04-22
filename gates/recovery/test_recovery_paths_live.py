@@ -257,6 +257,7 @@ def _reset_postgres_state(postgres_dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
 
 
