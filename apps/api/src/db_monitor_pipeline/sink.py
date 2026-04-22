@@ -6,8 +6,13 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from db_monitor_pipeline.domain import MetricSample
+from db_monitor_pipeline.processlist import (
+    ProcesslistSnapshot,
+    snapshot_to_clickhouse_rows,
+)
 
 CLICKHOUSE_METRICS_TABLE = "metric_samples"
+CLICKHOUSE_MYSQL_PROCESSLIST_TABLE = "mysql_processlist"
 
 
 class MetricSink(Protocol):
@@ -18,9 +23,13 @@ class MetricSink(Protocol):
 class InMemoryMetricSink:
     def __init__(self) -> None:
         self.samples: list[MetricSample] = []
+        self.processlist_snapshots: list[ProcesslistSnapshot] = []
 
     def write(self, samples: tuple[MetricSample, ...]) -> None:
         self.samples.extend(samples)
+
+    def write_processlist(self, snapshot: ProcesslistSnapshot) -> None:
+        self.processlist_snapshots.append(snapshot)
 
 
 class ClickHouseMetricSink:
@@ -42,6 +51,16 @@ class ClickHouseMetricSink:
             return
         payload = "\n".join(_sample_to_json(sample) for sample in samples).encode("utf-8")
         self._post(query=f"INSERT INTO {CLICKHOUSE_METRICS_TABLE} FORMAT JSONEachRow", payload=payload)
+
+    def write_processlist(self, snapshot: ProcesslistSnapshot) -> None:
+        rows = snapshot_to_clickhouse_rows(snapshot)
+        if not rows:
+            return
+        payload = "\n".join(json.dumps(row) for row in rows).encode("utf-8")
+        self._post(
+            query=f"INSERT INTO {CLICKHOUSE_MYSQL_PROCESSLIST_TABLE} FORMAT JSONEachRow",
+            payload=payload,
+        )
 
     def _post(self, *, payload: bytes, query: str) -> None:
         request = Request(

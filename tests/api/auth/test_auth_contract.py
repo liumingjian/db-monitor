@@ -26,6 +26,7 @@ def test_login_contract_returns_identity_and_permissions(client: TestClient) -> 
             }
         ],
         "permissions": [
+            "instances:action",
             "instances:read",
             "instances:write",
             "rules:read",
@@ -63,6 +64,7 @@ def test_admin_can_read_user_directory_and_role_catalog(client: TestClient) -> N
             "active_organization_id": "org-internal",
             "display_name": "Operations Engineer",
             "effective_permissions": [
+                "instances:action",
                 "instances:read",
                 "instances:write",
                 "rules:read",
@@ -77,6 +79,7 @@ def test_admin_can_read_user_directory_and_role_catalog(client: TestClient) -> N
             "active_organization_id": "org-internal",
             "display_name": "Platform Admin",
             "effective_permissions": [
+                "instances:action",
                 "instances:read",
                 "instances:write",
                 "rules:read",
@@ -105,6 +108,7 @@ def test_admin_can_read_user_directory_and_role_catalog(client: TestClient) -> N
     assert roles_response.json() == [
         {
             "permissions": [
+                "instances:action",
                 "instances:read",
                 "instances:write",
                 "rules:read",
@@ -116,6 +120,7 @@ def test_admin_can_read_user_directory_and_role_catalog(client: TestClient) -> N
         },
         {
             "permissions": [
+                "instances:action",
                 "instances:read",
                 "instances:write",
                 "rules:read",

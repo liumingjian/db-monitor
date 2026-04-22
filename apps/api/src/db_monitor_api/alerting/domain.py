@@ -40,6 +40,15 @@ def format_alert_engine(engine: DatabaseEngine) -> str:
 
 
 @dataclass(frozen=True)
+class RuleInstanceOverride:
+    instance_id: str
+    rule_id: str
+    updated_at: datetime
+    enabled: bool | None = None
+    threshold: float | None = None
+
+
+@dataclass(frozen=True)
 class AlertRule:
     created_at: datetime
     enabled: bool
@@ -52,6 +61,7 @@ class AlertRule:
     rule_id: str
     severity: RuleSeverity
     threshold: float
+    overrides: tuple[RuleInstanceOverride, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -156,7 +156,9 @@ def _reset_postgres_schema(postgres_dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
+            cursor.execute("DROP TABLE IF EXISTS instance_parameters")
             cursor.execute("DROP TABLE IF EXISTS control_mysql_instances")
             cursor.execute("DROP TABLE IF EXISTS control_settings")
 
@@ -164,20 +166,14 @@ def _reset_postgres_schema(postgres_dsn: str) -> None:
 def _reset_clickhouse_schema(settings: ApiSettings) -> None:
     database = _required_env(CLICKHOUSE_DATABASE_ENV)
     clickhouse = _clickhouse_settings(settings)
-    _run_clickhouse_query(
-        database=database,
-        endpoint=clickhouse.endpoint,
-        password=clickhouse.password,
-        query="DROP TABLE IF EXISTS schema_version",
-        username=clickhouse.username,
-    )
-    _run_clickhouse_query(
-        database=database,
-        endpoint=clickhouse.endpoint,
-        password=clickhouse.password,
-        query="DROP TABLE IF EXISTS metric_samples",
-        username=clickhouse.username,
-    )
+    for table in ("schema_version", "metric_samples", "mysql_processlist"):
+        _run_clickhouse_query(
+            database=database,
+            endpoint=clickhouse.endpoint,
+            password=clickhouse.password,
+            query=f"DROP TABLE IF EXISTS {table}",
+            username=clickhouse.username,
+        )
 
 
 def _clickhouse_settings(settings: ApiSettings) -> ClickHouseSettings:

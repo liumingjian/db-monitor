@@ -13,7 +13,6 @@ from db_monitor_api.auth.repository import (
     InMemoryAuditRepository,
     InMemorySessionRepository,
     InMemoryUserRepository,
-    SeedUser,
 )
 from db_monitor_api.auth.postgres_repository import PostgresAuditRepository
 from db_monitor_api.auth.service import (
@@ -22,7 +21,7 @@ from db_monitor_api.auth.service import (
     AuthorizationService,
     PasswordHasher,
 )
-from db_monitor_api.auth.domain import Organization, OrganizationMembership
+from db_monitor_api.auth.seed_users import default_seed_users
 from db_monitor_api.control_plane.mysql_validation import (
     MySQLConnectionValidator,
     PyMySQLConnectionValidator,
@@ -45,6 +44,17 @@ from db_monitor_api.health import (
     StaticDependencyCheck,
 )
 from db_monitor_api.runtime import AppRuntime
+from db_monitor_api.runtime_views.kill import (
+    ProcesslistKiller,
+    ProcesslistKillService,
+    PyMySQLProcesslistKiller,
+)
+from db_monitor_api.runtime_views.repository import (
+    ClickHouseProcesslistRepository,
+    InMemoryProcesslistRepository,
+    ProcesslistRepository,
+)
+from db_monitor_api.runtime_views.service import ProcesslistService
 from db_monitor_api.settings import ApiSettings, ClickHouseSettings, RuntimeMode
 from db_monitor_schema.runtime import verify_api_runtime_schema
 
@@ -69,6 +79,8 @@ def build_local_runtime(
     mysql_validator: MySQLConnectionValidator | None = None,
     oracle_validator: OracleConnectionValidator | None = None,
     notifier: Notifier | None = None,
+    processlist_repository: ProcesslistRepository | None = None,
+    processlist_killer: ProcesslistKiller | None = None,
 ) -> AppRuntime:
     return _build_runtime(
         analytics_repository=analytics_repository or InMemoryAnalyticsRepository(),
@@ -85,6 +97,8 @@ def build_local_runtime(
         mysql_validator=mysql_validator or PyMySQLConnectionValidator(),
         oracle_validator=oracle_validator or PythonOracleConnectionValidator(),
         notifier=notifier or InMemoryNotifier(),
+        processlist_repository=processlist_repository or InMemoryProcesslistRepository(),
+        processlist_killer=processlist_killer or PyMySQLProcesslistKiller(),
         runtime_mode=RuntimeMode.LOCAL.value,
     )
 
@@ -99,6 +113,8 @@ def build_postgres_runtime(
     mysql_validator: MySQLConnectionValidator | None = None,
     oracle_validator: OracleConnectionValidator | None = None,
     notifier: Notifier | None = None,
+    processlist_repository: ProcesslistRepository | None = None,
+    processlist_killer: ProcesslistKiller | None = None,
 ) -> AppRuntime:
     verify_api_runtime_schema(
         analytics_repository=analytics_repository,
@@ -106,6 +122,9 @@ def build_postgres_runtime(
         postgres_dsn=postgres_dsn,
     )
     resolved_analytics = analytics_repository or _build_clickhouse_analytics_repository(clickhouse)
+    resolved_processlist = processlist_repository or _build_clickhouse_processlist_repository(
+        clickhouse
+    )
     return _build_runtime(
         analytics_repository=resolved_analytics,
         alerting_repository=alerting_repository or PostgresAlertingRepository(postgres_dsn=postgres_dsn),
@@ -120,6 +139,8 @@ def build_postgres_runtime(
         mysql_validator=mysql_validator or PyMySQLConnectionValidator(),
         oracle_validator=oracle_validator or PythonOracleConnectionValidator(),
         notifier=notifier or InMemoryNotifier(),
+        processlist_repository=resolved_processlist,
+        processlist_killer=processlist_killer or PyMySQLProcesslistKiller(),
         runtime_mode=RuntimeMode.POSTGRES.value,
     )
 
@@ -134,6 +155,8 @@ def _build_runtime(
     mysql_validator: MySQLConnectionValidator,
     oracle_validator: OracleConnectionValidator,
     notifier: Notifier,
+    processlist_repository: ProcesslistRepository,
+    processlist_killer: ProcesslistKiller,
     runtime_mode: str,
 ) -> AppRuntime:
     password_hasher = PasswordHasher()
@@ -143,7 +166,7 @@ def _build_runtime(
         password_hasher=password_hasher,
         session_repository=InMemorySessionRepository(),
         user_repository=InMemoryUserRepository.from_seed_users(
-            seed_users=_default_seed_users(),
+            seed_users=default_seed_users(),
             password_hasher=password_hasher,
         ),
     )
@@ -169,6 +192,15 @@ def _build_runtime(
             notifier=notifier,
             repository=alerting_repository,
         ),
+        processlist_service=ProcesslistService(
+            control_plane_repository=control_plane_repository,
+            processlist_repository=processlist_repository,
+        ),
+        processlist_kill_service=ProcesslistKillService(
+            audit_service=audit_service,
+            control_plane_repository=control_plane_repository,
+            killer=processlist_killer,
+        ),
         readiness_probe=ReadinessProbe(checks=dependency_checks),
         runtime_mode=runtime_mode,
         settings_service=SettingsService(
@@ -186,6 +218,21 @@ def _build_clickhouse_analytics_repository(
             "ClickHouse settings are required when no analytics repository is injected."
         )
     return ClickHouseAnalyticsRepository(
+        database=clickhouse.database,
+        endpoint=clickhouse.endpoint,
+        password=clickhouse.password,
+        username=clickhouse.username,
+    )
+
+
+def _build_clickhouse_processlist_repository(
+    clickhouse: ClickHouseSettings | None,
+) -> ProcesslistRepository:
+    if clickhouse is None:
+        raise RuntimeError(
+            "ClickHouse settings are required when no processlist repository is injected."
+        )
+    return ClickHouseProcesslistRepository(
         database=clickhouse.database,
         endpoint=clickhouse.endpoint,
         password=clickhouse.password,
@@ -223,53 +270,3 @@ def _build_postgres_dependency_checks(
     return tuple(checks)
 
 
-def _default_seed_users() -> tuple[SeedUser, ...]:
-    default_organization = Organization(
-        organization_id="org-internal",
-        name="Internal Operations",
-        slug="internal-ops",
-    )
-    return (
-        SeedUser(
-            active_organization_id=default_organization.organization_id,
-            user_id="user-admin",
-            username="admin",
-            password="admin-password",
-            display_name="Platform Admin",
-            organization_memberships=(
-                OrganizationMembership(
-                    organization=default_organization,
-                    roles=frozenset({"admin"}),
-                ),
-            ),
-            roles=frozenset({"admin"}),
-        ),
-        SeedUser(
-            active_organization_id=default_organization.organization_id,
-            user_id="user-ops",
-            username="operator",
-            password="operator-password",
-            display_name="Operations Engineer",
-            organization_memberships=(
-                OrganizationMembership(
-                    organization=default_organization,
-                    roles=frozenset({"operator"}),
-                ),
-            ),
-            roles=frozenset({"operator"}),
-        ),
-        SeedUser(
-            active_organization_id=default_organization.organization_id,
-            user_id="user-viewer",
-            username="viewer",
-            password="viewer-password",
-            display_name="Read Only User",
-            organization_memberships=(
-                OrganizationMembership(
-                    organization=default_organization,
-                    roles=frozenset({"viewer"}),
-                ),
-            ),
-            roles=frozenset({"viewer"}),
-        ),
-    )

@@ -265,6 +265,13 @@
             "title": "Operator",
             "type": "string"
           },
+          "overrides": {
+            "items": {
+              "$ref": "#/components/schemas/RuleOverrideResponse"
+            },
+            "title": "Overrides",
+            "type": "array"
+          },
           "rule_id": {
             "title": "Rule Id",
             "type": "string"
@@ -286,6 +293,7 @@
           "metric_name",
           "name",
           "operator",
+          "overrides",
           "rule_id",
           "severity",
           "threshold"
@@ -432,6 +440,13 @@
           },
           "operator": {
             "$ref": "#/components/schemas/RuleOperator"
+          },
+          "overrides": {
+            "items": {
+              "$ref": "#/components/schemas/RuleOverrideRequest"
+            },
+            "title": "Overrides",
+            "type": "array"
           },
           "severity": {
             "$ref": "#/components/schemas/RuleSeverity"
@@ -671,6 +686,53 @@
           "window"
         ],
         "title": "InstanceTrendResponse",
+        "type": "object"
+      },
+      "KillProcesslistRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "KillProcesslistRequest",
+        "type": "object"
+      },
+      "KillProcesslistResponse": {
+        "properties": {
+          "checked_at": {
+            "title": "Checked At",
+            "type": "string"
+          },
+          "killed": {
+            "title": "Killed",
+            "type": "boolean"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "checked_at",
+          "killed",
+          "notes"
+        ],
+        "title": "KillProcesslistResponse",
         "type": "object"
       },
       "LoginRequest": {
@@ -1038,6 +1100,94 @@
         "title": "OverviewSummaryResponse",
         "type": "object"
       },
+      "ProcesslistEntryResponse": {
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "db": {
+            "title": "Db",
+            "type": "string"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string"
+          },
+          "info": {
+            "title": "Info",
+            "type": "string"
+          },
+          "process_id": {
+            "title": "Process Id",
+            "type": "integer"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "time_seconds": {
+            "title": "Time Seconds",
+            "type": "integer"
+          },
+          "trx_started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trx Started At"
+          },
+          "user": {
+            "title": "User",
+            "type": "string"
+          }
+        },
+        "required": [
+          "process_id",
+          "user",
+          "host",
+          "db",
+          "command",
+          "time_seconds",
+          "state",
+          "info",
+          "trx_started_at"
+        ],
+        "title": "ProcesslistEntryResponse",
+        "type": "object"
+      },
+      "ProcesslistSnapshotResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ProcesslistEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "snapshot_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot At"
+          }
+        },
+        "required": [
+          "snapshot_at",
+          "entries"
+        ],
+        "title": "ProcesslistSnapshotResponse",
+        "type": "object"
+      },
       "RoleCatalogEntryResponse": {
         "properties": {
           "permissions": {
@@ -1068,6 +1218,83 @@
         ],
         "title": "RuleOperator",
         "type": "string"
+      },
+      "RuleOverrideRequest": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          }
+        },
+        "required": [
+          "instance_id"
+        ],
+        "title": "RuleOverrideRequest",
+        "type": "object"
+      },
+      "RuleOverrideResponse": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "instance_id",
+          "threshold",
+          "updated_at"
+        ],
+        "title": "RuleOverrideResponse",
+        "type": "object"
       },
       "RuleSeverity": {
         "enum": [
@@ -1160,6 +1387,60 @@
         ],
         "title": "TimeWindow",
         "type": "string"
+      },
+      "UpdateRuleRequest": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/DatabaseEngine"
+          },
+          "instance_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Instance Ids",
+            "type": "array"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/RuleOperator"
+          },
+          "overrides": {
+            "items": {
+              "$ref": "#/components/schemas/RuleOverrideRequest"
+            },
+            "title": "Overrides",
+            "type": "array"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/RuleSeverity"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "enabled",
+          "engine",
+          "metric_name",
+          "name",
+          "operator",
+          "severity",
+          "threshold"
+        ],
+        "title": "UpdateRuleRequest",
+        "type": "object"
       },
       "UpdateSettingRequest": {
         "properties": {
@@ -1472,6 +1753,92 @@
           }
         },
         "summary": "Create Rule"
+      }
+    },
+    "/alerts/rules/{rule_id}": {
+      "get": {
+        "operationId": "get_rule_alerts_rules__rule_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Rule"
+      },
+      "put": {
+        "operationId": "update_rule_alerts_rules__rule_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Rule"
       }
     },
     "/alerts/{alert_id}": {
@@ -2268,6 +2635,221 @@
         "tags": [
           "health"
         ]
+      }
+    },
+    "/instances/{instance_id}/processlist": {
+      "get": {
+        "operationId": "get_instance_processlist_instances__instance_id__processlist_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User"
+            }
+          },
+          {
+            "in": "query",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          },
+          {
+            "in": "query",
+            "name": "command",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Command"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_time_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Time Seconds"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collected_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collected After"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collected_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collected Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcesslistSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance Processlist"
+      }
+    },
+    "/instances/{instance_id}/processlist/{process_id}/kill": {
+      "post": {
+        "operationId": "kill_instance_process_instances__instance_id__processlist__process_id__kill_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "title": "Process Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/KillProcesslistRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillProcesslistResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Kill Instance Process"
       }
     }
   }

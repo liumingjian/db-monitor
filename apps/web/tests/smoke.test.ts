@@ -9,6 +9,7 @@ describe("smoke flow", () => {
 			"/overview",
 			"/instances",
 			"/instances/inst-prod-primary",
+			"/instances/inst-prod-primary/processes",
 			"/alerts",
 			"/alerts/alert-lag",
 			"/rules",

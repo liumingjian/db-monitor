@@ -187,6 +187,19 @@ export interface InstanceTrendResponse {
 	readonly window: TimeWindow;
 }
 
+export interface RuleOverrideRequest {
+	readonly instance_id: string;
+	readonly enabled?: boolean | null;
+	readonly threshold?: number | null;
+}
+
+export interface RuleOverrideResponse {
+	readonly enabled: boolean | null;
+	readonly instance_id: string;
+	readonly threshold: number | null;
+	readonly updated_at: string;
+}
+
 export interface AlertRuleResponse {
 	readonly created_at: string;
 	readonly enabled: boolean;
@@ -195,6 +208,7 @@ export interface AlertRuleResponse {
 	readonly metric_name: string;
 	readonly name: string;
 	readonly operator: string;
+	readonly overrides: readonly RuleOverrideResponse[];
 	readonly rule_id: string;
 	readonly severity: string;
 	readonly threshold: number;
@@ -207,6 +221,19 @@ export interface CreateAlertRuleRequest {
 	readonly metric_name: string;
 	readonly name: string;
 	readonly operator: "gt" | "gte" | "lt" | "lte";
+	readonly overrides?: readonly RuleOverrideRequest[];
+	readonly severity: "warning" | "critical";
+	readonly threshold: number;
+}
+
+export interface UpdateAlertRuleRequest {
+	readonly enabled: boolean;
+	readonly engine: DatabaseEngine;
+	readonly instance_ids: readonly string[];
+	readonly metric_name: string;
+	readonly name: string;
+	readonly operator: "gt" | "gte" | "lt" | "lte";
+	readonly overrides?: readonly RuleOverrideRequest[];
 	readonly severity: "warning" | "critical";
 	readonly threshold: number;
 }
@@ -268,6 +295,43 @@ export interface AlertDetailResponse {
 	readonly record: AlertRecordResponse;
 }
 
+export interface ProcesslistEntryResponse {
+	readonly process_id: number;
+	readonly user: string;
+	readonly host: string;
+	readonly db: string;
+	readonly command: string;
+	readonly time_seconds: number;
+	readonly state: string;
+	readonly info: string;
+	readonly trx_started_at: string | null;
+}
+
+export interface ProcesslistSnapshotResponse {
+	readonly snapshot_at: string | null;
+	readonly entries: readonly ProcesslistEntryResponse[];
+}
+
+export interface ListProcesslistFilters {
+	readonly collected_after?: string;
+	readonly collected_before?: string;
+	readonly command?: string;
+	readonly host?: string;
+	readonly limit?: number;
+	readonly min_time_seconds?: number;
+	readonly user?: string;
+}
+
+export interface KillProcesslistRequest {
+	readonly reason?: string;
+}
+
+export interface KillProcesslistResponse {
+	readonly checked_at: string;
+	readonly killed: boolean;
+	readonly notes: string | null;
+}
+
 export interface ApiClient {
 	readonly baseUrl: string;
 	readonly contractVersion: string;
@@ -278,8 +342,19 @@ export interface ApiClient {
 	createMySQLInstance(request: CreateMySQLInstanceRequest): Promise<InstanceResponse>;
 	createRule(request: CreateAlertRuleRequest): Promise<AlertRuleResponse>;
 	getAlert(alertId: string): Promise<AlertDetailResponse>;
+	getRule(ruleId: string): Promise<AlertRuleResponse>;
+	updateRule(ruleId: string, request: UpdateAlertRuleRequest): Promise<AlertRuleResponse>;
 	getInstance(instanceId: string): Promise<InstanceResponse>;
 	getMySQLInstance(instanceId: string): Promise<InstanceResponse>;
+	getInstanceProcesslist(
+		instanceId: string,
+		filters?: ListProcesslistFilters,
+	): Promise<ProcesslistSnapshotResponse>;
+	killProcess(
+		instanceId: string,
+		processId: number,
+		request?: KillProcesslistRequest,
+	): Promise<KillProcesslistResponse>;
 	getInstanceTrends(instanceId: string, window: TimeWindow): Promise<InstanceTrendResponse>;
 	getOverview(window: TimeWindow): Promise<OverviewResponse>;
 	listInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
@@ -300,7 +375,7 @@ export interface ApiClient {
 	updateUserRoles(userId: string, request: UpdateUserRolesRequest): Promise<ManagedUserResponse>;
 }
 
-export const API_CONTRACT_VERSION = "0.10.0";
+export const API_CONTRACT_VERSION = "0.12.0";
 export const apiClientPackageName = "@db-monitor/api-client";
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -338,7 +413,25 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 				method: "POST",
 			}),
 		getAlert: (alertId) => request<AlertDetailResponse>(`/alerts/${alertId}`),
+		getRule: (ruleId) => request<AlertRuleResponse>(`/alerts/rules/${ruleId}`),
+		updateRule: (ruleId, payload) =>
+			request<AlertRuleResponse>(`/alerts/rules/${ruleId}`, {
+				body: JSON.stringify(payload),
+				method: "PUT",
+			}),
 		getInstance: (instanceId) => request<InstanceResponse>(`/control/instances/${instanceId}`),
+		getInstanceProcesslist: (instanceId, filters) =>
+			request<ProcesslistSnapshotResponse>(
+				`/instances/${instanceId}/processlist${buildQueryString(filters)}`,
+			),
+		killProcess: (instanceId, processId, payload) =>
+			request<KillProcesslistResponse>(
+				`/instances/${instanceId}/processlist/${processId}/kill`,
+				{
+					body: JSON.stringify(payload ?? {}),
+					method: "POST",
+				},
+			),
 		getMySQLInstance: (instanceId) =>
 			request<InstanceResponse>(`/control/mysql-instances/${instanceId}`),
 		getInstanceTrends: (instanceId, window) =>
@@ -377,7 +470,9 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 	};
 }
 
-function buildQueryString(filters: ListAlertsFilters | ListInstancesFilters | undefined): string {
+function buildQueryString(
+	filters: ListAlertsFilters | ListInstancesFilters | ListProcesslistFilters | undefined,
+): string {
 	if (filters === undefined) {
 		return "";
 	}

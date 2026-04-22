@@ -9,6 +9,7 @@ from db_monitor_api.alerting.domain import (
     AlertRecord,
     AlertRule,
     AlertStatus,
+    RuleInstanceOverride,
     RuleOperator,
     RuleSeverity,
 )
@@ -17,13 +18,31 @@ from db_monitor_api.alerting.catalog import (
     AlertMetricCatalogEntry,
     list_alert_metric_catalog,
 )
-from db_monitor_api.alerting.service import AlertNotFoundError, AlertWorkflowValidationError
+from db_monitor_api.alerting.service import (
+    AlertNotFoundError,
+    AlertWorkflowValidationError,
+    OverrideDraft,
+    RuleNotFoundError,
+)
 from db_monitor_api.auth.domain import AuthContext, Permission
 from db_monitor_api.control_plane.domain import DatabaseEngine
 from db_monitor_api.dependencies import get_runtime, require_permission_dependency
 from db_monitor_api.runtime import AppRuntime
 
 router = APIRouter()
+
+
+class RuleOverrideRequest(BaseModel):
+    instance_id: str
+    enabled: bool | None = None
+    threshold: float | None = None
+
+
+class RuleOverrideResponse(BaseModel):
+    enabled: bool | None
+    instance_id: str
+    threshold: float | None
+    updated_at: str
 
 
 class CreateRuleRequest(BaseModel):
@@ -33,6 +52,19 @@ class CreateRuleRequest(BaseModel):
     metric_name: str
     name: str
     operator: RuleOperator
+    overrides: list[RuleOverrideRequest] = Field(default_factory=list)
+    severity: RuleSeverity
+    threshold: float
+
+
+class UpdateRuleRequest(BaseModel):
+    enabled: bool
+    engine: DatabaseEngine
+    instance_ids: list[str] = Field(default_factory=list)
+    metric_name: str
+    name: str
+    operator: RuleOperator
+    overrides: list[RuleOverrideRequest] = Field(default_factory=list)
     severity: RuleSeverity
     threshold: float
 
@@ -53,6 +85,7 @@ class AlertRuleResponse(BaseModel):
     metric_name: str
     name: str
     operator: str
+    overrides: list[RuleOverrideResponse]
     rule_id: str
     severity: str
     threshold: float
@@ -121,12 +154,71 @@ def create_rule(
             name=payload.name,
             operator=payload.operator,
             organization_id=context.active_organization.organization_id,
+            overrides=_to_override_drafts(payload.overrides),
             severity=payload.severity,
             threshold=payload.threshold,
         )
     except AlertWorkflowValidationError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
     return _build_rule_response(rule)
+
+
+@router.get("/alerts/rules/{rule_id}", response_model=AlertRuleResponse)
+def get_rule(
+    rule_id: str,
+    context: AuthContext = Depends(require_permission_dependency(Permission.RULES_READ, "rules")),
+    runtime: AppRuntime = Depends(get_runtime),
+) -> AlertRuleResponse:
+    try:
+        rule = runtime.alerting_service.get_rule(
+            rule_id=rule_id,
+            organization_id=context.active_organization.organization_id,
+        )
+    except RuleNotFoundError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    return _build_rule_response(rule)
+
+
+@router.put("/alerts/rules/{rule_id}", response_model=AlertRuleResponse)
+def update_rule(
+    rule_id: str,
+    payload: UpdateRuleRequest,
+    context: AuthContext = Depends(require_permission_dependency(Permission.RULES_WRITE, "rules")),
+    runtime: AppRuntime = Depends(get_runtime),
+) -> AlertRuleResponse:
+    try:
+        rule = runtime.alerting_service.update_rule(
+            actor_user_id=context.user.user_id,
+            enabled=payload.enabled,
+            engine=payload.engine,
+            instance_ids=tuple(payload.instance_ids),
+            metric_name=payload.metric_name,
+            name=payload.name,
+            operator=payload.operator,
+            organization_id=context.active_organization.organization_id,
+            overrides=_to_override_drafts(payload.overrides),
+            rule_id=rule_id,
+            severity=payload.severity,
+            threshold=payload.threshold,
+        )
+    except RuleNotFoundError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except AlertWorkflowValidationError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    return _build_rule_response(rule)
+
+
+def _to_override_drafts(
+    overrides: list[RuleOverrideRequest],
+) -> tuple[OverrideDraft, ...]:
+    return tuple(
+        OverrideDraft(
+            enabled=item.enabled,
+            instance_id=item.instance_id,
+            threshold=item.threshold,
+        )
+        for item in overrides
+    )
 
 
 @router.get("/alerts/rules", response_model=list[AlertRuleResponse])
@@ -260,9 +352,19 @@ def _build_rule_response(rule: AlertRule) -> AlertRuleResponse:
         metric_name=rule.metric_name,
         name=rule.name,
         operator=rule.operator.value,
+        overrides=[_build_override_response(item) for item in rule.overrides],
         rule_id=rule.rule_id,
         severity=rule.severity.value,
         threshold=rule.threshold,
+    )
+
+
+def _build_override_response(override: RuleInstanceOverride) -> RuleOverrideResponse:
+    return RuleOverrideResponse(
+        enabled=override.enabled,
+        instance_id=override.instance_id,
+        threshold=override.threshold,
+        updated_at=override.updated_at.isoformat(),
     )
 
 

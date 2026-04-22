@@ -8,6 +8,7 @@ from db_monitor_api.auth.router import build_auth_router
 from db_monitor_api.control_plane.router import build_control_plane_router
 from db_monitor_api.health import ReadinessSnapshot
 from db_monitor_api.runtime import AppRuntime
+from db_monitor_api.runtime_views.router import build_runtime_router
 
 
 def create_app(*, runtime: AppRuntime) -> FastAPI:
@@ -30,6 +31,7 @@ def create_app(*, runtime: AppRuntime) -> FastAPI:
     app.include_router(build_analytics_router())
     app.include_router(build_alerting_router())
     app.include_router(build_control_plane_router())
+    app.include_router(build_runtime_router())
     return app
 
 

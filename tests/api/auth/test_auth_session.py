@@ -106,6 +106,7 @@ def test_admin_can_update_existing_user_roles_and_audit_change(
         "active_organization_id": "org-internal",
         "display_name": "Read Only User",
         "effective_permissions": [
+            "instances:action",
             "instances:read",
             "instances:write",
             "rules:read",
@@ -131,6 +132,7 @@ def test_admin_can_update_existing_user_roles_and_audit_change(
     assert me_response.status_code == 200
     assert me_response.json()["roles"] == ["operator"]
     assert me_response.json()["permissions"] == [
+        "instances:action",
         "instances:read",
         "instances:write",
         "rules:read",

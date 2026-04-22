@@ -21,8 +21,10 @@ POSTGRES_REQUIRED_TABLES: Final[tuple[str, ...]] = (
     "audit_entries",
     "control_mysql_instances",
     "control_settings",
+    "instance_parameters",
     "organization_memberships",
     "organizations",
+    "rule_instance_overrides",
 )
 POSTGRES_BOOTSTRAP_COMMAND = "uv run python -m db_monitor_schema bootstrap-postgres"
 _POSTGRES_REQUIRED_TABLE_NAMES = ", ".join(f"'{table_name}'" for table_name in POSTGRES_REQUIRED_TABLES)
@@ -135,6 +137,23 @@ CREATE TABLE IF NOT EXISTS audit_entries (
     outcome TEXT NOT NULL,
     resource TEXT NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+)
+"""
+_CREATE_INSTANCE_PARAMETERS_SQL = """
+CREATE TABLE IF NOT EXISTS instance_parameters (
+    instance_id TEXT PRIMARY KEY REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE,
+    parameters JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+"""
+_CREATE_RULE_INSTANCE_OVERRIDES_SQL = """
+CREATE TABLE IF NOT EXISTS rule_instance_overrides (
+    rule_id TEXT NOT NULL REFERENCES alert_rules (rule_id) ON DELETE CASCADE,
+    instance_id TEXT NOT NULL REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE,
+    threshold DOUBLE PRECISION NULL,
+    enabled BOOLEAN NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (rule_id, instance_id)
 )
 """
 _CREATE_VERSION_TABLE_SQL = f"""
@@ -419,6 +438,8 @@ def bootstrap_postgres_schema(*, postgres_dsn: str) -> SchemaVersion:
             cursor.execute(_SET_ALERT_HISTORY_ORGANIZATION_NOT_NULL_SQL)
             cursor.execute(_ENSURE_ALERT_HISTORY_ORGANIZATION_FK_SQL)
             cursor.execute(_CREATE_AUDIT_ENTRIES_SQL)
+            cursor.execute(_CREATE_INSTANCE_PARAMETERS_SQL)
+            cursor.execute(_CREATE_RULE_INSTANCE_OVERRIDES_SQL)
             cursor.execute(
                 _UPSERT_VERSION_SQL,
                 (POSTGRES_SCHEMA_SCOPE, POSTGRES_SCHEMA_VERSION, updated_at),

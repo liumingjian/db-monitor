@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Publish RuleHitEvent from rule-engine,PENDING,"rule-engine 命中后发 event；现有评估路径不变；event 携带 rule/instance/metric 快照","uv run pytest tests/rule_engine/test_hit_event_publish.py -q",,0,
+2,Implement dispatch.service.dispatch with asyncio.create_task fire-and-forget,PENDING,"dispatch 调用在 rule-engine 内 ≤100ms 返回；实际发送异步完成","uv run pytest tests/api/alerting/notification/test_e2e_dispatch.py -q",,0,
+3,Implement feishu→smtp fallback policy,PENDING,"同事件 feishu 3 次重试全失败 → 调用 smtp binding（若存在）；两次 history 行","uv run pytest tests/api/alerting/notification/test_fallback.py -q",,0,
+4,Add backpressure regression test,PENDING,"Notifier sleep 10s，rule-engine p95 不受影响；对比基线回归 ≤10%","uv run pytest tests/rule_engine/test_dispatch_backpressure.py -q",,0,
+5,Add pnpm test:notifier:signoff gate,PENDING,"package.json 新增 script；CI 入口；本子任务通过即 gate 就绪","pnpm test:notifier:signoff",,0,"signoff 聚合 #1-#3 的测试 + 回归"

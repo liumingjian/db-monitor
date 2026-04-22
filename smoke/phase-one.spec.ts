@@ -19,6 +19,19 @@ test("phase-one release smoke flow", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "prod-primary" })).toBeVisible();
 	await expect(page.locator("canvas").first()).toBeVisible();
 
+	await page.getByRole("link", { name: "Processes" }).click();
+	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/processes$/);
+	await expect(page.getByRole("heading", { name: "Processes" })).toBeVisible();
+	await page.getByLabel("User").fill("root");
+	await page.getByRole("button", { name: "Apply filters" }).click();
+	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/processes\?.*user=root/);
+	await expect(page.getByLabel("User")).toHaveValue("root");
+	// Admin session has instances:action, so Kill UI (button/dialog) MUST load without runtime errors.
+	// Smoke fixture seeds no processlist entries, so we only assert the page still renders cleanly
+	// (validation heading shows empty-state) and that no stray enabled Kill control leaks into DOM.
+	await expect(page.locator("table")).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Kill" })).toHaveCount(0);
+
 	await page.goto("/instances");
 	await page.getByLabel("Name", { exact: true }).fill("smoke-secondary");
 	await page.getByLabel("Environment").fill("stage");

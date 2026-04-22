@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Run hardening signoff and fix any regression,PENDING,"pnpm test:hardening:signoff 通过；若失败只修回归，不扩 scope","pnpm test:hardening:signoff",,0,
+2,Run schema bootstrap gate,PENDING,"pnpm test:schema:bootstrap 通过；3 张新 CH 表 + 1 张 PG 表 asserted 创建","pnpm test:schema:bootstrap",,0,
+3,Run web smoke over 4 new surfaces,PENDING,"pnpm smoke:web 覆盖 Processes / Slow queries / Tablespaces / Rule overrides 主路径","pnpm smoke:web",,0,
+4,Finalize SUBTASKS.csv / PROGRESS.md / EPIC.md close-out,PENDING,"SUBTASKS.csv 全 DONE；PROGRESS.md Recovery 6/6；EPIC.md 追加 Close-Out Review","bash -lc 'grep -q \"进度: 6/6\" .codex-tasks/20260422-slice01-epic15-monitoring-depth/PROGRESS.md'",,0,

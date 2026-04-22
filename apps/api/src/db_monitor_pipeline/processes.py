@@ -3,9 +3,21 @@ from dataclasses import dataclass
 import time
 from typing import Protocol, TypeVar
 
+from db_monitor_api.control_plane.instance_parameters import (
+    PostgresInstanceParameterRepository,
+)
 from db_monitor_api.control_plane.postgres_repository import PostgresControlPlaneRepository
 from db_monitor_pipeline.collector import PyMySQLMetricsCollector, PythonOracleMetricsCollector
 from db_monitor_pipeline.process_settings import SchedulerProcessSettings, WorkerProcessSettings
+from db_monitor_pipeline.processlist import (
+    MYSQL_PROCESSLIST_TIMEOUT_SECONDS,
+    PyMySQLProcesslistCollector,
+    ProcesslistWorker,
+)
+from db_monitor_pipeline.processlist_scheduler import (
+    ProcesslistScheduler,
+    reduce_cycle_to_run_result,
+)
 from db_monitor_pipeline.queue import RedisCollectionTaskQueue
 from db_monitor_pipeline.scheduler import MetricsDispatchService
 from db_monitor_pipeline.sink import ClickHouseMetricSink
@@ -67,10 +79,17 @@ class SchedulerProcess:
 class WorkerProcess:
     poll_seconds: float
     process_worker: ProcessWorker
+    processlist_scheduler: ProcesslistScheduler | None = None
     sleep: SleepFn = time.sleep
 
     def run_once(self) -> WorkerRunResult:
-        return self.process_worker.process_next()
+        queue_result = self.process_worker.process_next()
+        if self.processlist_scheduler is None:
+            return queue_result
+        processlist_result = reduce_cycle_to_run_result(
+            self.processlist_scheduler.run_cycle(),
+        )
+        return _combine_worker_results(queue_result, processlist_result)
 
     def run_loop(self, *, max_cycles: int | None) -> WorkerRunResult:
         return _run_loop(
@@ -79,6 +98,37 @@ class WorkerProcess:
             run_cycle=self.run_once,
             sleep=self.sleep,
         )
+
+
+def _combine_worker_results(
+    queue_result: WorkerRunResult,
+    processlist_result: WorkerRunResult,
+) -> WorkerRunResult:
+    # Failures dominate so the outer loop / supervisor can react. Processed
+    # metric counts aggregate so observability does not lose either signal.
+    if queue_result.status == "failed" or processlist_result.status == "failed":
+        errors = tuple(
+            message
+            for message in (queue_result.error, processlist_result.error)
+            if message is not None
+        )
+        return WorkerRunResult(
+            error="; ".join(errors) if errors else "worker cycle failed",
+            next_retry_at=queue_result.next_retry_at,
+            processed_metrics=queue_result.processed_metrics
+            + processlist_result.processed_metrics,
+            retry_attempt=queue_result.retry_attempt,
+            status="failed",
+        )
+    total = queue_result.processed_metrics + processlist_result.processed_metrics
+    status = "processed" if total > 0 else "idle"
+    return WorkerRunResult(
+        error=None,
+        next_retry_at=None,
+        processed_metrics=total,
+        retry_attempt=queue_result.retry_attempt,
+        status=status,
+    )
 
 
 def build_scheduler_process(settings: SchedulerProcessSettings) -> SchedulerProcess:
@@ -104,6 +154,9 @@ def build_worker_process(settings: WorkerProcessSettings) -> WorkerProcess:
         password=settings.clickhouse.password,
         username=settings.clickhouse.username,
     )
+    control_plane_repository = PostgresControlPlaneRepository(
+        postgres_dsn=settings.postgres_dsn,
+    )
     return WorkerProcess(
         poll_seconds=settings.poll_seconds,
         process_worker=EngineAwareMetricsWorker(
@@ -126,6 +179,18 @@ def build_worker_process(settings: WorkerProcessSettings) -> WorkerProcess:
                 sink=sink,
             ),
             queue=queue,
+        ),
+        processlist_scheduler=ProcesslistScheduler(
+            control_plane_repository=control_plane_repository,
+            parameter_reader=PostgresInstanceParameterRepository(
+                postgres_dsn=settings.postgres_dsn,
+            ),
+            worker=ProcesslistWorker(
+                collector=PyMySQLProcesslistCollector(
+                    timeout_seconds=MYSQL_PROCESSLIST_TIMEOUT_SECONDS,
+                ),
+                sink=sink,
+            ),
         ),
     )
 

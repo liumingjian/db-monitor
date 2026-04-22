@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from db_monitor_api.settings import ClickHouseSettings
-from db_monitor_pipeline.sink import CLICKHOUSE_METRICS_TABLE
+from db_monitor_pipeline.sink import CLICKHOUSE_METRICS_TABLE, CLICKHOUSE_MYSQL_PROCESSLIST_TABLE
 from db_monitor_schema.contract import (
     CLICKHOUSE_SCHEMA_SCOPE,
     CLICKHOUSE_SCHEMA_VERSION,
@@ -16,6 +16,7 @@ from db_monitor_schema.contract import (
 
 CLICKHOUSE_REQUIRED_TABLES = (
     CLICKHOUSE_METRICS_TABLE,
+    CLICKHOUSE_MYSQL_PROCESSLIST_TABLE,
     CLICKHOUSE_SCHEMA_VERSION_TABLE,
 )
 CLICKHOUSE_BOOTSTRAP_COMMAND = "uv run python -m db_monitor_schema bootstrap-clickhouse"
@@ -42,6 +43,25 @@ CREATE TABLE IF NOT EXISTS {CLICKHOUSE_SCHEMA_VERSION_TABLE} (
 ) ENGINE = ReplacingMergeTree(updated_at)
 ORDER BY scope
 """
+_CREATE_MYSQL_PROCESSLIST_SQL = f"""
+CREATE TABLE IF NOT EXISTS {CLICKHOUSE_MYSQL_PROCESSLIST_TABLE} (
+    organization_id String,
+    instance_id String,
+    collected_at DateTime64(3, 'UTC'),
+    process_id UInt64,
+    user String,
+    host String,
+    db String,
+    command LowCardinality(String),
+    time_seconds UInt32,
+    state LowCardinality(String),
+    info String,
+    trx_started_at Nullable(DateTime64(3, 'UTC'))
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMMDD(collected_at)
+ORDER BY (instance_id, collected_at, process_id)
+TTL toDateTime(collected_at) + INTERVAL 7 DAY
+"""
 
 
 def bootstrap_clickhouse_schema(*, settings: ClickHouseSettings) -> SchemaVersion:
@@ -55,6 +75,11 @@ def bootstrap_clickhouse_schema(*, settings: ClickHouseSettings) -> SchemaVersio
     _execute_clickhouse_query(
         database=database,
         query=_CREATE_METRICS_TABLE_SQL,
+        settings=settings,
+    )
+    _execute_clickhouse_query(
+        database=database,
+        query=_CREATE_MYSQL_PROCESSLIST_SQL,
         settings=settings,
     )
     _execute_clickhouse_query(

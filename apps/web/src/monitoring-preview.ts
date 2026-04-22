@@ -478,6 +478,7 @@ export const PREVIEW_RULES: readonly AlertRuleResponse[] = [
 		metric_name: "mysql_replication_lag_seconds",
 		name: "Replication Lag High",
 		operator: "gt",
+		overrides: [],
 		rule_id: "rule-lag",
 		severity: "critical",
 		threshold: 5,

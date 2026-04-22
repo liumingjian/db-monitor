@@ -44,16 +44,31 @@
 | 11 | Multi-Engine Fleet Metric Parity and Overview Convergence | Done | mixed-engine fleet overview 的 cards/charts/instance metrics/leaders 已收敛到诚实可验证的 parity baseline，并通过 root signoff |
 | 12 | Oracle Runtime Reliability and Live-Gate Productionization | Done | Oracle runtime/live-gate 已收口为 doctor、signoff、operator baseline、diagnostics 与 rollback 的可复用基线 |
 | 13 | Production Launch Readiness and Deployment Baseline | Done | release gate、deployment baseline、env/signoff contract 与 root launch signoff 已收口为内部单环境可投产基线 |
-| 14 | Scale, High Availability, and Disaster Recovery Hardening | Conditional Next | 只有在 Epic 13 完成且真实上线需求开始集中在容量、故障域和恢复能力时，才值得进入更重的 HA/DR hardening |
+| — | **Roadmap reset**（2026-04-22） | Applied | Boss 显式将产品终极目标重置为"还原 legacy `lepus-v3.8/` 的全部能力"。原始 `PRD.md` 作废；Option B 按 slice 推进、Option A 终极。见 `docs/adr/0001-lepus-parity-pivot.md` 与 `docs/adr/0002-slice-sequence-and-engine-scope.md` |
+| 15 | Slice 1 / Epic 15 — Monitoring Depth & Rule Granularity | Active | MySQL processlist+kill、slow query 短窗、Oracle tablespace、per-instance 阈值；签收为离线 gate + smoke |
+| 16 | Slice 1 / Epic 16 — Notification Reality & Slice-1 Acceptance | Planned | Notifier 抽象 + 飞书 + SMTP + 切片 1 真实值班演练；必须紧跟 Epic 15 |
+| S2 | Slice 2 — Alert Maturity & Notification Surface Expansion | Planned | 企业微信 / 短信 / 告警去重抑制深化 / 审计扩展；2-3 周 |
+| S3 | Slice 3 — OS/SNMP 第三引擎 | Planned | SNMP 采集、host CPU/内存/磁盘/网络、per-host 阈值；6-8 周 |
+| S4 | Slice 4 — SQLServer 第四引擎 | Planned | 连接/进程/等待/复制、最小告警与 web detail；3-5 周 |
+| S5 | Slice 5 — MySQL 深度层 | Planned | pt-query-digest 风格 slow query 深度、bigtable、binlog auto-purge、备份监控；6-8 周 |
+| S6 | Slice 6 — Oracle 深度层 | Planned | Oracle session 深入、tablespace 历史趋势；4-6 周 |
+| S7 | Slice 7 — Redis 引擎 | **Conditional** | 仅在业务显式提出需求后激活；3-5 周 |
+| S8 | Slice 8 — 大屏 + 报表 + 收官 | Planned | screen 大屏（overview 实时 AJAX 版）、报表邮件、admin_log 审计增强、永不复刻清单归档；3-4 周 |
+| 14 | Scale, High Availability, and Disaster Recovery Hardening | Conditional（post-Slice-8） | 降级至 Slice 8 之后；只有在 Lepus Parity 达成且真实上线证据集中在容量/故障域/恢复时才激活 |
+
+**永不复刻**：MongoDB 引擎、飞信短信、CodeIgniter widget/language/menu/license/profile/application/auth/error 控制器、`lp_mysql/awrreport` 页。
 
 ## Current Status
 
-- 截至 `2026-04-22`，roadmap 中 01-13 已全部 `Done`
-- 当前没有 active epic；若继续推进，必须先做 post-Epic-13 close-out review，再判断是否存在足够强的 scale / HA / DR 证据支持激活 `Epic 14`
+- 截至 `2026-04-22`，原始 roadmap 中 01-13 已全部 `Done`
+- **2026-04-22 做了一次 roadmap reset**：Boss 把产品终极目标重置为 Lepus Parity（Option A），执行路径按 8 个 slice 推进（Option B）。原始 `PRD.md` 被显式作废，详见 `docs/adr/0001-lepus-parity-pivot.md`
+- 当前 **active epic = Epic 15**（Slice 1 的监控深度半段），骨架位于 `.codex-tasks/20260422-slice01-epic15-monitoring-depth/`
+- Epic 16（Slice 1 的通知落地与真实演练半段）已 materialize 但保持 `planned`，直到 Epic 15 关闭
+- 原"Epic 14 Conditional Next"已降级为 Slice 8 之后的条件性方向
 - 本轮 close-out 额外补了一份 [docs/prd-closeout.md](docs/prd-closeout.md)，用于解释：
   - 原始 `PRD.md` 的 phase-one 需求哪些已经完成
   - 哪些能力已经明显超出原始 PRD
-  - 为什么后续开发已经不再是 PRD debt closeout，而是新的 roadmap extension
+  - 为什么后续开发已经不再是 PRD debt closeout，而是新的 roadmap extension（本次 reset 即是该 extension 的显式启动）
 - Epic 11 已收口的 gap 包括：
   - overview fleet cards / charts 已可对 MySQL + Oracle 做 engine-aware 聚合
   - overview instance metrics / signal leaders 已不再依赖 MySQL-only snapshot 字段

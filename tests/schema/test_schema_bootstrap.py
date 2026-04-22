@@ -97,6 +97,10 @@ def test_postgres_bootstrap_creates_tables_and_version_row(monkeypatch: pytest.M
     assert "audit_id BIGSERIAL PRIMARY KEY" in executed_sql
     assert "acknowledged_at TIMESTAMPTZ NULL" in executed_sql
     assert "owner_user_id TEXT NULL" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS rule_instance_overrides" in executed_sql
+    assert "REFERENCES alert_rules (rule_id) ON DELETE CASCADE" in executed_sql
+    assert "REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE" in executed_sql
+    assert "PRIMARY KEY (rule_id, instance_id)" in executed_sql
     assert "INSERT INTO schema_version" in executed_sql
 
 
@@ -110,8 +114,10 @@ def test_postgres_contract_requires_bootstrapped_version(monkeypatch: pytest.Mon
                 ("audit_entries",),
                 ("control_mysql_instances",),
                 ("control_settings",),
+                ("instance_parameters",),
                 ("organization_memberships",),
                 ("organizations",),
+                ("rule_instance_overrides",),
                 ("schema_version",),
             ]
         ],
@@ -153,6 +159,10 @@ def test_clickhouse_bootstrap_creates_database_tables_and_version_row(
     assert "CREATE TABLE IF NOT EXISTS schema_version" in executed_sql
     assert "CREATE TABLE IF NOT EXISTS metric_samples" in executed_sql
     assert "engine String" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS mysql_processlist" in executed_sql
+    assert "PARTITION BY toYYYYMMDD(collected_at)" in executed_sql
+    assert "ORDER BY (instance_id, collected_at, process_id)" in executed_sql
+    assert "TTL toDateTime(collected_at) + INTERVAL 7 DAY" in executed_sql
     assert "INSERT INTO schema_version FORMAT JSONEachRow" in executed_sql
 
 
@@ -162,7 +172,7 @@ def test_clickhouse_contract_requires_bootstrapped_version(
     responses = iter(
         [
             '{"name":"db_monitor"}\n',
-            '{"name":"metric_samples"}\n{"name":"schema_version"}\n',
+            '{"name":"metric_samples"}\n{"name":"mysql_processlist"}\n{"name":"schema_version"}\n',
             "",
         ]
     )

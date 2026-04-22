@@ -6,6 +6,8 @@ from db_monitor_api.auth.repository import AuditRepository
 from db_monitor_api.auth.service import AuditService, AuthService, AuthorizationService
 from db_monitor_api.control_plane.service import AssetService, SettingsService
 from db_monitor_api.health import ReadinessProbe
+from db_monitor_api.runtime_views.kill import ProcesslistKillService
+from db_monitor_api.runtime_views.service import ProcesslistService
 
 
 @dataclass(frozen=True)
@@ -17,6 +19,8 @@ class AppRuntime:
     asset_service: AssetService
     analytics_service: AnalyticsService
     alerting_service: AlertingService
+    processlist_service: ProcesslistService
+    processlist_kill_service: ProcesslistKillService
     readiness_probe: ReadinessProbe
     runtime_mode: str
     settings_service: SettingsService

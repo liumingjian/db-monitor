@@ -32,6 +32,7 @@ class WorkerProcessSettings:
     mode: ProcessMode
     mysql_timeout_seconds: int
     poll_seconds: float
+    postgres_dsn: str
     redis_url: str
     retry_backoff_seconds: int
     retry_max_attempts: int
@@ -77,6 +78,7 @@ def load_worker_process_settings(
             "DB_MONITOR_WORKER_MYSQL_POLL_SECONDS",
             DEFAULT_PROCESS_POLL_SECONDS,
         ),
+        postgres_dsn=_required(values, "DB_MONITOR_POSTGRES_DSN"),
         redis_url=_required(values, "DB_MONITOR_REDIS_URL"),
         retry_backoff_seconds=_load_positive_int(
             values,
