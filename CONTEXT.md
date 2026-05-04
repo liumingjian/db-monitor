@@ -98,8 +98,8 @@ _Avoid_: "旧系统"（歧义）、"lepus"（未限定版本时易误解）。
 
 | # | 主题 | 核心内容 | 估时 | 状态 |
 |---|---|---|---|---|
-| 1 | MySQL/Oracle 产品级完整度 | 见上一节 Slice 1 scope | 4-6 周 | locked，下一个 active |
-| 2 | 告警成熟度 + 通知面扩展 | 企业微信、短信、告警去重/抑制深化（对标 `alarm_temp`）、审计范围扩展 | 2-3 周 | planned |
+| 1 | MySQL/Oracle 产品级完整度 | 见上一节 Slice 1 scope | 4-6 周 | Done（代码侧；真人值班演练 deferred 至客户验收窗口） |
+| 2 | 告警成熟度 + 通知面扩展 | 企业微信、短信、告警去重/抑制深化（对标 `alarm_temp`）、审计范围扩展 | 2-3 周 | Active — 见 `.codex-tasks/20260504-slice02-alert-maturity-epic/`，ADR-0013/0014/0015 |
 | 3 | OS/SNMP 第三引擎 | SNMP 采集、host CPU/内存/磁盘/网络、per-host 阈值 | 6-8 周 | planned |
 | 4 | SQLServer 第四引擎 | 连接/进程/等待、复制、最小告警与 web detail | 3-5 周 | planned |
 | 5 | MySQL 深度层 | pt-query-digest 风格 slow query 深度、bigtable 扫描、binlog auto-purge、备份监控 | 6-8 周 | planned |

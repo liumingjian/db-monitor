@@ -1,0 +1,6 @@
+id,child_dir,title,status,depends_on,owner,notes
+1,20260504-01-wecom-channel,WeCom (企业微信) channel + ChannelRegistry 扩展 + binding schema 扩枚举,PLANNED,,,"ADR-0013；webhook + markdown 卡片 + @user/@mobile + 指数退避；与飞书重试策略对齐；待 kickoff PR 合并 + ADR-0013 由 Boss 转 Accepted 后启动"
+2,20260504-02-sms-channel,SMS 通道（阿里云）+ SmsProvider Protocol（单 provider）+ 模板预审 + 1 次重试,PLANNED,1,,"ADR-0013；env 注入 DB_MONITOR_ALIYUN_SMS_*；不预埋多 provider"
+3,20260504-03-dedup-and-suppression,告警去重 (rule×instance×severity) + 抑制窗口默认 10 分钟 + per-rule override + schema v11→v12,PLANNED,2,,"ADR-0014；DispatchCoordinator 入口判定；notify_history.status='suppressed'；不新增表"
+4,20260504-04-audit-scope-expansion,审计 11 个新 action + target_type/diff_summary + web 4 维过滤 + schema v12→v13,PLANNED,3,,"ADR-0015；service 层 explicit 调用；webhook secret 走 hash"
+5,20260504-05-slice2-offline-signoff,Slice 2 离线 signoff + smoke + EPIC_ROADMAP / CONTEXT 更新,PLANNED,"1;2;3;4",,"新 gate pnpm test:slice02:signoff；不含真人演练"
