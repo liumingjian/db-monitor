@@ -6,6 +6,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 ENV PIP_TRUSTED_HOST=mirrors.aliyun.com
 ENV UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple/
+ENV UV_NO_SYNC=1
 
 WORKDIR /workspace
 
