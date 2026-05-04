@@ -86,7 +86,7 @@ export function InstancesSnapshotTable(props: InstancesSnapshotTableProps) {
 							return (
 								<tr
 									key={instance.instance_id}
-									className="border-t border-border-hairline hover:bg-bg-elevated"
+									className="border-t border-border-hairline transition-colors hover:bg-bg-elevated active:bg-surface-overlay"
 								>
 									<Td>
 										<Link

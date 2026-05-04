@@ -1,18 +1,15 @@
 "use client";
 
 import { Button, Tooltip } from "@db-monitor/ui";
-import { Pencil as PencilIcon, Trash2 as TrashIcon } from "lucide-react";
+import { Clock as ClockIcon, Pencil as PencilIcon, Trash2 as TrashIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface RowPlaceholdersProps {
 	readonly compact?: boolean;
 }
 
-/**
- * 行/卡级 Tier 3 按钮占位：编辑、删除。
- *
- * 渲染 `disabled` 按钮 + Tooltip "将在 Slice 2 上线"；**禁止**绑定任何 server action。
- */
+// 行/卡级 Tier 3 按钮占位：编辑、删除。
+// 渲染 disabled 按钮 + Tooltip 说明能力即将上线；禁止绑定 server action。
 export function RowTier3Placeholders(props: RowPlaceholdersProps) {
 	const { compact = false } = props;
 	const t = useTranslations("instancesPage");
@@ -34,33 +31,20 @@ export function RowTier3Placeholders(props: RowPlaceholdersProps) {
 	);
 }
 
-/**
- * 顶部批量操作占位：批量启用 / 批量停用 / 批量删除。
- *
- * 整组 `disabled` + Tooltip 标 Slice 2；不提供 checkbox / 选中态。
- */
+// 顶部批量操作占位：从 3 个 disabled 按钮折叠为一行 inline notice，
+// 避免 dead UI。完整能力上线后会替换成真实操作组。
 export function BulkTier3Placeholders() {
 	const t = useTranslations("instancesPage");
 	return (
-		<div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-border-subtle bg-bg-base/60 px-3 py-2">
-			<span className="text-xs font-medium uppercase tracking-widest text-fg-muted">
+		<div className="inline-flex items-center gap-2 rounded-md border border-dashed border-border-subtle bg-bg-base/60 px-3 py-1.5 text-xs text-fg-muted">
+			<ClockIcon aria-hidden="true" className="h-3.5 w-3.5" />
+			<span className="font-medium uppercase tracking-widest text-fg-secondary">
 				{t("tier3BulkSectionLabel")}
 			</span>
-			<Tooltip content={t("tier3BulkEnableTooltip")} side="top">
-				<Button disabled size="sm" variant="ghost">
-					{t("tier3BulkEnableLabel")}
-				</Button>
-			</Tooltip>
-			<Tooltip content={t("tier3BulkDisableTooltip")} side="top">
-				<Button disabled size="sm" variant="ghost">
-					{t("tier3BulkDisableLabel")}
-				</Button>
-			</Tooltip>
-			<Tooltip content={t("tier3BulkDeleteTooltip")} side="top">
-				<Button disabled size="sm" variant="ghost">
-					{t("tier3BulkDeleteLabel")}
-				</Button>
-			</Tooltip>
+			<span aria-hidden="true" className="text-fg-disabled">
+				·
+			</span>
+			<span>{t("tier3BulkSectionNotice")}</span>
 		</div>
 	);
 }

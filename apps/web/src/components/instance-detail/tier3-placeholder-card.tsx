@@ -2,13 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@db-m
 
 export interface Tier3PlaceholderCardProps {
 	readonly title: string;
-	readonly sliceLabel: string;
+	readonly statusLabel: string;
 	readonly description: string;
 	readonly capabilities: readonly string[];
 }
 
 /**
- * Q13 规则 8 + ADR-0012 D6：Tier 3 honest placeholder，标注交付 Slice 与预计能力。
+ * Tier 3 honest placeholder：标注交付状态与预计能力。
  * 不伪造数据、不挂后端未落地的端点。
  */
 export function Tier3PlaceholderCard(props: Tier3PlaceholderCardProps) {
@@ -19,7 +19,7 @@ export function Tier3PlaceholderCard(props: Tier3PlaceholderCardProps) {
 					<div className="flex items-center gap-2">
 						<CardTitle>{props.title}</CardTitle>
 						<span className="inline-flex items-center rounded-md border border-border-subtle bg-surface-overlay px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
-							{props.sliceLabel}
+							{props.statusLabel}
 						</span>
 					</div>
 					<CardDescription>{props.description}</CardDescription>

@@ -3,13 +3,7 @@ import type {
 	InstanceTrendResponse,
 	MetricSeriesResponse,
 } from "@db-monitor/api-client";
-import {
-	CanonicalPageTemplate,
-	EntitySummary,
-	PageBreadcrumb,
-	PageContent,
-	QuickMetrics,
-} from "@db-monitor/ui";
+import { CanonicalPageTemplate, EntitySummary, PageContent, QuickMetrics } from "@db-monitor/ui";
 
 import { InstancesListContent } from "../../src/components/instances-list/instances-list-content";
 import { InstancesListShell } from "../../src/components/instances-list/instances-list-shell";
@@ -64,13 +58,11 @@ export default async function InstancesPage({ searchParams }: InstancesPageProps
 	const oracleCount = filteredRows.filter((instance) => instance.engine === "oracle").length;
 
 	return (
-		<InstancesListShell instanceCount={totalRows.length} session={session}>
+		<InstancesListShell session={session}>
 			<CanonicalPageTemplate>
-				<PageBreadcrumb items={[{ label: "观测", href: "/overview" }, { label: "实例" }]} />
 				<EntitySummary
 					badges={[
 						{ tone: healthCount === filteredRows.length ? "ok" : "warning", label: "Fleet" },
-						{ tone: "info", label: "Slice 1.5" },
 					]}
 					subtitle="Catalog 范式 · 双视图 · 行内 sparkline · 真实新建 / 重验证"
 					title="实例管理"

@@ -16,6 +16,8 @@ export interface TopBarProps {
 	readonly onNotificationsOpen?: () => void;
 	readonly themeToggle: ReactNode;
 	readonly userAvatar: ReactNode;
+	/** Optional slot rendered before the breadcrumb (e.g. mobile sidebar trigger). */
+	readonly leadingSlot?: ReactNode;
 }
 
 /**
@@ -33,6 +35,7 @@ export function TopBar(props: TopBarProps) {
 		onNotificationsOpen,
 		themeToggle,
 		userAvatar,
+		leadingSlot,
 	} = props;
 
 	const badge =
@@ -43,7 +46,8 @@ export function TopBar(props: TopBarProps) {
 			: null;
 
 	return (
-		<div className="flex w-full items-center gap-4 px-4">
+		<div className="flex w-full items-center gap-2 px-4 md:gap-4">
+			{leadingSlot ? <div className="flex flex-initial items-center">{leadingSlot}</div> : null}
 			<div className="min-w-0 flex-1">
 				<Breadcrumb items={breadcrumbs} />
 			</div>
@@ -52,14 +56,14 @@ export function TopBar(props: TopBarProps) {
 					type="button"
 					onClick={onCommandOpen}
 					className={cn(
-						"inline-flex h-8 items-center gap-2 rounded-md border border-border-subtle bg-bg-elevated px-3",
-						"text-sm text-fg-muted transition-colors",
-						"hover:text-fg-primary hover:border-border-strong",
+						"inline-flex h-8 items-center gap-2 rounded-md border border-border-strong bg-bg-elevated px-3 shadow-sm",
+						"text-sm text-fg-secondary transition-colors",
+						"hover:text-fg-primary hover:border-border-strong hover:shadow",
 						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 					)}
 				>
 					<span>{commandLabel}</span>
-					<kbd className="rounded border border-border-subtle bg-bg-base px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary">
+					<kbd className="rounded border border-border-strong bg-bg-base px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary">
 						{commandShortcut}
 					</kbd>
 				</button>

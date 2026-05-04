@@ -3,7 +3,6 @@ import {
 	Button,
 	CanonicalPageTemplate,
 	EntitySummary,
-	PageBreadcrumb,
 	PageContent,
 	type QuickMetricItem,
 	QuickMetrics,
@@ -63,19 +62,12 @@ export function AlertsPageShell(props: AlertsPageShellProps) {
 
 	return (
 		<CanonicalPageTemplate>
-			<PageBreadcrumb
-				items={
-					isDetail
-						? [{ href: "/alerts", label: "告警" }, { label: "告警详情" }]
-						: [{ label: "告警" }]
-				}
-			/>
 			<EntitySummary
 				actions={
 					<div className="flex items-center gap-2">
 						<AlertOnCallToggle />
-						<Button aria-disabled disabled size="sm" title="预计 Slice 2 交付" variant="outline">
-							告警抑制 · Slice 2
+						<Button aria-disabled disabled size="sm" title="即将上线" variant="outline">
+							告警抑制（即将上线）
 						</Button>
 					</div>
 				}

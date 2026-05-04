@@ -187,7 +187,7 @@ function DrawerLinkedSignalsSection({ record }: { readonly record: AlertRecordRe
 			<div className="rounded-md border border-dashed border-border-hairline bg-bg-elevated p-3 text-xs text-fg-muted">
 				<p>
 					指标 <span className="font-mono text-fg-secondary">{record.metric_name}</span>{" "}
-					的拓扑信号将由 Slice 2 指标检索补全
+					的拓扑信号检索能力即将上线
 				</p>
 				<p className="mt-1">当前值 / 阈值已在概要展示；联动 Sparkline 将在全局框架就位后呈现</p>
 			</div>

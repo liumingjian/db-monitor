@@ -4,8 +4,8 @@
 > Slice: 1.5b（Slice 1.5 收尾延展，不新增 Slice）
 > 前置依赖: Slice 1.5 已结但 SUBTASKS.csv #5 (Alerts page) / #10 (E2E + visual + Lighthouse gate) 验收数据有水分
 > 后置继任: Slice 2（独立并行，不阻塞）
-> 估时: 5-7 天
-> 决策来源: 2026-05-04 grilling 回话（Q1-Q10 全锁定）+ ADR-0012 Followup 段
+> 估时: 7-10 天（PR β 拆 β.0 / β.1 后 +2-3 天）
+> 决策来源: 2026-05-04 grilling 第一轮（Q1-Q10 全锁定）+ ADR-0012 Followup 段 + 2026-05-04 grilling 第二轮（Q1-Q5 sidebar consolidation 推荐打包通过）+ ADR-0016
 
 ## Goal
 
@@ -34,27 +34,39 @@
 
 ## Scope — In
 
-1. **PR α — alerts chrome 收尾 + 合规承接**（child #1）
+1. **PR α — alerts chrome 收尾 + 合规承接**（child #1，PR #7 待 Boss 合）
    - 建本 epic（EPIC.md + SUBTASKS.csv）
    - 修正 Slice 1.5 #5 / #10 状态 → IN_PROGRESS
    - ADR-0012 末尾加 `## Followup (2026-05-04)` 段
    - 删 `apps/web/src/components/app-chrome.tsx`
    - 新建 `apps/web/src/components/alerts/alerts-app-shell.tsx`（复制 InstancesListShell 模式，activeGroup="alert"）
    - 改 `apps/web/app/alerts/page.tsx` + `apps/web/app/alerts/[alertId]/page.tsx` 用 AlertsAppShell
+   - Tailwind v4 `@source` 声明 `packages/ui` 修复 utility class 缺失
+   - 规则 sidebar 图标补 `SlidersHorizontal` + 移除 LifeBuoy 双语义
    - 机器门：lint + typecheck + test + build 全绿
-   - 估时 1.5 天
+   - 实际耗时 1 天
 
-2. **PR β — overview panel 战术立模板**（child #2）
+2. **PR β.0 — sidebar 重做 + AppShell 重构（ADR-0016）**（child #2）
+   - 写 `docs/adr/0016-sidebar-consolidation.md`（修订 ADR-0012 D4 仅一项）
+   - 新建 `packages/ui/src/layout/sidebar.tsx`（240↔64 折叠 / grouped 4 段 / `[` 快捷键 / `localStorage["ui.sidebar.collapsed"]` / hover tooltip）
+   - 删 `packages/ui/src/layout/icon-rail.tsx` + `packages/ui/src/layout/contextual-sidebar.tsx`（primitive + types + index export）
+   - `AppShell` 接口 breaking change：删 `iconRail` prop；增加 `chrome="full" | "screen"` 模式参数（screen 模式下 sidebar hidden）
+   - `SidebarItemModel.group` 必填字段（"observe" | "alert" | "operate" | "admin"）
+   - 7 个 page-local shell 重写：overview / rules / alerts-app / instances-list / instance-detail / notify / admin
+   - 机器门：lint + typecheck + test + build 全绿
+   - 估时 2-3 天
+
+3. **PR β.1 — overview panel 战术立模板**（child #3）
    - 调 `ui-ux-pro-max` skill 出 3 个 overview layout 候选 + 截图，Boss 拍板
    - 重排 `overview-shell` / `fleet-health-matrix` / `instances-snapshot-table` / `overview-line-chart`
      成 section-heading + hairline divider 模式
-   - 不动 Card primitive 本身样式（守 ADR-0012 D4 钉子）
+   - 不动 Card primitive 本身样式（守 ADR-0012 D4 钉子，密度只控表格行高）
    - 估时 2-3 天
 
-3. **PR γ — 其他 page 批量复制 + 验收**（child #3）
+4. **PR γ — 其他 page 批量复制 + 验收**（child #4）
    - instances list / instance/[id] / rules / admin/audit / admin/notify-history /
      admin/channels / settings 7 页复制 overview panel 模板
-   - 视觉回归 update-snapshots（删旧 24 个 baseline 重建）
+   - 视觉回归 update-snapshots（24 个 baseline 在新 sidebar 形态 + 新 panel 模板下全部重建）
    - Lighthouse 5 路由 prod build 跑 Perf/A11y/BP ≥ 90
    - Boss 主观走 9 个改造页面拍 OK
    - Slice 1.5 #5 / #10 状态从 IN_PROGRESS 改回 DONE（标 Slice 1.5b 收尾完成）
@@ -62,11 +74,14 @@
 
 ## Scope — Out
 
-- 不破 ADR-0012 D1-D7（暗色 / cyan accent / 4 色 severity / 4-6-8 圆角 / 字体 / ECharts / shadcn）
-- 不动 chrome 拓扑（IconRail 64 + ContextualSidebar 216 永久展开守 ADR D4）
-- 不重选 accent color（emerald `#3DDCCA` 保留）
+- 不破 ADR-0012 D1-D3 / D5-D7（暗色 / cyan accent / 4 色 severity / 4-6-8 圆角 / 字体 / ECharts / shadcn / i18n / 表格三分法 / Tier 分层 / 通用态）
+- **D4 单条修订**：通过 ADR-0016 重定义为单 sidebar 拓扑（PR β.0 范围内）；其他 D 项保持锁死
+- 不重选 accent color（cyan `#3DDCCA` 保留）
 - 不引入新组件库 / 新图表库 / 新 i18n 框架
 - 不动 Slice 2 工作（WeCom / SMS / dedup / audit-expansion / signoff），并行不冲突
+- 不做 sidebar 二级嵌套（如 instance/[id] 8 tab 仍走 page 内 TabBar，不进 sidebar）
+- 不做 hover-flyout 子菜单（保留 ADR-0012 Followup 与 ADR-0016 双重禁用）
+- 不做 mobile/tablet 响应式 drawer（< 768px 仅 sidebar hidden，drawer overlay 归 Slice 2/3）
 
 ## Risks
 

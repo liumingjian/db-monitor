@@ -41,7 +41,6 @@ export default async function RuleDetailPage({ params, searchParams }: RuleDetai
 	const t = await getTranslations("rulesPage");
 	const tCommon = await getTranslations("common");
 	const tNav = await getTranslations("nav");
-	const tTopbar = await getTranslations("topbar");
 
 	const tabsCopy = buildRuleDetailTabsCopy(t);
 	const definitionCopy = buildRuleDefinitionCopy(t, tCommon);
@@ -79,21 +78,6 @@ export default async function RuleDetailPage({ params, searchParams }: RuleDetai
 					title={rule.name}
 				/>
 			}
-			labels={{
-				admin: tNav("admin"),
-				alert: tNav("alert"),
-				commandLabel: tTopbar("commandPalette"),
-				notificationLabel: tTopbar("notifications"),
-				observe: tNav("observe"),
-				operate: tNav("operate"),
-				sidebarAlerts: tNav("alerts"),
-				sidebarInstances: tNav("instances"),
-				sidebarOverview: tNav("overview"),
-				sidebarRules: tNav("rules"),
-				sidebarSettings: tNav("settings"),
-				themeToggleDark: tTopbar("themeToggleDark"),
-				themeToggleLight: tTopbar("themeToggleLight"),
-			}}
 			username={username}
 		>
 			<div className="space-y-4">

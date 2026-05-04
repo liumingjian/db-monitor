@@ -10,10 +10,8 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	ContextualSidebar,
 	EntityBadge,
 	EntitySummary,
-	IconRail,
 	Input,
 	Label,
 	PageBreadcrumb,
@@ -26,56 +24,9 @@ import {
 	ThemeToggle,
 	TopBar,
 } from "@db-monitor/ui";
-import type { IconRailGroup, SidebarItemModel } from "@db-monitor/ui";
 import { formatBytes, formatDuration, formatPercent } from "@db-monitor/ui";
-import {
-	Activity as ActivityIcon,
-	Bell as BellIcon,
-	LifeBuoy as LifeBuoyIcon,
-	Settings as SettingsIcon,
-	Wrench as WrenchIcon,
-} from "lucide-react";
 
-const iconGroups: readonly IconRailGroup[] = [
-	{
-		id: "observe",
-		label: "观测",
-		icon: ActivityIcon,
-		href: "/overview",
-		matchPrefixes: ["/overview", "/instances", "/design-demo"],
-	},
-	{
-		id: "alert",
-		label: "告警",
-		icon: BellIcon,
-		href: "/alerts",
-		matchPrefixes: ["/alerts", "/rules"],
-	},
-	{
-		id: "operate",
-		label: "运维",
-		icon: WrenchIcon,
-		href: "/instances",
-		matchPrefixes: [
-			"/instances/:id/processes",
-			"/instances/:id/slow-queries",
-			"/instances/:id/tablespaces",
-		],
-	},
-	{
-		id: "admin",
-		label: "管理",
-		icon: SettingsIcon,
-		href: "/settings",
-		matchPrefixes: ["/admin", "/settings"],
-	},
-];
-
-const sidebarItems: readonly SidebarItemModel[] = [
-	{ href: "/overview", label: "总览", icon: ActivityIcon },
-	{ href: "/instances", label: "实例", icon: LifeBuoyIcon, badge: "3" },
-	{ href: "/design-demo", label: "设计系统 Demo" },
-];
+import { AppSidebar } from "../../src/components/shell/app-sidebar";
 
 const tabs = [
 	{ key: "primitives", label: "Primitives" },
@@ -86,21 +37,15 @@ const tabs = [
 export default function DesignDemoPage() {
 	return (
 		<AppShell
-			iconRail={
-				<IconRail
-					groups={iconGroups}
-					footer={<ThemeToggle labelDark="切换到亮色主题" labelLight="切换到暗色主题" />}
-				/>
-			}
-			sidebar={<ContextualSidebar activeGroup="observe" groupLabel="观测" items={sidebarItems} />}
+			sidebar={<AppSidebar />}
 			topBar={
 				<TopBar
 					breadcrumbs={[{ label: "观测", href: "/overview" }, { label: "设计系统 Demo" }]}
 					commandLabel="搜索或跳转"
 					commandShortcut="⌘K"
-					onCommandOpen={() => {}}
 					notificationCount={2}
 					notificationLabel="通知"
+					onCommandOpen={() => {}}
 					themeToggle={<ThemeToggle labelDark="切换到亮色主题" labelLight="切换到暗色主题" />}
 					userAvatar={
 						<div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">
@@ -115,22 +60,19 @@ export default function DesignDemoPage() {
 					items={[{ label: "观测", href: "/overview" }, { label: "设计系统 Demo" }]}
 				/>
 				<EntitySummary
-					title="设计系统冒烟页"
-					subtitle="验证 tokens / 字体 / 双主题 / primitives / layout / utils 协同"
-					badges={[
-						{ tone: "ok", label: "设计就绪" },
-						{ tone: "info", label: "Slice 1.5" },
-					]}
 					actions={
 						<>
-							<Button variant="outline" size="sm">
-								查看 ADR-0012
+							<Button size="sm" variant="outline">
+								查看 ADR-0016
 							</Button>
-							<Button variant="default" size="sm">
+							<Button size="sm" variant="default">
 								继续开发
 							</Button>
 						</>
 					}
+					badges={[{ tone: "ok", label: "设计就绪" }]}
+					subtitle="验证 tokens / 字体 / 双主题 / primitives / layout / utils 协同"
+					title="设计系统冒烟页"
 				/>
 				<QuickMetrics
 					items={[
@@ -178,7 +120,7 @@ export default function DesignDemoPage() {
 									<EntityBadge tone="warning" label="警告" />
 									<EntityBadge tone="info" label="提示" />
 									<EntityBadge tone="ok" label="健康" />
-									<Separator orientation="vertical" className="h-6" />
+									<Separator className="h-6" orientation="vertical" />
 									<Badge variant="default">Default</Badge>
 									<Badge variant="outline">Outline</Badge>
 									<Badge variant="secondary">Secondary</Badge>
@@ -204,15 +146,15 @@ export default function DesignDemoPage() {
 										<div className="flex flex-col gap-1.5">
 											<Label htmlFor="demo-threshold">阈值</Label>
 											<Input
+												defaultValue="0.85"
 												id="demo-threshold"
 												name="threshold"
 												type="number"
-												defaultValue="0.85"
 											/>
 										</div>
 										<div className="flex items-center justify-between rounded-md border border-border-hairline bg-bg-elevated px-3 py-2">
 											<Label htmlFor="demo-switch">启用规则</Label>
-											<Switch id="demo-switch" defaultChecked />
+											<Switch defaultChecked id="demo-switch" />
 										</div>
 									</div>
 								</CardContent>
@@ -243,7 +185,7 @@ export default function DesignDemoPage() {
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<ul className="grid gap-2 text-sm text-fg-secondary font-mono tabular-nums">
+								<ul className="grid gap-2 font-mono text-sm tabular-nums text-fg-secondary">
 									<li>formatBytes(1_234_567_890) = {formatBytes(1_234_567_890)}</li>
 									<li>formatDuration(3_660_000) = {formatDuration(3_660_000)}</li>
 									<li>formatPercent(0.8532) = {formatPercent(0.8532)}</li>

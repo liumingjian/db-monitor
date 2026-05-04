@@ -1,107 +1,38 @@
 "use client";
 
-import {
-	AppShell,
-	ContextualSidebar,
-	IconRail,
-	ThemeToggle,
-	ToastProvider,
-	TopBar,
-} from "@db-monitor/ui";
-import type { IconRailGroup, SidebarItemModel } from "@db-monitor/ui";
-import {
-	Activity as ActivityIcon,
-	Bell as BellIcon,
-	LifeBuoy as LifeBuoyIcon,
-	Settings as SettingsIcon,
-	Wrench as WrenchIcon,
-} from "lucide-react";
+import { AppShell, SidebarMenuButton, ThemeToggle, ToastProvider, TopBar } from "@db-monitor/ui";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import type { SessionSnapshot } from "../../auth";
-
-const ICON_GROUPS: readonly IconRailGroup[] = [
-	{
-		id: "observe",
-		label: "观测",
-		icon: ActivityIcon,
-		href: "/overview",
-		matchPrefixes: ["/overview", "/instances"],
-	},
-	{
-		id: "alert",
-		label: "告警",
-		icon: BellIcon,
-		href: "/alerts",
-		matchPrefixes: ["/alerts", "/rules"],
-	},
-	{
-		id: "operate",
-		label: "运维",
-		icon: WrenchIcon,
-		href: "/instances",
-		matchPrefixes: ["/admin/notify-history", "/admin/channels"],
-	},
-	{
-		id: "admin",
-		label: "管理",
-		icon: SettingsIcon,
-		href: "/settings",
-		matchPrefixes: ["/settings", "/admin/audit"],
-	},
-];
-
-const SIDEBAR_ITEMS: readonly SidebarItemModel[] = [
-	{ href: "/overview", label: "总览", icon: ActivityIcon },
-	{ href: "/instances", label: "实例", icon: LifeBuoyIcon },
-];
+import { AppSidebar } from "../shell/app-sidebar";
 
 interface InstancesListShellProps {
 	readonly session: SessionSnapshot;
-	readonly instanceCount: number;
 	readonly children: ReactNode;
 }
 
 /**
  * Page-local AppShell assembly for /instances.
  *
- * Temporary until child #9 absorbs the shell into `app/layout.tsx`. Keep API
- * surface narrow so the later migration is a drop-in swap.
+ * Slice 1.5b PR β.0 (2026-05-04): consolidated to single-sidebar chrome
+ * (ADR-0016 D4'). The previous instance-count badge on the sidebar was page-
+ * scoped state leaking into chrome — show it inside the page (entity summary
+ * or quick metrics) instead.
  */
 export function InstancesListShell(props: InstancesListShellProps) {
-	const { session, instanceCount, children } = props;
+	const { session, children } = props;
 	const t = useTranslations("instancesPage");
 	const tTopbar = useTranslations("topbar");
 	const tNav = useTranslations("nav");
+	const tSidebar = useTranslations("sidebar");
 
 	const initials = resolveInitials(session);
 
 	return (
 		<ToastProvider>
 			<AppShell
-				iconRail={
-					<IconRail
-						groups={ICON_GROUPS}
-						footer={
-							<ThemeToggle
-								labelDark={tTopbar("themeToggleDark")}
-								labelLight={tTopbar("themeToggleLight")}
-							/>
-						}
-					/>
-				}
-				sidebar={
-					<ContextualSidebar
-						activeGroup="observe"
-						groupLabel={tNav("observe")}
-						items={SIDEBAR_ITEMS.map((item) =>
-							item.href === "/instances"
-								? { ...item, badge: instanceCount > 0 ? String(instanceCount) : undefined }
-								: item,
-						)}
-					/>
-				}
+				sidebar={<AppSidebar />}
 				topBar={
 					<TopBar
 						breadcrumbs={[
@@ -110,10 +41,9 @@ export function InstancesListShell(props: InstancesListShellProps) {
 						]}
 						commandLabel={tTopbar("commandPalette")}
 						commandShortcut={tTopbar("keyboardShortcut")}
-						onCommandOpen={() => {
-							/* 归 #9 的全局 command palette；此处保留触发器外观但不挂载面板 */
-						}}
+						leadingSlot={<SidebarMenuButton label={tSidebar("openMenu")} />}
 						notificationLabel={tTopbar("notifications")}
+						onCommandOpen={NOOP}
 						themeToggle={
 							<ThemeToggle
 								labelDark={tTopbar("themeToggleDark")}
@@ -147,3 +77,5 @@ function resolveInitials(session: SessionSnapshot): string {
 	const letters = parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase());
 	return letters.join("") || trimmed.charAt(0).toUpperCase();
 }
+
+const NOOP = (): void => {};

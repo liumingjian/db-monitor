@@ -6,25 +6,16 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 /**
- * The four top-level groups surfaced on the left 64px icon rail.
+ * The four top-level navigation groups (ADR-0012 D6 Tier 分层 / ADR-0016 D4').
  */
-export type IconRailGroupId = "observe" | "alert" | "operate" | "admin";
-
-export interface IconRailGroup {
-	readonly id: IconRailGroupId;
-	readonly label: string;
-	readonly icon: IconComponent;
-	readonly href: string;
-	/** Route prefixes that mark this group active (longest-prefix wins). */
-	readonly matchPrefixes: readonly string[];
-}
+export type SidebarGroup = "observe" | "alert" | "operate" | "admin";
 
 export interface SidebarItemModel {
+	readonly group: SidebarGroup;
 	readonly href: string;
 	readonly label: string;
 	readonly icon?: IconComponent;
 	readonly badge?: string | number;
-	readonly children?: readonly SidebarItemModel[];
 }
 
 export interface BreadcrumbItem {
@@ -43,8 +34,10 @@ export interface QuickMetricItem {
 	readonly key: string;
 	readonly label: string;
 	readonly value: string;
+	readonly unit?: string;
 	readonly hint?: string;
 	readonly sparkline?: ReactNode;
+	readonly numeric?: boolean;
 }
 
 export interface TabItem {

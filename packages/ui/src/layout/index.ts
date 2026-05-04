@@ -1,5 +1,5 @@
 export { AppShell } from "./app-shell";
-export type { AppShellProps } from "./app-shell";
+export type { AppShellChrome, AppShellProps } from "./app-shell";
 
 export { Breadcrumb } from "./breadcrumb";
 export type { BreadcrumbProps } from "./breadcrumb";
@@ -7,20 +7,11 @@ export type { BreadcrumbProps } from "./breadcrumb";
 export { CanonicalPageTemplate } from "./canonical-page-template";
 export type { CanonicalPageTemplateProps } from "./canonical-page-template";
 
-export { ContextualSidebar } from "./contextual-sidebar";
-export type { ContextualSidebarProps } from "./contextual-sidebar";
-
 export { EntityBadge } from "./entity-badge";
 export type { EntityBadgeProps } from "./entity-badge";
 
 export { EntitySummary } from "./entity-summary";
 export type { EntitySummaryProps } from "./entity-summary";
-
-export { IconRail } from "./icon-rail";
-export type { IconRailProps } from "./icon-rail";
-
-export { IconRailItem } from "./icon-rail-item";
-export type { IconRailItemProps } from "./icon-rail-item";
 
 export { PageBreadcrumb } from "./page-breadcrumb";
 export type { PageBreadcrumbProps } from "./page-breadcrumb";
@@ -34,8 +25,15 @@ export type { QuickMetricCellProps } from "./quick-metric-cell";
 export { QuickMetrics } from "./quick-metrics";
 export type { QuickMetricsProps } from "./quick-metrics";
 
-export { SidebarItem } from "./sidebar-item";
-export type { SidebarItemProps } from "./sidebar-item";
+export { Sidebar } from "./sidebar";
+export type { SidebarProps, SidebarStrings } from "./sidebar";
+
+export {
+	SidebarMenuButton,
+	SidebarMobileProvider,
+	useSidebarMobile,
+} from "./sidebar-mobile";
+export type { SidebarMenuButtonProps, SidebarMobileProviderProps } from "./sidebar-mobile";
 
 export { TabBar } from "./tab-bar";
 export type { TabBarProps } from "./tab-bar";
@@ -77,10 +75,9 @@ export type {
 	BreadcrumbItem,
 	EntityBadgeModel,
 	IconComponent,
-	IconRailGroup,
-	IconRailGroupId,
 	QuickMetricItem,
 	SeverityTone,
+	SidebarGroup,
 	SidebarItemModel,
 	TabItem,
 } from "./types";

@@ -18,7 +18,6 @@ import { InstancesSnapshotTable } from "../../src/components/overview/instances-
 import { OverviewAutoRefresh } from "../../src/components/overview/overview-auto-refresh";
 import { OverviewLineChart } from "../../src/components/overview/overview-line-chart";
 import { OverviewShell } from "../../src/components/overview/overview-shell";
-import type { OverviewShellLabels } from "../../src/components/overview/overview-shell";
 import { WindowSelector } from "../../src/components/overview/window-selector";
 import {
 	APPROVED_TIME_WINDOWS,
@@ -69,27 +68,6 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 
 	const t = await getTranslations("overviewPage");
 	const tCommon = await getTranslations("common");
-	const tTopbar = await getTranslations("topbar");
-	const tNav = await getTranslations("nav");
-
-	const shellLabels: OverviewShellLabels = {
-		observe: tNav("observe"),
-		alert: tNav("alert"),
-		operate: tNav("operate"),
-		admin: tNav("admin"),
-		sidebarOverview: tNav("overview"),
-		sidebarInstances: tNav("instances"),
-		sidebarAlerts: tNav("alerts"),
-		sidebarRules: tNav("rules"),
-		sidebarSettings: tNav("settings"),
-		breadcrumbObserve: tNav("observe"),
-		breadcrumbOverview: tNav("overview"),
-		commandLabel: tTopbar("commandPalette"),
-		notificationLabel: tTopbar("notifications"),
-		themeToggleDark: tTopbar("themeToggleDark"),
-		themeToggleLight: tTopbar("themeToggleLight"),
-		tabSummary: t("tabSummary"),
-	};
 
 	const username = session.displayName ?? session.username ?? tCommon("appName");
 
@@ -120,12 +98,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 	const quickMetrics = <QuickMetrics items={buildQuickMetrics(overview, t)} />;
 
 	return (
-		<OverviewShell
-			username={username}
-			labels={shellLabels}
-			entitySummary={entitySummary}
-			quickMetrics={quickMetrics}
-		>
+		<OverviewShell username={username} entitySummary={entitySummary} quickMetrics={quickMetrics}>
 			<PageContent>
 				<ChartGrid overview={overview} t={t} />
 				<FleetHealthMatrix
