@@ -45,9 +45,10 @@
 | 12 | Oracle Runtime Reliability and Live-Gate Productionization | Done | Oracle runtime/live-gate 已收口为 doctor、signoff、operator baseline、diagnostics 与 rollback 的可复用基线 |
 | 13 | Production Launch Readiness and Deployment Baseline | Done | release gate、deployment baseline、env/signoff contract 与 root launch signoff 已收口为内部单环境可投产基线 |
 | — | **Roadmap reset**（2026-04-22） | Applied | Boss 显式将产品终极目标重置为"还原 legacy `lepus-v3.8/` 的全部能力"。原始 `PRD.md` 作废；Option B 按 slice 推进、Option A 终极。见 `docs/adr/0001-lepus-parity-pivot.md` 与 `docs/adr/0002-slice-sequence-and-engine-scope.md` |
-| 15 | Slice 1 / Epic 15 — Monitoring Depth & Rule Granularity | Active | MySQL processlist+kill、slow query 短窗、Oracle tablespace、per-instance 阈值；签收为离线 gate + smoke |
-| 16 | Slice 1 / Epic 16 — Notification Reality & Slice-1 Acceptance | Planned | Notifier 抽象 + 飞书 + SMTP + 切片 1 真实值班演练；必须紧跟 Epic 15 |
-| S2 | Slice 2 — Alert Maturity & Notification Surface Expansion | Planned | 企业微信 / 短信 / 告警去重抑制深化 / 审计扩展；2-3 周 |
+| 15 | Slice 1 / Epic 15 — Monitoring Depth & Rule Granularity | Done | MySQL processlist+kill、slow query 短窗、Oracle tablespace、per-instance 阈值；离线 gate + smoke 已通过 |
+| 16 | Slice 1 / Epic 16 — Notification Reality | Done | Notifier 抽象 + 飞书 + SMTP + dispatch fallback 已落地；真实值班演练 DEFERRED 至客户验收窗口（不阻断切片关闭） |
+| 1.5 | Slice 1.5 — UI Redesign & Design System | Done | 10 张 Tier 1 页 + canonical template + 暗色主题 + 中文语言包；详见 `docs/adr/0012-ui-redesign-design-system-and-page-architecture.md` |
+| S2 | Slice 2 — Alert Maturity & Notification Surface Expansion | Active | 企业微信 / 短信 / dedup+suppression / audit 扩展；详见 `.codex-tasks/20260504-slice02-alert-maturity-epic/EPIC.md`，ADR-0013/0014/0015 |
 | S3 | Slice 3 — OS/SNMP 第三引擎 | Planned | SNMP 采集、host CPU/内存/磁盘/网络、per-host 阈值；6-8 周 |
 | S4 | Slice 4 — SQLServer 第四引擎 | Planned | 连接/进程/等待/复制、最小告警与 web detail；3-5 周 |
 | S5 | Slice 5 — MySQL 深度层 | Planned | pt-query-digest 风格 slow query 深度、bigtable、binlog auto-purge、备份监控；6-8 周 |
@@ -60,10 +61,11 @@
 
 ## Current Status
 
-- 截至 `2026-04-22`，原始 roadmap 中 01-13 已全部 `Done`
+- 截至 `2026-05-04`，原始 roadmap 中 01-13、Slice 1（Epic 15 + Epic 16）与 Slice 1.5（UI redesign）均已 `Done`
 - **2026-04-22 做了一次 roadmap reset**：Boss 把产品终极目标重置为 Lepus Parity（Option A），执行路径按 8 个 slice 推进（Option B）。原始 `PRD.md` 被显式作废，详见 `docs/adr/0001-lepus-parity-pivot.md`
-- 当前 **active epic = Epic 15**（Slice 1 的监控深度半段），骨架位于 `.codex-tasks/20260422-slice01-epic15-monitoring-depth/`
-- Epic 16（Slice 1 的通知落地与真实演练半段）已 materialize 但保持 `planned`，直到 Epic 15 关闭
+- 当前 **active = Slice 2 / Alert Maturity**，骨架位于 `.codex-tasks/20260504-slice02-alert-maturity-epic/`
+- Slice 1 关闭说明：Epic 15 / Epic 16 / Slice 1.5 代码侧 DONE 并通过离线 gate + smoke；**真实值班演练（4 类故障跑通）已显式 deferred 至客户验收窗口**，不阻断切片关闭；该决议见 `.codex-tasks/20260504-post-slice1-transition-review/PROGRESS.md`
+- Slice 2 入口：3 个 ADR（0013 WeCom+SMS 通道 / 0014 dedup + suppression / 0015 audit scope expansion）已转 Accepted；child #1 (WeCom) `IN_PROGRESS`
 - 原"Epic 14 Conditional Next"已降级为 Slice 8 之后的条件性方向
 - 本轮 close-out 额外补了一份 [docs/prd-closeout.md](docs/prd-closeout.md)，用于解释：
   - 原始 `PRD.md` 的 phase-one 需求哪些已经完成
@@ -587,6 +589,54 @@
 
 - 团队对备份恢复、单点失效与关键负载有明确且可验证的运行基线
 - 规模和故障域问题不再依赖口头经验，而有 repo-local signoff 与 operator 资产支撑
+
+## Slice 2 — Alert Maturity & Notification Surface Expansion
+
+### Goal
+
+- 把告警链路从“有飞书 + SMTP 两条真实通道”推进到“双通道 + 去重抑制 + 审计写路径全覆盖”的告警成熟度基线，让 DBA 在真实值班场景里不会被噪音淹没
+
+### Why It Is Active Next
+
+- Slice 1（Epic 15 + Epic 16）已闭环：MySQL processlist+kill、slow query 短窗、Oracle tablespace、per-instance 阈值、Notifier 抽象 + 飞书 + SMTP 已落地，离线 gate + smoke 已通过
+- Slice 1.5 已闭环：10 张 Tier 1 页 + canonical template + 暗色主题 + 中文语言包，UI 已具备承载更多通道与告警细分的视觉容量
+- 当前最显式的剩余 gap 已集中在：
+  - 仅有飞书 + SMTP 两条真实通道，无法覆盖企业微信生态与短信兜底场景
+  - DispatchCoordinator 入口未做 (rule × instance × severity) 三元组去重，重复告警风险随规则数量线性放大
+  - audit_entries 仅覆盖用户/角色 + kill，rule / instance / override / channel binding 写路径仍是黑盒
+
+### Activation Gates
+
+- Slice 1 与 Slice 1.5 已显式 `Done`；离线 gate 与 web smoke 不再阻塞
+- 3 份 ADR（0013 WeCom + SMS / 0014 dedup + suppression / 0015 audit scope expansion）已转 `Accepted`
+- 当前仓库对 Notifier 抽象、DispatchCoordinator 入口、audit_entries schema 的 seam 已可直接定位
+- `.codex-tasks/20260504-slice02-alert-maturity-epic/EPIC.md` 与 `SUBTASKS.csv` 已 materialize
+
+### Top-Level Scope
+
+- WeCom（企业微信）作为第三条 Notifier 通道（webhook + markdown 卡片 + @user / @mobile + 失败 fallback SMTP）
+- 阿里云 SMS 作为第四条 Notifier 通道（单 provider，YAGNI；1 次重试，计费谨慎；失败 fallback SMTP）
+- DispatchCoordinator 入口 dedup（key = `rule_id × instance_id × severity`）+ 默认 10 分钟抑制窗口 + per-rule override（`alert_rules.suppression_window_seconds INT NULL`）
+- audit_entries 写路径扩展到 rule / instance / override / channel binding 全写动作；新增 `target_type` + `diff_summary`；webhook secret / SMS access_key 走 SHA256 hash
+- Slice 2 离线 signoff（lint / typecheck / ruff / mypy / pytest / 4 通道单元测试 / dedup integration / audit integration）
+- schema 演进：v11 → v12（dedup + 通道 enum 扩展）→ v13（audit scope expansion）
+
+### Non-Goals
+
+- 不引入新的引擎（OS/SQLServer 留给 Slice 3/4）
+- 不复刻飞信 / MongoDB
+- 不做多 SMS provider 抽象层（YAGNI；只接阿里云）
+- 不引入告警分级 / 路由 DSL；severity 仍只有 critical/warning 两级
+- 不替换 audit_entries 表结构或迁移到外部审计平台
+- 不在本切片内做真人值班演练（仍归客户验收前窗口）
+
+### Done-When
+
+- 4 条 Notifier 通道（飞书 / SMTP / 企业微信 / SMS）能在端到端测试中真到达，且失败时按 fallback 链路降级
+- DispatchCoordinator 入口对重复 (rule × instance × severity) 命中能稳定抑制 10 分钟，且 per-rule override 生效
+- rule / instance / override / channel binding 的写动作 100% 进入 audit_entries，敏感字段以 hash 形式落库
+- Slice 2 离线 signoff（`scripts/test-slice02-signoff.ps1` + `pnpm test:slice02:signoff`）通过
+- `EPIC_ROADMAP.md` Slice 2 = `Done`，`CONTEXT.md` 同步更新，Slice 3 planning materialization 触发
 
 ## Close-Out Review Template
 
