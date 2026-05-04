@@ -228,4 +228,3 @@ export const INSTANCE_CHART_FRAME: ChartFrameContract = {
 	emptyState: "This instance has not produced enough trend points yet.",
 	title: "Instance Trends",
 };
-
