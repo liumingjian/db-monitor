@@ -149,7 +149,7 @@ def show_target_logs(env_overrides: dict[str, str] | None = None) -> None:
 
 def wait_http_200(url: str, name: str) -> None:
     last_error: Exception | None = None
-    for _ in range(90):
+    for _ in range(240):
         try:
             with urllib.request.urlopen(url, timeout=3) as response:
                 if response.status == 200:
