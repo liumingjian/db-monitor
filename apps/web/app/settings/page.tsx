@@ -183,7 +183,6 @@ export default async function SettingsPage() {
 
 	return (
 		<AdminShell
-			activeGroup="admin"
 			breadcrumbs={[
 				{ label: t("breadcrumbAdmin"), href: "/settings" },
 				{ label: t("breadcrumbSettings") },

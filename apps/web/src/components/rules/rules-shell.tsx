@@ -2,90 +2,49 @@
 
 import {
 	AppShell,
+	type BreadcrumbItem,
 	CanonicalPageTemplate,
-	ContextualSidebar,
-	IconRail,
 	PageBreadcrumb,
 	ThemeToggle,
 	TopBar,
 } from "@db-monitor/ui";
-import type { BreadcrumbItem, IconRailGroup, SidebarItemModel } from "@db-monitor/ui";
-import {
-	Activity as ActivityIcon,
-	Bell as BellIcon,
-	LifeBuoy as LifeBuoyIcon,
-	SlidersHorizontal as RulesIcon,
-	Settings as SettingsIcon,
-	Wrench as WrenchIcon,
-} from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-export interface RulesShellLabels {
-	readonly observe: string;
-	readonly alert: string;
-	readonly operate: string;
-	readonly admin: string;
-	readonly sidebarOverview: string;
-	readonly sidebarInstances: string;
-	readonly sidebarAlerts: string;
-	readonly sidebarRules: string;
-	readonly sidebarSettings: string;
-	readonly commandLabel: string;
-	readonly notificationLabel: string;
-	readonly themeToggleDark: string;
-	readonly themeToggleLight: string;
-}
+import { AppSidebar } from "../shell/app-sidebar";
 
 interface RulesShellProps {
 	readonly breadcrumbs: readonly BreadcrumbItem[];
 	readonly children: ReactNode;
 	readonly entitySummary: ReactNode;
-	readonly labels: RulesShellLabels;
 	readonly username: string;
 }
 
-const OBSERVE_PREFIXES = ["/overview", "/instances"];
-const ALERT_PREFIXES = ["/alerts", "/rules"];
-const OPERATE_PREFIXES = ["/instances/:id/processes", "/instances/:id/slow-queries"];
-const ADMIN_PREFIXES = ["/admin", "/settings"];
-
 /**
- * Page-local AppShell for Rules + Overrides (child #6).
- * Follows the same disjoint pattern Overview uses; #9 will absorb AppShell into layout.tsx.
+ * Page-local AppShell for /rules and /rules/[ruleId].
+ *
+ * Slice 1.5b PR β.0 (2026-05-04): consolidated to single-sidebar chrome
+ * (ADR-0016 D4'). All sidebar/iconRail labels now resolved by AppSidebar via
+ * next-intl, so callers only pass breadcrumbs + content + username.
  */
-export function RulesShell({
-	breadcrumbs,
-	children,
-	entitySummary,
-	labels,
-	username,
-}: RulesShellProps) {
+export function RulesShell({ breadcrumbs, children, entitySummary, username }: RulesShellProps) {
+	const tTopbar = useTranslations("topbar");
+
 	return (
 		<AppShell
-			iconRail={
-				<IconRail
-					footer={
-						<ThemeToggle labelDark={labels.themeToggleDark} labelLight={labels.themeToggleLight} />
-					}
-					groups={buildIconGroups(labels)}
-				/>
-			}
-			sidebar={
-				<ContextualSidebar
-					activeGroup="alert"
-					groupLabel={labels.alert}
-					items={buildSidebarItems(labels)}
-				/>
-			}
+			sidebar={<AppSidebar />}
 			topBar={
 				<TopBar
 					breadcrumbs={breadcrumbs}
-					commandLabel={labels.commandLabel}
-					commandShortcut="⌘K"
-					notificationLabel={labels.notificationLabel}
+					commandLabel={tTopbar("commandPalette")}
+					commandShortcut={tTopbar("keyboardShortcut")}
+					notificationLabel={tTopbar("notifications")}
 					onCommandOpen={NOOP}
 					themeToggle={
-						<ThemeToggle labelDark={labels.themeToggleDark} labelLight={labels.themeToggleLight} />
+						<ThemeToggle
+							labelDark={tTopbar("themeToggleDark")}
+							labelLight={tTopbar("themeToggleLight")}
+						/>
 					}
 					userAvatar={<UserAvatar username={username} />}
 				/>
@@ -98,49 +57,6 @@ export function RulesShell({
 			</CanonicalPageTemplate>
 		</AppShell>
 	);
-}
-
-function buildIconGroups(labels: RulesShellLabels): readonly IconRailGroup[] {
-	return [
-		{
-			href: "/overview",
-			icon: ActivityIcon,
-			id: "observe",
-			label: labels.observe,
-			matchPrefixes: OBSERVE_PREFIXES,
-		},
-		{
-			href: "/alerts",
-			icon: BellIcon,
-			id: "alert",
-			label: labels.alert,
-			matchPrefixes: ALERT_PREFIXES,
-		},
-		{
-			href: "/instances",
-			icon: WrenchIcon,
-			id: "operate",
-			label: labels.operate,
-			matchPrefixes: OPERATE_PREFIXES,
-		},
-		{
-			href: "/settings",
-			icon: SettingsIcon,
-			id: "admin",
-			label: labels.admin,
-			matchPrefixes: ADMIN_PREFIXES,
-		},
-	];
-}
-
-function buildSidebarItems(labels: RulesShellLabels): readonly SidebarItemModel[] {
-	return [
-		{ href: "/overview", icon: ActivityIcon, label: labels.sidebarOverview },
-		{ href: "/instances", icon: LifeBuoyIcon, label: labels.sidebarInstances },
-		{ href: "/alerts", icon: BellIcon, label: labels.sidebarAlerts },
-		{ href: "/rules", icon: RulesIcon, label: labels.sidebarRules },
-		{ href: "/settings", icon: SettingsIcon, label: labels.sidebarSettings },
-	];
 }
 
 function UserAvatar({ username }: { readonly username: string }) {

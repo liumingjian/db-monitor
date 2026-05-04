@@ -61,6 +61,11 @@
 		"themeToggleLight": "切换到亮色主题",
 		"logout": "退出登录"
 	},
+	"sidebar": {
+		"navigationLabel": "主导航",
+		"toggleCollapse": "收起侧边栏（[）",
+		"toggleExpand": "展开侧边栏（[）"
+	},
 	"login": {
 		"title": "登录",
 		"subtitle": "使用你的账号登录以继续",

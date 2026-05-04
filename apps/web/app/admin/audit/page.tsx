@@ -47,7 +47,6 @@ export default async function AuditPage() {
 
 	return (
 		<AdminShell
-			activeGroup="admin"
 			breadcrumbs={[
 				{ label: t("breadcrumbAdmin"), href: "/settings" },
 				{ label: t("breadcrumbAudit") },

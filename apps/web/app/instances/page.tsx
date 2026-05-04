@@ -64,7 +64,7 @@ export default async function InstancesPage({ searchParams }: InstancesPageProps
 	const oracleCount = filteredRows.filter((instance) => instance.engine === "oracle").length;
 
 	return (
-		<InstancesListShell instanceCount={totalRows.length} session={session}>
+		<InstancesListShell session={session}>
 			<CanonicalPageTemplate>
 				<PageBreadcrumb items={[{ label: "观测", href: "/overview" }, { label: "实例" }]} />
 				<EntitySummary
