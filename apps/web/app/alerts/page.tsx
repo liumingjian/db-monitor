@@ -1,8 +1,12 @@
+import type { BreadcrumbItem } from "@db-monitor/ui";
+
 import { toAlertTabKey } from "../../src/components/alerts/alert-view-model";
+import { AlertsAppShell } from "../../src/components/alerts/alerts-app-shell";
 import { AlertsPageShell } from "../../src/components/alerts/alerts-page-shell";
-import { AppChrome } from "../../src/components/app-chrome";
 import { buildAlertListFilterValues, buildOperationsModel } from "../../src/monitoring-ui";
 import { createServerApiClient, requireServerSession } from "../../src/server-api";
+
+const BREADCRUMBS: readonly BreadcrumbItem[] = [{ label: "告警" }];
 
 interface AlertsPageProps {
 	readonly searchParams: Promise<{
@@ -36,7 +40,7 @@ export default async function AlertsPage({ searchParams }: AlertsPageProps) {
 	const baseHref = queryString.length === 0 ? "/alerts" : `/alerts?${queryString}`;
 
 	return (
-		<AppChrome session={session}>
+		<AlertsAppShell session={session} breadcrumbs={BREADCRUMBS}>
 			<AlertsPageShell
 				alerts={model.alerts}
 				baseHref={baseHref}
@@ -46,7 +50,7 @@ export default async function AlertsPage({ searchParams }: AlertsPageProps) {
 				isDetail={false}
 				tab={tab}
 			/>
-		</AppChrome>
+		</AlertsAppShell>
 	);
 }
 
