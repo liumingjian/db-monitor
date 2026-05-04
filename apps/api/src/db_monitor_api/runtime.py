@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from db_monitor_api.analytics.service import AnalyticsService
+from db_monitor_api.alerting.notification.query_service import NotifyHistoryService
 from db_monitor_api.alerting.service import AlertingService
 from db_monitor_api.auth.repository import AuditRepository
 from db_monitor_api.auth.service import AuditService, AuthService, AuthorizationService
@@ -21,6 +22,7 @@ class AppRuntime:
     asset_service: AssetService
     analytics_service: AnalyticsService
     alerting_service: AlertingService
+    notify_history_service: NotifyHistoryService
     processlist_service: ProcesslistService
     processlist_kill_service: ProcesslistKillService
     readiness_probe: ReadinessProbe

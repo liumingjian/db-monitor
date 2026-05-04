@@ -101,6 +101,13 @@ def test_postgres_bootstrap_creates_tables_and_version_row(monkeypatch: pytest.M
     assert "REFERENCES alert_rules (rule_id) ON DELETE CASCADE" in executed_sql
     assert "REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE" in executed_sql
     assert "PRIMARY KEY (rule_id, instance_id)" in executed_sql
+    assert "CREATE EXTENSION IF NOT EXISTS pgcrypto" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS alert_channel_bindings" in executed_sql
+    assert "PRIMARY KEY (rule_id, channel)" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS notify_history" in executed_sql
+    assert "notify_id UUID PRIMARY KEY" in executed_sql
+    assert "CREATE INDEX IF NOT EXISTS notify_history_rule_attempted_idx" in executed_sql
+    assert "CREATE INDEX IF NOT EXISTS notify_history_status_idx" in executed_sql
     assert "INSERT INTO schema_version" in executed_sql
 
 
@@ -108,6 +115,7 @@ def test_postgres_contract_requires_bootstrapped_version(monkeypatch: pytest.Mon
     cursor = FakeCursor(
         fetchall_results=[
             [
+                ("alert_channel_bindings",),
                 ("alert_history",),
                 ("alert_records",),
                 ("alert_rules",),
@@ -115,6 +123,7 @@ def test_postgres_contract_requires_bootstrapped_version(monkeypatch: pytest.Mon
                 ("control_mysql_instances",),
                 ("control_settings",),
                 ("instance_parameters",),
+                ("notify_history",),
                 ("organization_memberships",),
                 ("organizations",),
                 ("rule_instance_overrides",),

@@ -19,6 +19,7 @@ from db_monitor_api.alerting.evaluation import (
     evaluate_samples,
 )
 from db_monitor_api.alerting.noise_control import AlertNoiseControlPolicy
+from db_monitor_api.alerting.notification import NullRuleHitSink, RuleHitSink
 from db_monitor_api.alerting.notifier import Notifier
 from db_monitor_api.alerting.repository import AlertingRepository
 from db_monitor_api.alerting.workflow import (
@@ -74,6 +75,7 @@ class AlertingService:
     notification_retry_policy: NotificationRetryPolicy = field(
         default_factory=NotificationRetryPolicy
     )
+    rule_hit_sink: RuleHitSink = field(default_factory=NullRuleHitSink)
 
     def create_rule(
         self,
@@ -138,6 +140,7 @@ class AlertingService:
             organization_id=organization_id,
             notification_retry_policy=self.notification_retry_policy,
             repository=self.repository,
+            rule_hit_sink=self.rule_hit_sink,
             samples=samples,
         )
 

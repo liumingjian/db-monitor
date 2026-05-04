@@ -29,6 +29,7 @@
     "test:integration": "uv run pytest tests/integration",
     "test:launch-readiness:signoff": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-launch-readiness-signoff.ps1",
     "test:metrics-pipeline:live": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-metrics-pipeline-live.ps1",
+    "test:notifier:signoff": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-notifier-signoff.ps1",
     "test:oracle-runtime:doctor": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-oracle-runtime-doctor.ps1",
     "test:oracle-runtime:signoff": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-oracle-runtime-signoff.ps1",
     "test:recovery-paths": "uv run python ./scripts/powershell_shim.py -ExecutionPolicy Bypass -File ./scripts/test-recovery-paths.ps1",

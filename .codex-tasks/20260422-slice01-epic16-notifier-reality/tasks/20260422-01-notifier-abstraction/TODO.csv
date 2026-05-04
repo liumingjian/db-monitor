@@ -1,7 +1,7 @@
 id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
-1,Add PG migration for notify_history + alert_channel_bindings,PENDING,"两表迁移脚本存在；test:schema:bootstrap 成立；PK/FK/索引符合 SPEC","pnpm test:schema:bootstrap",,0,"notify_history payload_hash 预留给未来去重"
-2,Define Notifier Protocol / NotifyPayload / NotifyResult,PENDING,"协议类型在 api/app/alerting/notification/protocol.py；其它模块可 import","uv run pytest tests/api/alerting/notification/test_protocol.py -q",,0,
-3,Implement channel registry + factory,PENDING,"register/get 接口；重复注册抛错；未知 channel 抛 KnownError","uv run pytest tests/api/alerting/notification/test_registry.py -q",,0,
-4,Implement dispatch service skeleton,PENDING,"dispatch(event) 返回 list[NotifyResult]；内部遍历 bindings；channel 未实现时写 failed 行","uv run pytest tests/api/alerting/notification/test_service.py -q",,0,"channel 实现延至 #2/#3；此步骤仅骨架"
-5,Expose /api/admin/notify-history list endpoint,PENDING,"分页 + 按 rule_id/status 过滤；OpenAPI snapshot 向后兼容","pnpm openapi:check",,0,
-6,Wire typed client + minimal web page,PENDING,"typed client 暴露 notifyHistory API；web 有一个最小只读页","pnpm --filter web typecheck && pnpm --filter web test",,0,"admin 隐藏菜单也行；不是正式 UI"
+1,Add PG migration for notify_history + alert_channel_bindings,DONE,"两表迁移脚本存在；test:schema:bootstrap 成立；PK/FK/索引符合 SPEC","uv run pytest tests/schema/test_schema_bootstrap.py -q",2026-04-22T13:40:00Z,0,"Agent α 完成；pgcrypto+两表+两索引；schema 版本 10→11"
+2,Define Notifier Protocol / NotifyPayload / NotifyResult,DONE,"协议类型在 db_monitor_api/alerting/notification/protocol.py；其它模块可 import","uv run pytest tests/alerting_notification/test_protocol.py -q",2026-04-22T13:40:00Z,0,"runtime_checkable async send"
+3,Implement channel registry + factory,DONE,"register/get 接口；重复注册抛错；未知 channel 抛 KnownError","uv run pytest tests/alerting_notification/test_registry.py -q",2026-04-22T13:40:00Z,0,"ChannelAlreadyRegisteredError / UnknownChannelError"
+4,Implement dispatch service skeleton,DONE,"dispatch(event) 返回 list[NotifyResult]；内部遍历 bindings；channel 未实现时写 failed 行","uv run pytest tests/alerting_notification/test_service.py -q",2026-04-22T13:40:00Z,0,"channel 实现延至 #2/#3；dispatch skeleton async"
+5,Expose /admin/notify-history list endpoint,DONE,"分页 + 按 rule_id/status 过滤；OpenAPI snapshot 向后兼容","pnpm openapi:check",2026-04-22T13:48:00Z,0,"NotifyHistoryService + router + bootstrap 注入"
+6,Wire typed client + minimal web page,DONE,"typed client 暴露 notifyHistory API；web 有一个最小只读页","pnpm --filter web typecheck && pnpm --filter web test",2026-04-22T13:56:00Z,0,"P6 subagent: api-client 0.14→0.15，apps/web/app/admin/notify-history/page.tsx"

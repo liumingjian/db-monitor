@@ -3,16 +3,20 @@
 ## Summary
 
 - Epic: 16 — Notifier Reality & Slice-1 Production Rehearsal
-- 状态: **planned**（由 Epic 15 close-out 后 post-Epic-15 transition review 激活）
+- 状态: **CLOSED (代码侧)**（child #1-#4 DONE；child #5 真人演练 2026-04-22 Boss 决议 DEFERRED）
 - Slice: 1 / 8（最后一个子 epic）
 
 ## Recovery
 
 - Epic: 16
-- 进度: 0/5
-- 当前: PLANNED（被 Epic 15 阻塞）
+- 进度: 4/5 DONE + 1 DEFERRED（代码侧 100% 收口）
+- 当前: Epic 16 Slice 1 代码侧关闭；child #5 真人演练 Boss 决议 DEFERRED，推到客户验收前窗口
 - 文件: `.codex-tasks/20260422-slice01-epic16-notifier-reality/SUBTASKS.csv`
-- 下一步: 等 Epic 15 close-out → 执行 Epic Transition Protocol (post-Epic-15 review + Epic 16 activation) → 将 child `#1` 标 IN_PROGRESS → 启动 `20260422-01-notifier-abstraction/TODO.csv` TODO `#1`
+- 下一步: 启动 Slice 1.5 UI 重做（前提 2 条已满足：Slice 1 代码侧收官 + Boss 批准）
+- CSE 控制记录:
+  - Phase A/B 全部一次过（零重试）
+  - Phase C child #4 一次过（evaluation.py 旁路 sink 99 regressions 绿 → AlertingService/bootstrap 装配 → 背压测试 test_dispatch_backpressure 一次绿；pnpm test:notifier:signoff 全绿）
+  - 累计 102 alerting 相关测试 + 72 web 测试 + mypy/ruff 28 源文件全绿；OpenAPI 0.15.0；schema v11
 
 ## Reference
 

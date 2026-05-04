@@ -3,6 +3,16 @@ from db_monitor_api.analytics.repository import (
     InMemoryAnalyticsRepository,
 )
 from db_monitor_api.analytics.service import AnalyticsService
+from db_monitor_api.alerting.notification import (
+    ChannelRegistry,
+    DispatchCoordinator,
+    InMemoryBindingRepository,
+)
+from db_monitor_api.alerting.notification.query_service import NotifyHistoryService
+from db_monitor_api.alerting.notification.repository import (
+    InMemoryNotifyHistoryRepository,
+    NotifyHistoryRepository,
+)
 from db_monitor_api.alerting.notifier import InMemoryNotifier, Notifier
 from db_monitor_api.alerting.postgres_repository import PostgresAlertingRepository
 from db_monitor_api.alerting.repository import AlertingRepository, InMemoryAlertingRepository
@@ -88,6 +98,7 @@ def build_local_runtime(
     mysql_validator: MySQLConnectionValidator | None = None,
     oracle_validator: OracleConnectionValidator | None = None,
     notifier: Notifier | None = None,
+    notify_history_repository: NotifyHistoryRepository | None = None,
     processlist_repository: ProcesslistRepository | None = None,
     processlist_killer: ProcesslistKiller | None = None,
     slow_query_repository: SlowQueryRepository | None = None,
@@ -108,6 +119,7 @@ def build_local_runtime(
         mysql_validator=mysql_validator or PyMySQLConnectionValidator(),
         oracle_validator=oracle_validator or PythonOracleConnectionValidator(),
         notifier=notifier or InMemoryNotifier(),
+        notify_history_repository=notify_history_repository or InMemoryNotifyHistoryRepository(),
         processlist_repository=processlist_repository or InMemoryProcesslistRepository(),
         processlist_killer=processlist_killer or PyMySQLProcesslistKiller(),
         runtime_mode=RuntimeMode.LOCAL.value,
@@ -126,6 +138,7 @@ def build_postgres_runtime(
     mysql_validator: MySQLConnectionValidator | None = None,
     oracle_validator: OracleConnectionValidator | None = None,
     notifier: Notifier | None = None,
+    notify_history_repository: NotifyHistoryRepository | None = None,
     processlist_repository: ProcesslistRepository | None = None,
     processlist_killer: ProcesslistKiller | None = None,
     slow_query_repository: SlowQueryRepository | None = None,
@@ -160,6 +173,7 @@ def build_postgres_runtime(
         mysql_validator=mysql_validator or PyMySQLConnectionValidator(),
         oracle_validator=oracle_validator or PythonOracleConnectionValidator(),
         notifier=notifier or InMemoryNotifier(),
+        notify_history_repository=notify_history_repository or InMemoryNotifyHistoryRepository(),
         processlist_repository=resolved_processlist,
         processlist_killer=processlist_killer or PyMySQLProcesslistKiller(),
         runtime_mode=RuntimeMode.POSTGRES.value,
@@ -178,6 +192,7 @@ def _build_runtime(
     mysql_validator: MySQLConnectionValidator,
     oracle_validator: OracleConnectionValidator,
     notifier: Notifier,
+    notify_history_repository: NotifyHistoryRepository,
     processlist_repository: ProcesslistRepository,
     processlist_killer: ProcesslistKiller,
     runtime_mode: str,
@@ -186,6 +201,13 @@ def _build_runtime(
 ) -> AppRuntime:
     password_hasher = PasswordHasher()
     audit_service = AuditService(audit_repository=audit_repository)
+    channel_registry = ChannelRegistry()
+    binding_repository = InMemoryBindingRepository()
+    dispatch_coordinator = DispatchCoordinator(
+        registry=channel_registry,
+        bindings=binding_repository,
+        history=notify_history_repository,
+    )
     auth_service = AuthService(
         audit_service=audit_service,
         password_hasher=password_hasher,
@@ -216,7 +238,9 @@ def _build_runtime(
             control_plane_repository=control_plane_repository,
             notifier=notifier,
             repository=alerting_repository,
+            rule_hit_sink=dispatch_coordinator,
         ),
+        notify_history_service=NotifyHistoryService(repository=notify_history_repository),
         processlist_service=ProcesslistService(
             control_plane_repository=control_plane_repository,
             processlist_repository=processlist_repository,

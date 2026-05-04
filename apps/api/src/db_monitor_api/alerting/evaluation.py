@@ -28,8 +28,10 @@ from db_monitor_api.alerting.noise_control import (
     build_suppressed_event,
     should_record_suppressed_event,
 )
+from db_monitor_api.alerting.notification import NullRuleHitSink, RuleHitEvent, RuleHitSink
 from db_monitor_api.alerting.notifier import Notifier
 from db_monitor_api.alerting.repository import AlertingRepository
+from db_monitor_api.control_plane.domain import DatabaseEngine
 from db_monitor_pipeline.domain import MetricSample
 
 DEFAULT_NOTIFICATION_RETRY_BACKOFF_SECONDS = 60
@@ -54,8 +56,10 @@ def evaluate_samples(
     notification_retry_policy: NotificationRetryPolicy,
     repository: AlertingRepository,
     samples: tuple[MetricSample, ...],
+    rule_hit_sink: RuleHitSink | None = None,
 ) -> EvaluationSummary:
     started_at = time.perf_counter()
+    effective_sink: RuleHitSink = rule_hit_sink if rule_hit_sink is not None else NullRuleHitSink()
     rules = repository.list_rules(organization_id=organization_id)
     notified = 0
     opened = 0
@@ -72,6 +76,7 @@ def evaluate_samples(
                 override=override_index.get(sample.instance_id),
                 repository=repository,
                 rule=rule,
+                rule_hit_sink=effective_sink,
                 sample=sample,
             )
             notified += counts.notified_alerts
@@ -172,6 +177,7 @@ def _evaluate_sample(
     override: RuleInstanceOverride | None,
     repository: AlertingRepository,
     rule: AlertRule,
+    rule_hit_sink: RuleHitSink,
     sample: MetricSample,
 ) -> EvaluationSummary:
     if not _effective_enabled(override=override, rule=rule):
@@ -195,6 +201,7 @@ def _evaluate_sample(
             notification_retry_policy=notification_retry_policy,
             repository=repository,
             rule=rule,
+            rule_hit_sink=rule_hit_sink,
             sample=sample,
         )
     if active_alert is None:
@@ -221,6 +228,7 @@ def _handle_matching_sample(
     notification_retry_policy: NotificationRetryPolicy,
     repository: AlertingRepository,
     rule: AlertRule,
+    rule_hit_sink: RuleHitSink,
     sample: MetricSample,
 ) -> EvaluationSummary:
     if active_alert is None:
@@ -229,6 +237,7 @@ def _handle_matching_sample(
             notifier=notifier,
             repository=repository,
             rule=rule,
+            rule_hit_sink=rule_hit_sink,
             sample=sample,
         )
         return EvaluationSummary(notified_alerts=1, opened_alerts=1, resolved_alerts=0)
@@ -259,6 +268,7 @@ def _handle_matching_sample(
             occurred_at=sample.collected_at,
             repository=repository,
         )
+        rule_hit_sink.submit(_build_rule_hit_event(alert=refreshed_alert, sample=sample))
         return EvaluationSummary(notified_alerts=1, opened_alerts=0, resolved_alerts=0)
     _record_suppressed_match_if_due(
         alert=refreshed_alert,
@@ -276,6 +286,7 @@ def _open_alert(
     notifier: Notifier,
     repository: AlertingRepository,
     rule: AlertRule,
+    rule_hit_sink: RuleHitSink,
     sample: MetricSample,
 ) -> None:
     alert = AlertRecord(
@@ -313,6 +324,31 @@ def _open_alert(
         notifier=notifier,
         occurred_at=sample.collected_at,
         repository=repository,
+    )
+    rule_hit_sink.submit(_build_rule_hit_event(alert=alert, sample=sample))
+
+
+def _build_rule_hit_event(*, alert: AlertRecord, sample: MetricSample) -> RuleHitEvent:
+    engine_value = (
+        alert.engine.value if isinstance(alert.engine, DatabaseEngine) else str(alert.engine)
+    )
+    severity_value = (
+        alert.severity.value
+        if hasattr(alert.severity, "value")
+        else str(alert.severity)
+    )
+    return RuleHitEvent(
+        rule_id=alert.rule_id,
+        rule_name=alert.rule_name,
+        organization_id=alert.organization_id,
+        instance_id=alert.instance_id,
+        engine=engine_value,
+        metric_name=alert.metric_name,
+        metric_value=sample.metric_value,
+        threshold=alert.threshold,
+        severity=severity_value,
+        occurred_at=sample.collected_at,
+        web_link=None,
     )
 
 

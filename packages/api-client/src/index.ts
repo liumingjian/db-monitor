@@ -396,6 +396,25 @@ export interface ListTablespacesFilters {
 	readonly collected_before?: string;
 }
 
+export interface NotifyHistoryResponse {
+	readonly attempt: number;
+	readonly attempted_at: string;
+	readonly channel: string;
+	readonly delivered_at: string | null;
+	readonly error: string | null;
+	readonly instance_id: string | null;
+	readonly organization_id: string;
+	readonly rule_id: string;
+	readonly status: string;
+}
+
+export interface ListNotifyHistoryFilters {
+	readonly channel?: string;
+	readonly limit?: number;
+	readonly rule_id?: string;
+	readonly status?: string;
+}
+
 export interface TablespaceHistoryFilters {
 	readonly from: string;
 	readonly to: string;
@@ -442,6 +461,7 @@ export interface ApiClient {
 	listInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
 	listMySQLInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
 	listAlerts(filters?: ListAlertsFilters): Promise<readonly AlertRecordResponse[]>;
+	listNotifyHistory(filters?: ListNotifyHistoryFilters): Promise<readonly NotifyHistoryResponse[]>;
 	listRuleCatalog(): Promise<readonly AlertEngineCatalogResponse[]>;
 	listRules(): Promise<readonly AlertRuleResponse[]>;
 	listRoleCatalog(): Promise<readonly RoleCatalogEntryResponse[]>;
@@ -457,7 +477,7 @@ export interface ApiClient {
 	updateUserRoles(userId: string, request: UpdateUserRolesRequest): Promise<ManagedUserResponse>;
 }
 
-export const API_CONTRACT_VERSION = "0.14.0";
+export const API_CONTRACT_VERSION = "0.15.0";
 export const apiClientPackageName = "@db-monitor/api-client";
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -534,6 +554,10 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 			request<readonly InstanceResponse[]>(`/control/mysql-instances${buildQueryString(filters)}`),
 		listAlerts: (filters) =>
 			request<readonly AlertRecordResponse[]>(`/alerts${buildQueryString(filters)}`),
+		listNotifyHistory: (filters) =>
+			request<readonly NotifyHistoryResponse[]>(
+				`/admin/notify-history${buildQueryString(filters)}`,
+			),
 		listRuleCatalog: () => request<readonly AlertEngineCatalogResponse[]>("/alerts/rule-catalog"),
 		listRules: () => request<readonly AlertRuleResponse[]>("/alerts/rules"),
 		listRoleCatalog: () => request<readonly RoleCatalogEntryResponse[]>("/auth/roles"),
@@ -565,6 +589,7 @@ function buildQueryString(
 	filters:
 		| ListAlertsFilters
 		| ListInstancesFilters
+		| ListNotifyHistoryFilters
 		| ListProcesslistFilters
 		| ListSlowQueriesFilters
 		| ListTablespacesFilters

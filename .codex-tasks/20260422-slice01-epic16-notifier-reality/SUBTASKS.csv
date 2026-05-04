@@ -1,6 +1,6 @@
 id,child_dir,title,status,depends_on,owner,notes
-1,20260422-01-notifier-abstraction,Notifier Protocol + pluggable factory + notify_history schema,PENDING,,,抽象层；决定后续 channel 能否插拔
-2,20260422-02-feishu-channel,Feishu webhook + 签名 + 富卡片 + @成员 + 指数退避重试,PENDING,1,,主通道；Slice 1 唯一"必到"的真实通道
-3,20260422-03-smtp-channel,SMTP HTML 模板 + 配置读取 + Feishu 降级接管,PENDING,1,,备通道；与 #2 可并行
-4,20260422-04-end-to-end-integration,Rule-engine 命中 → Notifier 异步送达 + notify_history 写入 + timeout 不阻塞,PENDING,"2,3",,决定 Notifier 不会成为 rule-engine 回压点
-5,20260422-05-slice1-production-rehearsal-signoff,真人 DBA 4 小时值班演练 + 4 故障场景 + 签字报告,PENDING,4,,Slice 1 投产 gate；通过后 Slice 1 DONE
+1,20260422-01-notifier-abstraction,Notifier Protocol + pluggable factory + notify_history schema,DONE,,,"2026-04-22 完成；6/6；21 unit 测试 + web typecheck 全绿；schema v11；OpenAPI 0.15.0"
+2,20260422-02-feishu-channel,Feishu webhook + 签名 + 富卡片 + @成员 + 指数退避重试,DONE,1,,"2026-04-22 完成；feishu.py 274L + 3 测试文件；34 channel 测试合流绿"
+3,20260422-03-smtp-channel,SMTP HTML 模板 + 配置读取 + Feishu 降级接管,DONE,1,,"2026-04-22 完成；smtp.py+settings+3 测试文件；stdlib smtplib+asyncio.to_thread，零新依赖"
+4,20260422-04-end-to-end-integration,Rule-engine 命中 → Notifier 异步送达 + notify_history 写入 + timeout 不阻塞,DONE,"2,3",,"2026-04-22 完成；evaluation.py 旁路 sink + AlertingService.rule_hit_sink + bootstrap 装配 DispatchCoordinator(≤128) + InMemoryBindingRepository；背压测试 test_dispatch_backpressure 通过；scripts/test-notifier-signoff.ps1 + pnpm test:notifier:signoff 全绿 (openapi+alerting_notification+rule_engine+api/alerting+workflow+noise+delivery+schema_bootstrap+web 72 tests+typecheck)"
+5,20260422-05-slice1-production-rehearsal-signoff,真人 DBA 4 小时值班演练 + 4 故障场景 + 签字报告,DEFERRED,4,,"2026-04-22 Boss 决议跳过；不作为 Slice 1 收官 gate；凭据配置 + 真人演练推到客户验收前窗口"

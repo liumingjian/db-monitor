@@ -233,6 +233,29 @@ def handle_alert_maturity_signoff() -> None:
         run(cmd)
 
 
+def handle_notifier_signoff() -> None:
+    commands = [
+        ["pnpm", "openapi:check"],
+        [
+            "uv",
+            "run",
+            "pytest",
+            "tests/alerting_notification",
+            "tests/rule_engine",
+            "tests/api/alerting",
+            "tests/alerting_contract",
+            "tests/alerting_workflow",
+            "tests/alerting_noise",
+            "tests/alerting_delivery",
+            "tests/schema/test_schema_bootstrap.py",
+        ],
+        ["pnpm", "test"],
+        ["pnpm", "typecheck"],
+    ]
+    for cmd in commands:
+        run(cmd)
+
+
 def handle_alert_pipeline_postgres() -> None:
     env = {"DB_MONITOR_POSTGRES_TEST_DSN": default_postgres_test_dsn()}
     with compose_services("postgres"):
@@ -597,6 +620,7 @@ HANDLERS = {
     "test-hardening-signoff.ps1": handle_hardening_signoff,
     "test-launch-readiness-signoff.ps1": handle_launch_readiness_signoff,
     "test-metrics-pipeline-live.ps1": handle_metrics_pipeline_live,
+    "test-notifier-signoff.ps1": handle_notifier_signoff,
     "test-oracle-runtime-doctor.ps1": handle_oracle_runtime_doctor,
     "test-oracle-runtime-signoff.ps1": handle_oracle_runtime_signoff,
     "test-recovery-paths.ps1": handle_recovery_paths,
