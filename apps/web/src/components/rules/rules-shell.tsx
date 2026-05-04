@@ -14,6 +14,7 @@ import {
 	Activity as ActivityIcon,
 	Bell as BellIcon,
 	LifeBuoy as LifeBuoyIcon,
+	SlidersHorizontal as RulesIcon,
 	Settings as SettingsIcon,
 	Wrench as WrenchIcon,
 } from "lucide-react";
@@ -137,7 +138,7 @@ function buildSidebarItems(labels: RulesShellLabels): readonly SidebarItemModel[
 		{ href: "/overview", icon: ActivityIcon, label: labels.sidebarOverview },
 		{ href: "/instances", icon: LifeBuoyIcon, label: labels.sidebarInstances },
 		{ href: "/alerts", icon: BellIcon, label: labels.sidebarAlerts },
-		{ href: "/rules", label: labels.sidebarRules },
+		{ href: "/rules", icon: RulesIcon, label: labels.sidebarRules },
 		{ href: "/settings", icon: SettingsIcon, label: labels.sidebarSettings },
 	];
 }

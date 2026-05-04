@@ -20,6 +20,12 @@
 /* Design tokens (dual-theme CSS vars + Tailwind v4 @theme) */
 @import "../../../packages/ui/src/styles/tokens.css";
 
+/* Tailwind v4 only scans the directory containing this CSS file by default.
+   Monorepo packages/ui sources must be declared explicitly so utility classes
+   used only inside @db-monitor/ui (e.g. h-16, grid-cols-5, grid-cols-6 in
+   packages/ui/src/layout/quick-metrics.tsx) are detected and emitted. */
+@source "../../../packages/ui/src/**/*.{tsx,ts,jsx,js}";
+
 @layer base {
 	html {
 		background-color: var(--bg-deep);

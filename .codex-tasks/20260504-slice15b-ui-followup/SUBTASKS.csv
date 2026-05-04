@@ -1,0 +1,4 @@
+id,child_dir,title,status,depends_on,owner,notes
+1,20260504-pr-alpha-alerts-chrome-followup,PR α — alerts chrome 收尾 + 合规承接,IN_PROGRESS,,,"建本 epic + 修正 Slice 1.5 #5/#10 状态 + ADR-0012 加 Followup 段 + 删 app-chrome.tsx + 新建 alerts-app-shell.tsx + alerts 两页迁 AppShell + 机器门全绿；估时 1.5 天"
+2,20260504-pr-beta-overview-panel-rework,PR β — overview panel 战术立模板,PLANNED,1,,"调 ui-ux-pro-max skill 出 3 个 layout 候选 + Boss 拍板 + overview-shell/fleet-health-matrix/instances-snapshot-table/overview-line-chart 重排成 section-heading + hairline divider；估时 2-3 天"
+3,20260504-pr-gamma-batch-pages-and-acceptance,PR γ — 其他 page 批量复制 + 验收,PLANNED,2,,"7 页复制 overview 模板 + 视觉回归 update-snapshots + Lighthouse ≥ 90 + Boss 走 9 页 + Slice 1.5 #5/#10 改回 DONE；估时 1.5-2 天"

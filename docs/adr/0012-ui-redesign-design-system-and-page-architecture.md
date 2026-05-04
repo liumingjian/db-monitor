@@ -106,10 +106,49 @@ Slice 1 在 2026-04-22 进入投产前的最后窗口，Playwright E2E + 专业 
 - 任何新页必须遵循 Canonical page template；偏离需写子 ADR 说明。
 - Tier 3 占位卡片上线后，若对应功能落地必须同步替换占位卡片；**不允许**占位卡片静默删除。
 
+## Followup (2026-05-04)
+
+> Status: Slice 1.5b 收尾延展，**不修订 D1-D7 锁定项**。
+
+Slice 1.5 验收数据复盘发现两条残留：
+
+1. `apps/web/app/alerts/page.tsx` 与 `apps/web/app/alerts/[alertId]/page.tsx` 仍 import 旧
+   `apps/web/src/components/app-chrome.tsx`（亮色 marketing-style），与其他 8 个 Tier 1 页面
+   走 AppShell 的暗色 ops 方向不一致。`SUBTASKS.csv #5` 标 DONE 与代码状态不符，已改回
+   `IN_PROGRESS` 并在 notes 备注 followup 指针。
+2. `SUBTASKS.csv #10` Lighthouse Perf=64 备注是 dev-mode penalty，prod build + next start
+   尚未重跑。视觉回归 24 个基线在 alerts 迁移 + panel 重排后将作废，需 update-snapshots 重建。
+
+本 followup 在守 ADR-0012 D1-D7 的前提下补足上述残留，并对 D4 / D7 做 **不修订** 的延展约束：
+
+- **D4 不修订**：IconRail 64 + ContextualSidebar 216 永久展开拓扑保留，`/alerts` 走 AppShell
+  与其他页一致；不引入"按需展开 / hover-flyout / 单 sidebar"等会破 D4 的 chrome 改造
+- **D4 钉子（密度只控表格行高，不影响图表与卡片）保留**：聚合页 panel 重排只允许通过
+  **减少 panel 数量**（去除重发明的 `<section className="rounded-md border bg-bg-base p-4">`
+  自造卡片，改用 `<header>` + `border-b border-border-hairline` 的 section-heading + hairline
+  divider 模式）实现密度收口；**不允许**压 Card primitive 的 padding / radius / shadow
+- **D7 不修订**：loading skeleton / empty 三分法 / error 三层 / toast 4 色 / Confirm Modal /
+  时间数字格式照旧
+- **聚合页 vs 详情页战术分流**（D4 内允许的细化）：聚合页（overview / alerts / rules / admin/audit /
+  admin/notify-history）走 section-heading + hairline；详情页（instance/[id]、settings 子页）
+  保留 Card primitive 帮助分隔信息流
+
+执行切片：
+
+- **PR α**：alerts chrome 收尾 + 合规承接（删 app-chrome.tsx + alerts 两页迁 AppShell + 修正
+  SUBTASKS.csv 状态 + 本 Followup 段）
+- **PR β**：overview panel 战术立模板（调 ui-ux-pro-max skill 出 layout 候选 + Boss 拍板 +
+  fleet-health-matrix / instances-snapshot-table / overview-line-chart 重排）
+- **PR γ**：其他 page 批量复制 + 视觉回归 update-snapshots + Lighthouse prod build ≥ 90 +
+  Boss 走查 9 页
+
+详见 `.codex-tasks/20260504-slice15b-ui-followup/EPIC.md`。
+
 ## Linked
 
 - `/domain-model` 访谈记录 Q1–Q18（访谈原文保留在 `.claude/projects/*` session 中）。
 - `.codex-tasks/20260423-ui-redesign-slice1-5/EPIC.md`（执行计划）。
+- `.codex-tasks/20260504-slice15b-ui-followup/EPIC.md`（Slice 1.5b 收尾延展）。
 - ADR-0006：Runtime action permission（Kill 按钮权限门槛来源）。
 - ADR-0004：Per-instance threshold overrides（Rules 页 Tri-state 继承态的后端依据）。
 - Epic 16 HANDOFF：`/admin/notify-history` UI 规格（Q14）的后端依据。

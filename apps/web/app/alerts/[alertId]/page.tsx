@@ -1,9 +1,16 @@
+import type { BreadcrumbItem } from "@db-monitor/ui";
+
 import { AlertDrawer } from "../../../src/components/alerts/alert-drawer";
 import { toAlertTabKey } from "../../../src/components/alerts/alert-view-model";
+import { AlertsAppShell } from "../../../src/components/alerts/alerts-app-shell";
 import { AlertsPageShell } from "../../../src/components/alerts/alerts-page-shell";
-import { AppChrome } from "../../../src/components/app-chrome";
 import { buildAlertListFilterValues } from "../../../src/monitoring-ui";
 import { createServerApiClient, requireServerSession } from "../../../src/server-api";
+
+const BREADCRUMBS: readonly BreadcrumbItem[] = [
+	{ label: "告警", href: "/alerts" },
+	{ label: "告警详情" },
+];
 
 interface AlertDetailPageProps {
 	readonly params: Promise<{
@@ -41,7 +48,7 @@ export default async function AlertDetailPage({ params, searchParams }: AlertDet
 	const listHref = queryString.length === 0 ? "/alerts" : `/alerts?${queryString}`;
 
 	return (
-		<AppChrome session={session}>
+		<AlertsAppShell session={session} breadcrumbs={BREADCRUMBS}>
 			<AlertsPageShell
 				alerts={alerts}
 				baseHref={listHref}
@@ -52,7 +59,7 @@ export default async function AlertDetailPage({ params, searchParams }: AlertDet
 				isDetail={true}
 				tab={tab}
 			/>
-		</AppChrome>
+		</AlertsAppShell>
 	);
 }
 
