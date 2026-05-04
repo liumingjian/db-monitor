@@ -1,0 +1,9 @@
+step,task,status,acceptance,verification,completed_at,retries,notes
+1,"追加 loginPage.* namespace 到 zh-CN.json",DONE,"所有 hero/form/error/trace keys 全部追加；不动其它 namespace；JSON 可解析","pnpm --filter web typecheck",2026-04-23,0,"append 到末尾；并行 alertsPage 追加后文件仍合法 JSON"
+2,"新建 particles-background.tsx（CSS-only）",DONE,"纯 CSS keyframes + radial-gradient，四色 token 驱动；无 JS 动画","lint/typecheck/build",2026-04-23,0,"通过内联 <style dangerouslySetInnerHTML> 把 @keyframes 挂到本页；prefers-reduced-motion 兜底"
+3,"新建 brand-panel.tsx",DONE,"hero + 三条价值点 + 粒子背景集成；双主题全 token","typecheck",2026-04-23,0,"tokens: accent/sev-info/sev-ok/sev-warning bg + border-hairline 全部走 CSS var"
+4,"新建 login-error-banner.tsx + login-form.tsx",DONE,"Input/Label/Button 来自 @db-monitor/ui；提交中 skeleton 覆盖；401/422 inline；5xx 页级；trace_id 展示","typecheck",2026-04-23,0,"client fetch + redirect:manual，303 → window.location.assign(nextPath)"
+5,"新建 login-shell.tsx（60/40 容器 + ThemeToggle）",DONE,"md+ 6fr/4fr；<md 单列；ThemeToggle 右上","typecheck + build",2026-04-23,0,"grid-cols-[6fr_4fr] md 断点；左右各铺一次 BrandPanel / LoginForm"
+6,"重写 apps/web/app/login/page.tsx",DONE,"server component；fetchServerSession + redirect；把 next 传给 LoginShell","typecheck + build",2026-04-23,0,"保留 redirect('/overview')；默认 nextPath '/overview'"
+7,"本地四门验证",PARTIAL,"scope lint/typecheck/test PASS；全局 lint/build 因其他 agent 区域已知问题红（非本作用域）","详见 PROGRESS.md Validation",2026-04-23,0,"typecheck=PASS；test=104/104；自作用域 biome check 7 files clean；全局 lint/build 红的根因均在 alerts/overview/rules/instances-list/notify + #0 未导出 formatTimestamp"
+8,"更新 SUBTASKS.csv + 写 PROGRESS.md validation 段",PARTIAL,"PROGRESS.md 已写；SUBTASKS.csv id=1 暂未改 DONE，待 Boss 决策","手动 grep 确认",2026-04-23,0,"本 agent 不越界修其他作用域；等 Boss 选择 A/B（详见 PROGRESS.md）"

@@ -45,3 +45,17 @@ def test_admin_settings_write_records_audit_entry(
     assert response.json()["value"] == "email"
     assert runtime.audit_repository.entries[-1].action == "settings.write"
     assert runtime.audit_repository.entries[-1].outcome == "allowed"
+
+
+def test_viewer_is_denied_user_management_and_audited(
+    client: TestClient,
+    runtime: AppRuntime,
+) -> None:
+    client.post("/auth/login", json={"password": "viewer-password", "username": "viewer"})
+
+    response = client.get("/auth/users")
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Missing permission: settings:write"}
+    assert runtime.audit_repository.entries[-1].action == "users.denied"
+    assert runtime.audit_repository.entries[-1].outcome == "denied"

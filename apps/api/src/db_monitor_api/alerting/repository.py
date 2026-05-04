@@ -1,7 +1,13 @@
 from dataclasses import replace
 from typing import Protocol
 
-from db_monitor_api.alerting.domain import AlertHistoryEvent, AlertRecord, AlertRule, AlertStatus
+from db_monitor_api.alerting.domain import (
+    AlertHistoryEvent,
+    AlertRecord,
+    AlertRule,
+    AlertStatus,
+    RuleInstanceOverride,
+)
 
 
 class AlertingRepository(Protocol):
@@ -9,6 +15,9 @@ class AlertingRepository(Protocol):
         ...
 
     def create_rule(self, rule: AlertRule) -> None:
+        ...
+
+    def delete_override(self, *, instance_id: str, rule_id: str) -> bool:
         ...
 
     def find_active_alert(
@@ -28,6 +37,14 @@ class AlertingRepository(Protocol):
     ) -> AlertRecord | None:
         ...
 
+    def get_rule(
+        self,
+        rule_id: str,
+        *,
+        organization_id: str | None = None,
+    ) -> AlertRule | None:
+        ...
+
     def list_alerts(self, *, organization_id: str | None = None) -> tuple[AlertRecord, ...]:
         ...
 
@@ -42,7 +59,13 @@ class AlertingRepository(Protocol):
     def list_rules(self, *, organization_id: str | None = None) -> tuple[AlertRule, ...]:
         ...
 
+    def update_rule(self, rule: AlertRule) -> None:
+        ...
+
     def upsert_alert(self, alert: AlertRecord) -> None:
+        ...
+
+    def upsert_override(self, override: RuleInstanceOverride) -> None:
         ...
 
 
@@ -51,12 +74,16 @@ class InMemoryAlertingRepository:
         self._alerts: dict[str, AlertRecord] = {}
         self._history: dict[str, list[AlertHistoryEvent]] = {}
         self._rules: dict[str, AlertRule] = {}
+        self._overrides: dict[tuple[str, str], RuleInstanceOverride] = {}
 
     def append_history(self, event: AlertHistoryEvent) -> None:
         self._history.setdefault(event.alert_id, []).append(event)
 
     def create_rule(self, rule: AlertRule) -> None:
-        self._rules[rule.rule_id] = rule
+        self._rules[rule.rule_id] = replace(rule, overrides=())
+
+    def delete_override(self, *, instance_id: str, rule_id: str) -> bool:
+        return self._overrides.pop((rule_id, instance_id), None) is not None
 
     def find_active_alert(
         self,
@@ -120,7 +147,39 @@ class InMemoryAlertingRepository:
             ),
             key=lambda rule: rule.created_at,
         )
-        return tuple(replace(rule) for rule in sorted_rules)
+        return tuple(self._hydrate_rule_overrides(rule) for rule in sorted_rules)
+
+    def get_rule(
+        self,
+        rule_id: str,
+        *,
+        organization_id: str | None = None,
+    ) -> AlertRule | None:
+        rule = self._rules.get(rule_id)
+        if rule is None:
+            return None
+        if organization_id is not None and rule.organization_id != organization_id:
+            return None
+        return self._hydrate_rule_overrides(rule)
+
+    def update_rule(self, rule: AlertRule) -> None:
+        if rule.rule_id not in self._rules:
+            raise KeyError(f"Unknown rule: {rule.rule_id}")
+        self._rules[rule.rule_id] = replace(rule, overrides=())
 
     def upsert_alert(self, alert: AlertRecord) -> None:
         self._alerts[alert.alert_id] = alert
+
+    def upsert_override(self, override: RuleInstanceOverride) -> None:
+        self._overrides[(override.rule_id, override.instance_id)] = override
+
+    def _hydrate_rule_overrides(self, rule: AlertRule) -> AlertRule:
+        overrides = tuple(
+            replace(override)
+            for (rule_id, _instance_id), override in sorted(
+                self._overrides.items(),
+                key=lambda item: item[0][1],
+            )
+            if rule_id == rule.rule_id
+        )
+        return replace(rule, overrides=overrides)

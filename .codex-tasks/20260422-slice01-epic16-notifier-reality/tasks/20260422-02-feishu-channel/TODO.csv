@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Implement feishu signature + payload builder,PENDING,"HMAC-SHA256 签名与飞书官方样例一致；卡片 JSON 结构符合 SPEC","uv run pytest tests/alerting_notification/test_feishu_payload.py -q",,0,
+2,Implement feishu send with httpx + 3x retry backoff,PENDING,"429/5xx 重试；4xx(非429) 不重试；总耗时 ≤15s","uv run pytest tests/alerting_notification/test_feishu_send.py -q",,0,
+3,Register feishu channel in registry,PENDING,"app 启动后 get_notifier('feishu') 返回实例","uv run pytest tests/alerting_notification/test_registry_feishu.py -q",,0,
+4,Write notify_history on each attempt,PENDING,"3 次重试写 3 行；最终成功/失败状态正确","uv run pytest tests/alerting_notification/test_feishu_history.py -q",,0,
+5,Support at_user_ids + @all from binding config,PENDING,"卡片 at 块内容符合 SPEC；@all 走飞书专用标记","uv run pytest tests/alerting_notification/test_feishu_at.py -q",,0,

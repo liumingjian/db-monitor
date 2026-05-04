@@ -8,9 +8,8 @@
 
 - 原始 `PRD.md` 的 `MySQL-first phase one` 主链已经基本交付
 - 当前仓库已经明显超出原始 PRD，进入了多引擎、组织治理和更深运维闭环阶段
-- 现在真正阻塞继续推进的，不是“phase one 主链还没做出来”，而是：
-  - 原始 PRD 里仍有少数 control-plane 欠账没补齐
-  - roadmap 01-09 已全部完成，继续开发前必须先做新的 roadmap extension
+- 原始 PRD 里最后一批 control-plane closeout 欠账，已经通过 `Epic 10: PRD Debt and Control-Plane Closeout` 收口完成
+- 如果继续推进，下一步不再是补 phase-one 债，而是基于新的 repo gap 做后续 roadmap extension
 
 ## Status Summary
 
@@ -19,7 +18,7 @@
 | 原始 PRD 主链 | 基本完成 | 登录、RBAC enforcement、实例接入、采集链路、overview/detail、规则告警、设置页、工程门禁都已落地 |
 | 原始 PRD 的运维/质量目标 | 已完成并超额 | 发布、恢复、schema、background process、smoke/signoff 已形成完整闭环 |
 | 原始 PRD 之外的能力 | 已明显超出 | Oracle 第二引擎、engine-aware overview、multi-engine alerting、organization governance 已落地 |
-| 仍未补齐的 PRD 欠账 | 有，但属于补洞而非重做 | 主要集中在用户管理、筛选面、审计持久化、若干 detail semantics |
+| PRD closeout 欠账 | 已完成 | `Epic 10` 已把用户管理、筛选面、审计持久化和 detail semantics 一次性收口 |
 
 ## What Is Complete
 
@@ -47,27 +46,24 @@
 | Organization governance | 已完成 | auth、control-plane、alerting、web 都已挂到 organization scope |
 | Operational hardening | 已完成并形成 runbook | 发布、回滚、恢复、runtime readness 均有门禁与文档 |
 
-## Remaining Gaps
+## Closeout Results
 
-下面这些项是我认为当前最值得被当作“原始 PRD closeout 欠账”的内容。
+下面这些项曾经是原始 PRD 最后剩余的 closeout 欠账；当前已经全部有代码、测试和 signoff 证据。
 
 | Gap | 当前判断 | 为什么还算 gap |
 |---|---|---|
-| 用户/角色管理产品面 | 部分缺失 | 当前有 seed users、session、roles、permissions、RBAC enforcement，但没有完整的用户/角色管理 API 与 UI |
+| 用户/角色管理产品面 | 已完成 | `Epic 10 / child #3` 已补齐 admin-only 用户目录、角色目录、existing-user role update API、typed client 和 `/settings` 管理面 |
 | 实例列表筛选 | 已完成 | `Epic 10 / child #1` 已为 `/control/instances`、typed client 和 `/instances` 页面补齐名称、环境、标签、状态筛选 |
 | 告警列表筛选 | 已完成 | `Epic 10 / child #1` 已为 `/alerts`、typed client 和 `/alerts` 页面补齐状态、级别、时间、实例筛选 |
 | 审计日志持久化与查询 | 已完成（最小产品面） | `Epic 10 / child #2` 已补齐 `audit_entries`、`PostgresAuditRepository` 和 admin-only `/auth/audit-entries`，关键控制面写路径已进入 PostgreSQL 审计真相 |
-| TPS 指标显式交付 | 缺失 | 当前显式交付的是 QPS、网络、uptime、replication lag、buffer-pool / Oracle sessions 等，未看到独立 TPS contract |
-| 实例角色/版本显式展示 | 部分缺失 | validation 中已有 server version，但详情页当前主要展示连接信息、validation status 和 trends，没有把“角色/版本”作为正式 readout 收口 |
+| TPS 指标显式交付 | 已完成 | `Epic 10 / child #4` 已为 MySQL detail cards 补齐 `mysql_transactions_per_second`，并补了对应的 metrics/analytics 测试链 |
+| 实例角色/版本显式展示 | 已完成 | `Epic 10 / child #4` 已让 detail payload 和实例详情页显式展示 `server_role` / `server_version` readout |
 
 ## Current Closeout Track
 
-当前 repo 已经不再停留在“建议新开 debt epic”的阶段，而是已经进入实际执行中的 `Epic 10: PRD Debt and Control-Plane Closeout`。
+当前 repo 已经完成了 `Epic 10: PRD Debt and Control-Plane Closeout`。
 
-当前 closeout track 的剩余目标是：
-
-1. 用户/角色管理产品面
-2. TPS 与实例角色/版本显式展示
+当前 closeout track 已无剩余目标；如果继续推进，需要回到新的 roadmap close-out / extension 流程。
 
 ## Bottom Line
 
@@ -75,4 +71,5 @@
 
 - `PRD.md` 主链已经大体完成
 - 仓库实现已经超过原始 PRD 边界
-- 剩余工作更像一次有边界的 closeout / debt pass，而不是 phase-one 继续从头铺功能
+- 原始 PRD 剩余的 control-plane closeout 欠账已经收口完成
+- 后续新增工作应被视为新的 roadmap extension，而不是 phase-one debt 继续补洞

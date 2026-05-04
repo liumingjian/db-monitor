@@ -15,17 +15,53 @@ DEFAULT_ORGANIZATION_NAME = "Internal Operations"
 DEFAULT_ORGANIZATION_SLUG = "internal-ops"
 POSTGRES_REQUIRED_TABLES: Final[tuple[str, ...]] = (
     POSTGRES_SCHEMA_VERSION_TABLE,
+    "alert_channel_bindings",
     "alert_history",
     "alert_records",
     "alert_rules",
     "audit_entries",
     "control_mysql_instances",
     "control_settings",
+    "instance_parameters",
+    "notify_history",
     "organization_memberships",
     "organizations",
+    "rule_instance_overrides",
 )
 POSTGRES_BOOTSTRAP_COMMAND = "uv run python -m db_monitor_schema bootstrap-postgres"
 _POSTGRES_REQUIRED_TABLE_NAMES = ", ".join(f"'{table_name}'" for table_name in POSTGRES_REQUIRED_TABLES)
+_CREATE_PGCRYPTO_EXTENSION_SQL = "CREATE EXTENSION IF NOT EXISTS pgcrypto"
+_CREATE_ALERT_CHANNEL_BINDINGS_SQL = """
+CREATE TABLE IF NOT EXISTS alert_channel_bindings (
+    rule_id TEXT NOT NULL REFERENCES alert_rules (rule_id) ON DELETE CASCADE,
+    channel TEXT NOT NULL,
+    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (rule_id, channel)
+)
+"""
+_CREATE_NOTIFY_HISTORY_SQL = """
+CREATE TABLE IF NOT EXISTS notify_history (
+    notify_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id TEXT NOT NULL REFERENCES organizations (organization_id),
+    rule_id TEXT NOT NULL REFERENCES alert_rules (rule_id) ON DELETE CASCADE,
+    instance_id TEXT NULL,
+    channel TEXT NOT NULL,
+    status TEXT NOT NULL,
+    attempt INT NOT NULL DEFAULT 1,
+    attempted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    delivered_at TIMESTAMPTZ NULL,
+    error TEXT NULL,
+    payload_hash TEXT NULL
+)
+"""
+_CREATE_NOTIFY_HISTORY_RULE_ATTEMPTED_INDEX_SQL = (
+    "CREATE INDEX IF NOT EXISTS notify_history_rule_attempted_idx "
+    "ON notify_history (rule_id, attempted_at DESC)"
+)
+_CREATE_NOTIFY_HISTORY_STATUS_INDEX_SQL = (
+    "CREATE INDEX IF NOT EXISTS notify_history_status_idx ON notify_history (status)"
+)
 _CREATE_ORGANIZATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS organizations (
     organization_id TEXT PRIMARY KEY,
@@ -135,6 +171,23 @@ CREATE TABLE IF NOT EXISTS audit_entries (
     outcome TEXT NOT NULL,
     resource TEXT NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+)
+"""
+_CREATE_INSTANCE_PARAMETERS_SQL = """
+CREATE TABLE IF NOT EXISTS instance_parameters (
+    instance_id TEXT PRIMARY KEY REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE,
+    parameters JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+"""
+_CREATE_RULE_INSTANCE_OVERRIDES_SQL = """
+CREATE TABLE IF NOT EXISTS rule_instance_overrides (
+    rule_id TEXT NOT NULL REFERENCES alert_rules (rule_id) ON DELETE CASCADE,
+    instance_id TEXT NOT NULL REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE,
+    threshold DOUBLE PRECISION NULL,
+    enabled BOOLEAN NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (rule_id, instance_id)
 )
 """
 _CREATE_VERSION_TABLE_SQL = f"""
@@ -355,10 +408,18 @@ END $$;
 """
 
 
+def _bootstrap_notification_tables(cursor: psycopg.Cursor[object]) -> None:
+    cursor.execute(_CREATE_ALERT_CHANNEL_BINDINGS_SQL)
+    cursor.execute(_CREATE_NOTIFY_HISTORY_SQL)
+    cursor.execute(_CREATE_NOTIFY_HISTORY_RULE_ATTEMPTED_INDEX_SQL)
+    cursor.execute(_CREATE_NOTIFY_HISTORY_STATUS_INDEX_SQL)
+
+
 def bootstrap_postgres_schema(*, postgres_dsn: str) -> SchemaVersion:
     updated_at = datetime.now(tz=UTC)
     with psycopg.connect(postgres_dsn) as connection:
         with connection.cursor() as cursor:
+            cursor.execute(_CREATE_PGCRYPTO_EXTENSION_SQL)
             cursor.execute(_CREATE_VERSION_TABLE_SQL)
             cursor.execute(_CREATE_ORGANIZATIONS_SQL)
             cursor.execute(_CREATE_ORGANIZATION_MEMBERSHIPS_SQL)
@@ -419,6 +480,9 @@ def bootstrap_postgres_schema(*, postgres_dsn: str) -> SchemaVersion:
             cursor.execute(_SET_ALERT_HISTORY_ORGANIZATION_NOT_NULL_SQL)
             cursor.execute(_ENSURE_ALERT_HISTORY_ORGANIZATION_FK_SQL)
             cursor.execute(_CREATE_AUDIT_ENTRIES_SQL)
+            cursor.execute(_CREATE_INSTANCE_PARAMETERS_SQL)
+            cursor.execute(_CREATE_RULE_INSTANCE_OVERRIDES_SQL)
+            _bootstrap_notification_tables(cursor)
             cursor.execute(
                 _UPSERT_VERSION_SQL,
                 (POSTGRES_SCHEMA_SCOPE, POSTGRES_SCHEMA_VERSION, updated_at),

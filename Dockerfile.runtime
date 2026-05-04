@@ -1,0 +1,17 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/workspace/apps/api/src:/workspace/apps/scheduler/src:/workspace/apps/worker-mysql/src
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /workspace
+
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --frozen --no-dev
+
+COPY apps/api/src ./apps/api/src
+COPY apps/scheduler/src ./apps/scheduler/src
+COPY apps/worker-mysql/src ./apps/worker-mysql/src
+COPY scripts/docker_target_runtime.py ./scripts/docker_target_runtime.py

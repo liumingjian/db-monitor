@@ -1,0 +1,7 @@
+id,step,status,notes
+1,追加 zh-CN.json notifyHistory.* + channels.* namespace,DONE,Read 最新后再 Edit，避免与并行 agent 冲突
+2,落地 components/notify 共享组件（FilterChips / StatusBadge / AttemptsTimeline / NotifyDrawer）,DONE,client 组件；基于 @db-monitor/ui primitives 组合
+3,改写 app/admin/notify-history/page.tsx：Server Component 拉取 + 客户端抽屉,DONE,Canonical template + Feed 过滤 + drawer open via ?row= searchParam
+4,新建 app/admin/channels/page.tsx：只读目录 + banner,DONE,聚合 listNotifyHistory 算每通道最近状态；不做任何写操作
+5,本地 lint/typecheck/test/build 全绿,DONE,pnpm --filter web 四联
+6,SUBTASKS.csv id=7 置 DONE + PROGRESS.md 写 validation 段,DONE,记录耗时 / 评估 / 后续衔接

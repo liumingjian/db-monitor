@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add SMTP settings fields to config,PENDING,"SMTP_HOST/PORT/USER/PASSWORD/FROM/USE_TLS 从 .env 读取；缺失时注册为 disabled","uv run pytest tests/api/test_smtp_settings.py -q",,0,
+2,Implement Jinja2 HTML template + plaintext fallback,PENDING,"模板字段覆盖 SPEC 列表；multipart/alternative 两部分均渲染","uv run pytest tests/alerting_notification/test_smtp_template.py -q",,0,
+3,Implement SMTP send + error capture,PENDING,"连接/认证/超时异常都写 notify_history.failed；成功写 delivered","uv run pytest tests/alerting_notification/test_smtp_send.py -q",,0,"用 aiosmtplib 或 smtplib+asyncio.to_thread"
+4,Register smtp channel in registry,PENDING,"app 启动后 get_notifier('smtp') 返回实例（disabled 时抛显式错）","uv run pytest tests/alerting_notification/test_registry_smtp.py -q",,0,

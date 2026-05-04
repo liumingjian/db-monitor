@@ -19,6 +19,7 @@ MYSQL_TIMEOUT_SECONDS = 5
 REPLICA_STATUS_QUERY = "SHOW REPLICA STATUS"
 SLAVE_STATUS_QUERY = "SHOW SLAVE STATUS"
 STATUS_QUERY = "SHOW GLOBAL STATUS"
+MYSQL_TRANSACTION_KEYS = ("Com_commit", "Com_rollback")
 
 
 class MySQLMetricsCollector(Protocol):
@@ -51,6 +52,7 @@ class PyMySQLMetricsCollector:
                 status_rows = cursor.execute(STATUS_QUERY)
                 del status_rows
                 status_map = _rows_to_status_map(cursor.fetchall())
+                status_map.update(_build_transaction_status(status_map))
                 status_map.update(_load_replica_status(cursor))
                 return status_map
 
@@ -70,6 +72,18 @@ def _load_replica_status(cursor: pymysql.cursors.DictCursor) -> dict[str, str]:
         "Seconds_Behind_Master"
     )
     return {} if lag_value is None else {"Seconds_Behind_Source": str(lag_value)}
+
+
+def _build_transaction_status(status_map: Mapping[str, str]) -> dict[str, str]:
+    total = 0.0
+    seen = False
+    for key in MYSQL_TRANSACTION_KEYS:
+        value = status_map.get(key)
+        if value is None:
+            continue
+        total += float(value)
+        seen = True
+    return {"Transactions": str(total)} if seen else {}
 
 
 def _fetch_replica_row(

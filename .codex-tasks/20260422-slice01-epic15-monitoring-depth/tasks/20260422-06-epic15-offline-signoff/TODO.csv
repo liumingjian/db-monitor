@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Run hardening signoff and fix any regression,DONE,"pnpm test:hardening:signoff 通过；若失败只修回归，不扩 scope","pnpm test:hardening:signoff",2026-04-22T12:58:00Z,2,"修复 5 处 FK drop-order bug + _worker_settings 缺 DB_MONITOR_POSTGRES_DSN"
+2,Run schema bootstrap gate,DONE,"pnpm test:schema:bootstrap 通过；3 张新 CH 表 + 1 张 PG 表 asserted 创建","pnpm test:schema:bootstrap",2026-04-22T12:59:00Z,0,"独立复跑亦绿"
+3,Run web smoke over 4 new surfaces,DONE,"pnpm smoke:web 覆盖 Processes / Slow queries / Tablespaces / Rule overrides 主路径","pnpm smoke:web",2026-04-22T13:00:00Z,0,"smoke 用 MySQL fixture 实例，Slow queries 正向覆盖，Tablespaces tab absent assertion 通过"
+4,Finalize SUBTASKS.csv / PROGRESS.md / EPIC.md close-out,DONE,"SUBTASKS.csv 全 DONE；PROGRESS.md Recovery 6/6；EPIC.md 追加 Close-Out Review","bash -lc 'grep -q \"进度: 6/6\" .codex-tasks/20260422-slice01-epic15-monitoring-depth/PROGRESS.md'",2026-04-22T13:00:00Z,0,"Close-Out Review 写入本 child PROGRESS.md；父 Epic 进度更新"

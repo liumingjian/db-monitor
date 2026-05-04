@@ -16,6 +16,7 @@ class StaticMySQLConnectionValidator(MySQLConnectionValidator):
             detail="Static validator accepted the connection.",
             server_version="8.4.0",
             status=ValidationStatus.PASSED,
+            server_role="primary",
         )
 
     def validate(self, config: MySQLConnectionConfig) -> ConnectionValidation:
@@ -30,6 +31,7 @@ class StaticOracleConnectionValidator(OracleConnectionValidator):
             detail="Static Oracle validator accepted the connection.",
             server_version="19.21.0.0.0",
             status=ValidationStatus.PASSED,
+            server_role="primary",
         )
 
     def validate(self, config: InstanceConnectionConfig) -> ConnectionValidation:

@@ -32,8 +32,14 @@ AVAILABILITY_METRIC_BY_ENGINE: dict[DatabaseEngine, str] = {
     DatabaseEngine.ORACLE: "oracle_server_available",
 }
 
-OVERVIEW_METRIC_ENGINES: tuple[DatabaseEngine, ...] = (DatabaseEngine.MYSQL,)
-OVERVIEW_INSTANCE_METRIC_ENGINES: tuple[DatabaseEngine, ...] = (DatabaseEngine.MYSQL,)
+OVERVIEW_METRIC_ENGINES: tuple[DatabaseEngine, ...] = (
+    DatabaseEngine.MYSQL,
+    DatabaseEngine.ORACLE,
+)
+OVERVIEW_INSTANCE_METRIC_ENGINES: tuple[DatabaseEngine, ...] = (
+    DatabaseEngine.MYSQL,
+    DatabaseEngine.ORACLE,
+)
 
 
 class AnalyticsInstanceNotFoundError(Exception):
@@ -60,7 +66,7 @@ class MetricSpec:
     unit: str
 
 
-OVERVIEW_CARD_SPECS: tuple[MetricSpec, ...] = (
+MYSQL_OVERVIEW_CARD_SPECS: tuple[MetricSpec, ...] = (
     MetricSpec(MetricAggregation.SUM, "Threads Connected", "mysql_threads_connected", "mysql_threads_connected", MetricTransform.GAUGE, "connections"),
     MetricSpec(MetricAggregation.SUM, "Threads Running", "mysql_threads_running", "mysql_threads_running", MetricTransform.GAUGE, "threads"),
     MetricSpec(MetricAggregation.SUM, "QPS", "mysql_queries_per_second", "mysql_queries_total", MetricTransform.RATE, "qps"),
@@ -77,7 +83,7 @@ OVERVIEW_CARD_SPECS: tuple[MetricSpec, ...] = (
     MetricSpec(MetricAggregation.MAX, "Replication Lag", "mysql_replication_lag_seconds", "mysql_replication_lag_seconds", MetricTransform.GAUGE, "seconds"),
 )
 
-OVERVIEW_CHART_SPECS: tuple[MetricSpec, ...] = (
+MYSQL_OVERVIEW_CHART_SPECS: tuple[MetricSpec, ...] = (
     MetricSpec(MetricAggregation.SUM, "Threads Connected", "mysql_threads_connected", "mysql_threads_connected", MetricTransform.GAUGE, "connections"),
     MetricSpec(MetricAggregation.SUM, "Threads Running", "mysql_threads_running", "mysql_threads_running", MetricTransform.GAUGE, "threads"),
     MetricSpec(MetricAggregation.SUM, "QPS", "mysql_queries_per_second", "mysql_queries_total", MetricTransform.RATE, "qps"),
@@ -92,6 +98,50 @@ OVERVIEW_CHART_SPECS: tuple[MetricSpec, ...] = (
         "reads/s",
     ),
     MetricSpec(MetricAggregation.MAX, "Replication Lag", "mysql_replication_lag_seconds", "mysql_replication_lag_seconds", MetricTransform.GAUGE, "seconds"),
+)
+
+ORACLE_OVERVIEW_CARD_SPECS: tuple[MetricSpec, ...] = (
+    MetricSpec(MetricAggregation.SUM, "Sessions Total", "oracle_sessions_total", "oracle_sessions_total", MetricTransform.GAUGE, "sessions"),
+    MetricSpec(MetricAggregation.SUM, "Sessions Active", "oracle_sessions_active", "oracle_sessions_active", MetricTransform.GAUGE, "sessions"),
+    MetricSpec(MetricAggregation.SUM, "Session Waits", "oracle_session_waits", "oracle_session_waits", MetricTransform.GAUGE, "sessions"),
+    MetricSpec(
+        MetricAggregation.SUM,
+        "User Calls",
+        "oracle_user_calls_per_second",
+        "oracle_user_calls_total",
+        MetricTransform.RATE,
+        "calls/s",
+    ),
+    MetricSpec(
+        MetricAggregation.SUM,
+        "Physical Reads",
+        "oracle_physical_reads_per_second",
+        "oracle_physical_reads_total",
+        MetricTransform.RATE,
+        "reads/s",
+    ),
+)
+
+ORACLE_OVERVIEW_CHART_SPECS: tuple[MetricSpec, ...] = (
+    MetricSpec(MetricAggregation.SUM, "Sessions Total", "oracle_sessions_total", "oracle_sessions_total", MetricTransform.GAUGE, "sessions"),
+    MetricSpec(MetricAggregation.SUM, "Sessions Active", "oracle_sessions_active", "oracle_sessions_active", MetricTransform.GAUGE, "sessions"),
+    MetricSpec(MetricAggregation.SUM, "Session Waits", "oracle_session_waits", "oracle_session_waits", MetricTransform.GAUGE, "sessions"),
+    MetricSpec(
+        MetricAggregation.SUM,
+        "User Calls",
+        "oracle_user_calls_per_second",
+        "oracle_user_calls_total",
+        MetricTransform.RATE,
+        "calls/s",
+    ),
+    MetricSpec(
+        MetricAggregation.SUM,
+        "Physical Reads",
+        "oracle_physical_reads_per_second",
+        "oracle_physical_reads_total",
+        MetricTransform.RATE,
+        "reads/s",
+    ),
 )
 
 INSTANCE_CARD_SPECS: tuple[MetricSpec, ...] = (
@@ -99,6 +149,7 @@ INSTANCE_CARD_SPECS: tuple[MetricSpec, ...] = (
     MetricSpec(MetricAggregation.SUM, "Threads Connected", "mysql_threads_connected", "mysql_threads_connected", MetricTransform.GAUGE, "connections"),
     MetricSpec(MetricAggregation.SUM, "Threads Running", "mysql_threads_running", "mysql_threads_running", MetricTransform.GAUGE, "threads"),
     MetricSpec(MetricAggregation.SUM, "QPS", "mysql_queries_per_second", "mysql_queries_total", MetricTransform.RATE, "qps"),
+    MetricSpec(MetricAggregation.SUM, "TPS", "mysql_transactions_per_second", "mysql_transactions_total", MetricTransform.RATE, "tps"),
     MetricSpec(MetricAggregation.SUM, "Inbound Throughput", "mysql_bytes_received_per_second", "mysql_bytes_received_total", MetricTransform.RATE, "bytes/s"),
     MetricSpec(MetricAggregation.SUM, "Outbound Throughput", "mysql_bytes_sent_per_second", "mysql_bytes_sent_total", MetricTransform.RATE, "bytes/s"),
     MetricSpec(
@@ -184,6 +235,21 @@ INSTANCE_CHART_SPECS_BY_ENGINE: dict[DatabaseEngine, tuple[MetricSpec, ...]] = {
     DatabaseEngine.ORACLE: ORACLE_INSTANCE_CHART_SPECS,
 }
 
+OVERVIEW_CARD_SPECS_BY_ENGINE: dict[DatabaseEngine, tuple[MetricSpec, ...]] = {
+    DatabaseEngine.MYSQL: MYSQL_OVERVIEW_CARD_SPECS,
+    DatabaseEngine.ORACLE: ORACLE_OVERVIEW_CARD_SPECS,
+}
+
+OVERVIEW_CHART_SPECS_BY_ENGINE: dict[DatabaseEngine, tuple[MetricSpec, ...]] = {
+    DatabaseEngine.MYSQL: MYSQL_OVERVIEW_CHART_SPECS,
+    DatabaseEngine.ORACLE: ORACLE_OVERVIEW_CHART_SPECS,
+}
+
+OVERVIEW_INSTANCE_METRIC_SPECS_BY_ENGINE: dict[DatabaseEngine, tuple[MetricSpec, ...]] = {
+    DatabaseEngine.MYSQL: MYSQL_OVERVIEW_CARD_SPECS,
+    DatabaseEngine.ORACLE: ORACLE_OVERVIEW_CARD_SPECS,
+}
+
 
 @dataclass(frozen=True)
 class AnalyticsService:
@@ -193,11 +259,20 @@ class AnalyticsService:
     def get_overview(self, *, window: TimeWindow) -> OverviewSnapshot:
         generated_at = utc_now()
         instances = self.control_plane_repository.list_instances(organization_id=None)
+        present_engines = _present_engines(instances)
+        card_specs = _flatten_specs_for_engines(
+            specs_by_engine=OVERVIEW_CARD_SPECS_BY_ENGINE,
+            engines=present_engines,
+        )
+        chart_specs = _flatten_specs_for_engines(
+            specs_by_engine=OVERVIEW_CHART_SPECS_BY_ENGINE,
+            engines=present_engines,
+        )
         indexed_samples = self._load_indexed_samples(
             generated_at=generated_at,
             instance_ids=tuple(instance.instance_id for instance in instances),
             metric_names=_required_metric_names(
-                OVERVIEW_CARD_SPECS + OVERVIEW_CHART_SPECS,
+                card_specs + chart_specs,
                 availability_metrics=tuple(AVAILABILITY_METRIC_BY_ENGINE.values()),
             ),
             window=window,
@@ -206,6 +281,7 @@ class AnalyticsService:
             _build_overview_instance_snapshot(
                 instance=instance,
                 metric_samples=indexed_samples.get(instance.instance_id, {}),
+                specs=OVERVIEW_INSTANCE_METRIC_SPECS_BY_ENGINE[instance.engine],
             )
             for instance in instances
         )
@@ -213,12 +289,12 @@ class AnalyticsService:
             bucket_seconds=window.bucket_seconds,
             cards=_build_cards(
                 metric_samples_by_instance=indexed_samples.values(),
-                specs=OVERVIEW_CARD_SPECS,
+                specs=card_specs,
             ),
             charts=_build_series(
                 bucket_seconds=window.bucket_seconds,
                 metric_samples_by_instance=indexed_samples.values(),
-                specs=OVERVIEW_CHART_SPECS,
+                specs=chart_specs,
             ),
             coverage=_build_overview_coverage(instances=instances),
             generated_at=generated_at,
@@ -279,6 +355,8 @@ class AnalyticsService:
                 instance_id=instance.instance_id,
                 labels=instance.labels,
                 name=instance.name,
+                server_role=instance.validation.server_role,
+                server_version=instance.validation.server_version,
                 status=status,
             ),
             window=window,
@@ -315,9 +393,7 @@ def _required_metric_names(
 def _build_overview_engine_summaries(
     snapshots: tuple[OverviewInstanceSnapshot, ...],
 ) -> tuple[OverviewEngineSummary, ...]:
-    engines = tuple(
-        sorted({snapshot.engine for snapshot in snapshots}, key=lambda engine: engine.value)
-    )
+    engines = _present_engines(snapshots)
     return tuple(
         OverviewEngineSummary(
             engine=engine,
@@ -341,9 +417,7 @@ def _build_overview_coverage(
     *,
     instances: tuple[MonitoredInstance, ...],
 ) -> OverviewCoverage:
-    present_engines = tuple(
-        sorted({instance.engine for instance in instances}, key=lambda engine: engine.value)
-    )
+    present_engines = _present_engines(instances)
     return OverviewCoverage(
         detail_analytics_engines=tuple(
             engine for engine in present_engines if engine in INSTANCE_CARD_SPECS_BY_ENGINE
@@ -382,28 +456,38 @@ def _build_overview_instance_snapshot(
     *,
     instance: MonitoredInstance,
     metric_samples: dict[str, tuple[MetricSample, ...]],
+    specs: tuple[MetricSpec, ...],
 ) -> OverviewInstanceSnapshot:
     return OverviewInstanceSnapshot(
         environment=instance.environment,
         engine=instance.engine,
         instance_id=instance.instance_id,
         labels=instance.labels,
+        metrics=_build_cards(
+            metric_samples_by_instance=(metric_samples,),
+            specs=specs,
+        ),
         name=instance.name,
-        qps=_latest_metric_value(metric_samples=metric_samples, spec=OVERVIEW_CARD_SPECS[2]),
-        replication_lag_seconds=_latest_metric_value(
-            metric_samples=metric_samples,
-            spec=OVERVIEW_CARD_SPECS[6],
-        ),
         status=_resolve_status(instance=instance, metric_samples=metric_samples),
-        threads_connected=_latest_metric_value(
-            metric_samples=metric_samples,
-            spec=OVERVIEW_CARD_SPECS[0],
-        ),
-        threads_running=_latest_metric_value(
-            metric_samples=metric_samples,
-            spec=OVERVIEW_CARD_SPECS[1],
-        ),
     )
+
+
+def _flatten_specs_for_engines(
+    *,
+    specs_by_engine: dict[DatabaseEngine, tuple[MetricSpec, ...]],
+    engines: tuple[DatabaseEngine, ...],
+) -> tuple[MetricSpec, ...]:
+    return tuple(
+        spec
+        for engine in engines
+        for spec in specs_by_engine.get(engine, ())
+    )
+
+
+def _present_engines(
+    values: tuple[MonitoredInstance, ...] | tuple[OverviewInstanceSnapshot, ...],
+) -> tuple[DatabaseEngine, ...]:
+    return tuple(sorted({value.engine for value in values}, key=lambda engine: engine.value))
 
 
 def _resolve_status(

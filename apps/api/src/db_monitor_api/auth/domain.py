@@ -10,6 +10,7 @@ class Permission(StrEnum):
     RULES_WRITE = "rules:write"
     SETTINGS_READ = "settings:read"
     SETTINGS_WRITE = "settings:write"
+    INSTANCES_ACTION = "instances:action"
 
 
 ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
@@ -18,6 +19,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
         {
             Permission.INSTANCES_READ,
             Permission.INSTANCES_WRITE,
+            Permission.INSTANCES_ACTION,
             Permission.RULES_READ,
             Permission.RULES_WRITE,
             Permission.SETTINGS_READ,
@@ -92,6 +94,22 @@ class AuthContext:
     permissions: frozenset[Permission]
     session: Session
     user: User
+
+
+@dataclass(frozen=True)
+class ManagedUser:
+    active_organization_id: str
+    display_name: str
+    effective_permissions: frozenset[Permission]
+    roles: frozenset[str]
+    user_id: str
+    username: str
+
+
+@dataclass(frozen=True)
+class RoleCatalogEntry:
+    permissions: frozenset[Permission]
+    role: str
 
 
 def utc_now() -> datetime:

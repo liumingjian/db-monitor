@@ -16,6 +16,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 API_PORT = 38100
 WEB_PORT = 38101
+ORACLE_RUNTIME_LOG_TAIL = "60"
+ORACLE_SELF_PROBE_SCRIPT = """\
+export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe
+export PATH="$ORACLE_HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$ORACLE_HOME/lib"
+echo 'select 1 from dual;' | sqlplus -s system/oracle@//127.0.0.1:1521/XE
+"""
 
 
 def run(cmd: list[str], *, env_overrides: dict[str, str] | None = None) -> None:
@@ -47,6 +54,27 @@ def capture(cmd: list[str], *, env_overrides: dict[str, str] | None = None) -> s
     if stdout:
         print(stdout, flush=True)
     return stdout
+
+
+def capture_allow_failure(
+    cmd: list[str],
+    *,
+    env_overrides: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    if env_overrides:
+        env.update(env_overrides)
+
+    printable = " ".join(shlex.quote(part) for part in cmd)
+    print(f"+ {printable}", flush=True)
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        cwd=REPO_ROOT,
+        env=env,
+        check=False,
+        text=True,
+    )
 
 
 @contextmanager
@@ -167,8 +195,16 @@ def handle_dev_up() -> None:
     print("Local foundation dependencies are running.", flush=True)
 
 
+def handle_docker_target_up() -> None:
+    run([sys.executable, "scripts/docker_target_stack.py", "up"])
+
+
 def handle_dev_down() -> None:
     run(["docker", "compose", "-f", "compose.yaml", "down"])
+
+
+def handle_docker_target_down() -> None:
+    run([sys.executable, "scripts/docker_target_stack.py", "down"])
 
 
 def handle_alert_maturity_signoff() -> None:
@@ -192,6 +228,29 @@ def handle_alert_maturity_signoff() -> None:
         ["pnpm", "build"],
         ["pnpm", "test:alert-pipeline:postgres"],
         ["pnpm", "test:recovery-paths"],
+    ]
+    for cmd in commands:
+        run(cmd)
+
+
+def handle_notifier_signoff() -> None:
+    commands = [
+        ["pnpm", "openapi:check"],
+        [
+            "uv",
+            "run",
+            "pytest",
+            "tests/alerting_notification",
+            "tests/rule_engine",
+            "tests/api/alerting",
+            "tests/alerting_contract",
+            "tests/alerting_workflow",
+            "tests/alerting_noise",
+            "tests/alerting_delivery",
+            "tests/schema/test_schema_bootstrap.py",
+        ],
+        ["pnpm", "test"],
+        ["pnpm", "typecheck"],
     ]
     for cmd in commands:
         run(cmd)
@@ -263,10 +322,47 @@ def handle_control_plane_oracle() -> None:
                 "DB_MONITOR_POSTGRES_TEST_DSN": default_postgres_test_dsn(),
                 **default_oracle_gate_env(),
             }
-            run(
-                ["uv", "run", "pytest", "gates/control_plane/test_control_plane_oracle_live.py"],
-                env_overrides=env,
-            )
+            try:
+                run(
+                    ["uv", "run", "pytest", "gates/control_plane/test_control_plane_oracle_live.py"],
+                    env_overrides=env,
+                )
+            except Exception:
+                show_oracle_runtime_diagnostics(container_ref)
+                raise
+
+
+def handle_oracle_runtime_doctor() -> None:
+    with compose_services("postgres"):
+        with oracle_gate_container() as container_ref:
+            try:
+                run(["uv", "run", "python", "-c", "import oracledb; print(oracledb.__version__)"])
+                run_oracle_self_probe(container_ref)
+            except Exception:
+                show_oracle_runtime_diagnostics(container_ref)
+                raise
+
+
+def handle_oracle_runtime_signoff() -> None:
+    commands = [
+        [
+            "python3",
+            "-c",
+            "import subprocess,sys; sys.exit(subprocess.run(sys.argv[1:], timeout=60).returncode)",
+            "uv",
+            "run",
+            "pytest",
+            "tests/ops/test_oracle_runtime_baseline.py",
+            "tests/ops/test_macos_environment_entrypoints.py",
+            "tests/api/control_plane/test_oracle_validation.py",
+            "-q",
+        ],
+        ["pnpm", "test:oracle-runtime:doctor"],
+        ["pnpm", "test:control-plane:postgres"],
+        ["pnpm", "test:control-plane:oracle"],
+    ]
+    for cmd in commands:
+        run(cmd)
 
 
 def handle_hardening_signoff() -> None:
@@ -284,6 +380,33 @@ def handle_hardening_signoff() -> None:
     ]
     for cmd in commands:
         run(cmd)
+
+
+def handle_launch_readiness_signoff() -> None:
+    commands = [
+        [
+            "python3",
+            "-c",
+            "import subprocess,sys; sys.exit(subprocess.run(sys.argv[1:], timeout=60).returncode)",
+            "uv",
+            "run",
+            "pytest",
+            "tests/ops/test_prelaunch_rehearsal_packet.py",
+            "tests/ops/test_launch_readiness_baseline.py",
+            "tests/ops/test_release_baseline.py",
+            "tests/ops/test_macos_environment_entrypoints.py",
+            "-q",
+        ],
+        ["pnpm", "test:hardening:signoff"],
+        ["pnpm", "test:oracle-runtime:signoff"],
+        ["git", "diff", "--check"],
+    ]
+    for cmd in commands:
+        run(cmd)
+
+
+def handle_docker_target_signoff() -> None:
+    run([sys.executable, "scripts/docker_target_stack.py", "signoff"])
 
 
 def handle_metrics_pipeline_live() -> None:
@@ -420,9 +543,72 @@ def _compose_container_id(service: str) -> str:
     return container_id
 
 
+def run_oracle_self_probe(container_ref: str) -> None:
+    run(
+        [
+            "docker",
+            "exec",
+            container_ref,
+            "bash",
+            "--noprofile",
+            "--norc",
+            "-lc",
+            ORACLE_SELF_PROBE_SCRIPT,
+        ]
+    )
+
+
+def show_oracle_runtime_diagnostics(container_ref: str) -> None:
+    print(f"--- Oracle runtime diagnostics for {container_ref} ---", flush=True)
+
+    health = capture_allow_failure(
+        [
+            "docker",
+            "container",
+            "inspect",
+            "-f",
+            "{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}",
+            container_ref,
+        ]
+    )
+    if health.stdout.strip():
+        print(f"health={health.stdout.strip()}", flush=True)
+    if health.stderr.strip():
+        print(health.stderr.strip(), flush=True)
+
+    logs = capture_allow_failure(["docker", "logs", "--tail", ORACLE_RUNTIME_LOG_TAIL, container_ref])
+    if logs.stdout.strip():
+        print(logs.stdout.strip(), flush=True)
+    if logs.stderr.strip():
+        print(logs.stderr.strip(), flush=True)
+
+    probe = capture_allow_failure(
+        [
+            "docker",
+            "exec",
+            container_ref,
+            "bash",
+            "--noprofile",
+            "--norc",
+            "-lc",
+            ORACLE_SELF_PROBE_SCRIPT,
+        ]
+    )
+    if probe.returncode == 0:
+        print("sqlplus self-probe: passed", flush=True)
+    else:
+        print("sqlplus self-probe: failed", flush=True)
+        if probe.stdout.strip():
+            print(probe.stdout.strip(), flush=True)
+        if probe.stderr.strip():
+            print(probe.stderr.strip(), flush=True)
+
+
 HANDLERS = {
     "dev-down.ps1": handle_dev_down,
     "dev-up.ps1": handle_dev_up,
+    "docker-target-down.ps1": handle_docker_target_down,
+    "docker-target-up.ps1": handle_docker_target_up,
     "test-alert-maturity-signoff.ps1": handle_alert_maturity_signoff,
     "test-alert-pipeline-postgres.ps1": handle_alert_pipeline_postgres,
     "test-analytics-clickhouse.ps1": handle_analytics_clickhouse,
@@ -430,8 +616,13 @@ HANDLERS = {
     "test-background-processes.ps1": handle_background_processes,
     "test-control-plane-oracle.ps1": handle_control_plane_oracle,
     "test-control-plane-postgres.ps1": handle_control_plane_postgres,
+    "test-docker-target-signoff.ps1": handle_docker_target_signoff,
     "test-hardening-signoff.ps1": handle_hardening_signoff,
+    "test-launch-readiness-signoff.ps1": handle_launch_readiness_signoff,
     "test-metrics-pipeline-live.ps1": handle_metrics_pipeline_live,
+    "test-notifier-signoff.ps1": handle_notifier_signoff,
+    "test-oracle-runtime-doctor.ps1": handle_oracle_runtime_doctor,
+    "test-oracle-runtime-signoff.ps1": handle_oracle_runtime_signoff,
     "test-recovery-paths.ps1": handle_recovery_paths,
     "test-schema-bootstrap.ps1": handle_schema_bootstrap,
     "test-web-smoke.ps1": handle_web_smoke,

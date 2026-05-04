@@ -65,6 +65,7 @@ def build_instance(
             detail="ok" if status is ValidationStatus.PASSED else "failed",
             server_version="11.2.0" if engine is DatabaseEngine.ORACLE else "8.4.0",
             status=status,
+            server_role="primary",
         ),
     )
 

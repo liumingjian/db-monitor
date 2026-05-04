@@ -1,0 +1,193 @@
+/*
+ * db-monitor design tokens (Slice 1.5, ADR-0012)
+ *
+ * dual-theme: data-theme="dark" (default) / data-theme="light"
+ * tokens exposed as CSS vars + Tailwind v4 @theme for utility class generation
+ */
+
+@theme {
+	/* ---- Typography ---- */
+	--font-sans: "Noto Sans SC", "HarmonyOS Sans SC", "IBM Plex Sans", "PingFang SC",
+		"Microsoft YaHei", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", "JetBrains Mono NL", "SF Mono", Menlo, Consolas, monospace;
+
+	/* ---- Radii ---- */
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+
+	/* ---- Easing ---- */
+	--ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+	/* ---- Severity (shared across themes) ---- */
+	--color-severity-critical: #ff5a67;
+	--color-severity-warning: #ffb547;
+	--color-severity-info: #5ea8ff;
+	--color-severity-ok: #3ddcca;
+}
+
+/* ---------------------------------------------------------------- */
+/* Dark theme (default)                                              */
+/* ---------------------------------------------------------------- */
+:root,
+:root[data-theme="dark"] {
+	color-scheme: dark;
+
+	/* Surfaces (3-layer depth) */
+	--bg-deep: #0b0d12;
+	--bg-base: #13161d;
+	--bg-elevated: #1c2029;
+	--surface-overlay: rgba(255, 255, 255, 0.05);
+
+	/* Foreground */
+	--fg-primary: #f8fafc;
+	--fg-secondary: #cbd5e1;
+	--fg-muted: #94a3b8;
+	--fg-disabled: #64748b;
+
+	/* Borders / rings */
+	--border-hairline: rgba(255, 255, 255, 0.08);
+	--border-subtle: rgba(255, 255, 255, 0.12);
+	--border-strong: rgba(255, 255, 255, 0.18);
+	--ring: #3ddcca;
+	--ring-offset: #0b0d12;
+
+	/* Brand accent */
+	--accent: #3ddcca;
+	--accent-hover: #55e4d5;
+	--accent-active: #2bc0b0;
+	--accent-glow: rgba(61, 220, 202, 0.2);
+	--on-accent: #0b0d12;
+
+	/* Severity tokens (dark surface backgrounds) */
+	--sev-critical: #ff5a67;
+	--sev-critical-bg: rgba(255, 90, 103, 0.12);
+	--sev-critical-border: rgba(255, 90, 103, 0.35);
+	--sev-warning: #ffb547;
+	--sev-warning-bg: rgba(255, 181, 71, 0.12);
+	--sev-warning-border: rgba(255, 181, 71, 0.35);
+	--sev-info: #5ea8ff;
+	--sev-info-bg: rgba(94, 168, 255, 0.12);
+	--sev-info-border: rgba(94, 168, 255, 0.35);
+	--sev-ok: #3ddcca;
+	--sev-ok-bg: rgba(61, 220, 202, 0.12);
+	--sev-ok-border: rgba(61, 220, 202, 0.35);
+
+	/* Chart palette (for ECharts multi-series) */
+	--chart-1: #5ea8ff;
+	--chart-2: #3ddcca;
+	--chart-3: #ffb547;
+	--chart-4: #ff5a67;
+	--chart-5: #c084fc;
+	--chart-6: #f472b6;
+	--chart-7: #a3e635;
+	--chart-8: #38bdf8;
+
+	/* Scrollbar */
+	--scrollbar-track: transparent;
+	--scrollbar-thumb: rgba(255, 255, 255, 0.12);
+	--scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+}
+
+/* ---------------------------------------------------------------- */
+/* Light theme                                                       */
+/* ---------------------------------------------------------------- */
+:root[data-theme="light"] {
+	color-scheme: light;
+
+	--bg-deep: #fafbfc;
+	--bg-base: #ffffff;
+	--bg-elevated: #ffffff;
+	--surface-overlay: rgba(0, 0, 0, 0.03);
+
+	--fg-primary: #0f172a;
+	--fg-secondary: #334155;
+	--fg-muted: #64748b;
+	--fg-disabled: #94a3b8;
+
+	--border-hairline: rgba(15, 23, 42, 0.08);
+	--border-subtle: rgba(15, 23, 42, 0.12);
+	--border-strong: rgba(15, 23, 42, 0.2);
+	--ring: #0f766e;
+	--ring-offset: #ffffff;
+
+	--accent: #0f766e;
+	--accent-hover: #0d9488;
+	--accent-active: #115e59;
+	--accent-glow: rgba(15, 118, 110, 0.18);
+	--on-accent: #ffffff;
+
+	--sev-critical: #dc2626;
+	--sev-critical-bg: rgba(220, 38, 38, 0.08);
+	--sev-critical-border: rgba(220, 38, 38, 0.32);
+	--sev-warning: #d97706;
+	--sev-warning-bg: rgba(217, 119, 6, 0.08);
+	--sev-warning-border: rgba(217, 119, 6, 0.32);
+	--sev-info: #2563eb;
+	--sev-info-bg: rgba(37, 99, 235, 0.08);
+	--sev-info-border: rgba(37, 99, 235, 0.32);
+	--sev-ok: #0f766e;
+	--sev-ok-bg: rgba(15, 118, 110, 0.08);
+	--sev-ok-border: rgba(15, 118, 110, 0.32);
+
+	--chart-1: #2563eb;
+	--chart-2: #0f766e;
+	--chart-3: #d97706;
+	--chart-4: #dc2626;
+	--chart-5: #7c3aed;
+	--chart-6: #db2777;
+	--chart-7: #65a30d;
+	--chart-8: #0891b2;
+
+	--scrollbar-track: transparent;
+	--scrollbar-thumb: rgba(15, 23, 42, 0.15);
+	--scrollbar-thumb-hover: rgba(15, 23, 42, 0.25);
+}
+
+/* ---------------------------------------------------------------- */
+/* Tailwind v4 @theme bridge (maps CSS vars to utility classes)     */
+/* ---------------------------------------------------------------- */
+@theme inline {
+	--color-bg-deep: var(--bg-deep);
+	--color-bg-base: var(--bg-base);
+	--color-bg-elevated: var(--bg-elevated);
+	--color-surface-overlay: var(--surface-overlay);
+
+	--color-fg-primary: var(--fg-primary);
+	--color-fg-secondary: var(--fg-secondary);
+	--color-fg-muted: var(--fg-muted);
+	--color-fg-disabled: var(--fg-disabled);
+
+	--color-border-hairline: var(--border-hairline);
+	--color-border-subtle: var(--border-subtle);
+	--color-border-strong: var(--border-strong);
+	--color-ring: var(--ring);
+
+	--color-accent: var(--accent);
+	--color-accent-hover: var(--accent-hover);
+	--color-accent-active: var(--accent-active);
+	--color-on-accent: var(--on-accent);
+
+	--color-sev-critical: var(--sev-critical);
+	--color-sev-critical-bg: var(--sev-critical-bg);
+	--color-sev-critical-border: var(--sev-critical-border);
+	--color-sev-warning: var(--sev-warning);
+	--color-sev-warning-bg: var(--sev-warning-bg);
+	--color-sev-warning-border: var(--sev-warning-border);
+	--color-sev-info: var(--sev-info);
+	--color-sev-info-bg: var(--sev-info-bg);
+	--color-sev-info-border: var(--sev-info-border);
+	--color-sev-ok: var(--sev-ok);
+	--color-sev-ok-bg: var(--sev-ok-bg);
+	--color-sev-ok-border: var(--sev-ok-border);
+
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-chart-6: var(--chart-6);
+	--color-chart-7: var(--chart-7);
+	--color-chart-8: var(--chart-8);
+}

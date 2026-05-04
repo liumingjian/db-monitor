@@ -1,0 +1,138 @@
+services:
+  mysql-target:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: mysql_probe
+      MYSQL_USER: db_monitor
+      MYSQL_PASSWORD: db_monitor
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-target-data:/var/lib/mysql
+
+  bootstrap-runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    command: ["uv", "run", "python", "scripts/docker_target_runtime.py", "bootstrap"]
+    depends_on:
+      - postgres
+      - clickhouse
+    environment: &runtime-env
+      DB_MONITOR_CLICKHOUSE_DATABASE: db_monitor
+      DB_MONITOR_CLICKHOUSE_ENDPOINT: http://clickhouse:8123
+      DB_MONITOR_CLICKHOUSE_PASSWORD: db_monitor
+      DB_MONITOR_CLICKHOUSE_USERNAME: db_monitor
+      DB_MONITOR_POSTGRES_DSN: postgresql://db_monitor:db_monitor@postgres:5432/db_monitor
+      DB_MONITOR_REDIS_URL: redis://redis:6379/0
+      DB_MONITOR_RUNTIME: postgres
+
+  seed-target-runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    command: ["uv", "run", "python", "scripts/docker_target_runtime.py", "seed"]
+    depends_on:
+      - postgres
+      - clickhouse
+      - mysql-target
+    environment:
+      <<: *runtime-env
+      DB_MONITOR_TARGET_MYSQL_DATABASE: mysql_probe
+      DB_MONITOR_TARGET_MYSQL_HOST: mysql-target
+      DB_MONITOR_TARGET_MYSQL_PASSWORD: db_monitor
+      DB_MONITOR_TARGET_MYSQL_PORT: "3306"
+      DB_MONITOR_TARGET_MYSQL_USERNAME: db_monitor
+      DB_MONITOR_TARGET_ORACLE_HOST: ${DB_MONITOR_TARGET_ORACLE_HOST:-oracle-xe}
+      DB_MONITOR_TARGET_ORACLE_PASSWORD: ${DB_MONITOR_TARGET_ORACLE_PASSWORD:-oracle}
+      DB_MONITOR_TARGET_ORACLE_PORT: ${DB_MONITOR_TARGET_ORACLE_PORT:-1521}
+      DB_MONITOR_TARGET_ORACLE_SERVICE: ${DB_MONITOR_TARGET_ORACLE_SERVICE:-XE}
+      DB_MONITOR_TARGET_ORACLE_USERNAME: ${DB_MONITOR_TARGET_ORACLE_USERNAME:-system}
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    command:
+      - uv
+      - run
+      - python
+      - -m
+      - uvicorn
+      - db_monitor_api.main:app
+      - --app-dir
+      - apps/api/src
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    depends_on:
+      - postgres
+      - clickhouse
+      - redis
+      - mysql-target
+    environment: *runtime-env
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3).status == 200 else 1)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "39100:8000"
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    command: ["uv", "run", "python", "-m", "db_monitor_scheduler.main"]
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      <<: *runtime-env
+      DB_MONITOR_SCHEDULER_MODE: loop
+      DB_MONITOR_SCHEDULER_POLL_SECONDS: "15"
+
+  worker-mysql:
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    command: ["uv", "run", "python", "-m", "db_monitor_worker_mysql.main"]
+    depends_on:
+      - clickhouse
+      - mysql-target
+      - redis
+    environment:
+      <<: *runtime-env
+      DB_MONITOR_WORKER_MYSQL_MODE: loop
+      DB_MONITOR_WORKER_MYSQL_POLL_SECONDS: "15"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    depends_on:
+      - api
+    environment:
+      DB_MONITOR_API_BASE_URL: http://api:8000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/login').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "39101:3000"
+
+volumes:
+  mysql-target-data:

@@ -9,6 +9,13 @@ from db_monitor_pipeline.domain import MetricKind
 from tests.analytics_support import build_instance, build_sample, sample_anchor
 
 
+def _instance_metrics(instance: object) -> dict[str, float]:
+    return {
+        metric.metric_name: metric.value
+        for metric in instance.metrics  # type: ignore[attr-defined]
+    }
+
+
 def test_analytics_overview_aggregates_metadata_and_metric_series() -> None:
     anchor = sample_anchor()
     repository = InMemoryControlPlaneRepository()
@@ -81,10 +88,16 @@ def test_analytics_overview_aggregates_metadata_and_metric_series() -> None:
     assert isclose(cards["mysql_replication_lag_seconds"], 5.0)
     assert instances["inst-a"].engine is DatabaseEngine.MYSQL
     assert instances["inst-b"].engine is DatabaseEngine.MYSQL
-    assert isclose(instances["inst-a"].qps, 0.4)
-    assert isclose(instances["inst-b"].qps, 0.2)
-    assert isclose(instances["inst-a"].replication_lag_seconds, 1.0)
-    assert isclose(instances["inst-b"].replication_lag_seconds, 5.0)
+    assert isclose(_instance_metrics(instances["inst-a"])["mysql_queries_per_second"], 0.4)
+    assert isclose(_instance_metrics(instances["inst-b"])["mysql_queries_per_second"], 0.2)
+    assert isclose(
+        _instance_metrics(instances["inst-a"])["mysql_replication_lag_seconds"],
+        1.0,
+    )
+    assert isclose(
+        _instance_metrics(instances["inst-b"])["mysql_replication_lag_seconds"],
+        5.0,
+    )
     assert len(snapshot.charts) == 7
 
 
@@ -158,6 +171,15 @@ def test_analytics_overview_preserves_mixed_engine_instance_metadata() -> None:
                 metric_kind=MetricKind.GAUGE,
                 metric_name="oracle_server_available",
                 metric_value=1,
+                minutes_ago=10,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.GAUGE,
+                metric_name="oracle_server_available",
+                metric_value=1,
                 minutes_ago=5,
             ),
             build_sample(
@@ -166,7 +188,88 @@ def test_analytics_overview_preserves_mixed_engine_instance_metadata() -> None:
                 instance_id="inst-oracle",
                 metric_kind=MetricKind.GAUGE,
                 metric_name="oracle_sessions_total",
+                metric_value=20,
+                minutes_ago=10,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.GAUGE,
+                metric_name="oracle_sessions_total",
                 metric_value=24,
+                minutes_ago=5,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.GAUGE,
+                metric_name="oracle_sessions_active",
+                metric_value=4,
+                minutes_ago=10,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.GAUGE,
+                metric_name="oracle_sessions_active",
+                metric_value=6,
+                minutes_ago=5,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.GAUGE,
+                metric_name="oracle_session_waits",
+                metric_value=1,
+                minutes_ago=10,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.GAUGE,
+                metric_name="oracle_session_waits",
+                metric_value=2,
+                minutes_ago=5,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.COUNTER,
+                metric_name="oracle_user_calls_total",
+                metric_value=60,
+                minutes_ago=10,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.COUNTER,
+                metric_name="oracle_user_calls_total",
+                metric_value=120,
+                minutes_ago=5,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.COUNTER,
+                metric_name="oracle_physical_reads_total",
+                metric_value=40,
+                minutes_ago=10,
+            ),
+            build_sample(
+                anchor=anchor,
+                engine=DatabaseEngine.ORACLE,
+                instance_id="inst-oracle",
+                metric_kind=MetricKind.COUNTER,
+                metric_name="oracle_physical_reads_total",
+                metric_value=70,
                 minutes_ago=5,
             ),
         ),
@@ -204,11 +307,19 @@ def test_analytics_overview_preserves_mixed_engine_instance_metadata() -> None:
         DatabaseEngine.MYSQL,
         DatabaseEngine.ORACLE,
     )
-    assert snapshot.coverage.overview_instance_metric_engines == (DatabaseEngine.MYSQL,)
-    assert snapshot.coverage.overview_metric_engines == (DatabaseEngine.MYSQL,)
+    assert snapshot.coverage.overview_instance_metric_engines == (
+        DatabaseEngine.MYSQL,
+        DatabaseEngine.ORACLE,
+    )
+    assert snapshot.coverage.overview_metric_engines == (
+        DatabaseEngine.MYSQL,
+        DatabaseEngine.ORACLE,
+    )
     assert oracle.engine is DatabaseEngine.ORACLE
     assert oracle.status.value == "healthy"
-    assert isclose(oracle.qps, 0.0)
-    assert isclose(oracle.replication_lag_seconds, 0.0)
-    assert isclose(oracle.threads_connected, 0.0)
-    assert isclose(oracle.threads_running, 0.0)
+    oracle_metrics = _instance_metrics(oracle)
+    assert isclose(oracle_metrics["oracle_sessions_total"], 24.0)
+    assert isclose(oracle_metrics["oracle_sessions_active"], 6.0)
+    assert isclose(oracle_metrics["oracle_session_waits"], 2.0)
+    assert isclose(oracle_metrics["oracle_user_calls_per_second"], 0.2)
+    assert isclose(oracle_metrics["oracle_physical_reads_per_second"], 0.1)

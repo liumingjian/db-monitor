@@ -97,6 +97,17 @@ def test_postgres_bootstrap_creates_tables_and_version_row(monkeypatch: pytest.M
     assert "audit_id BIGSERIAL PRIMARY KEY" in executed_sql
     assert "acknowledged_at TIMESTAMPTZ NULL" in executed_sql
     assert "owner_user_id TEXT NULL" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS rule_instance_overrides" in executed_sql
+    assert "REFERENCES alert_rules (rule_id) ON DELETE CASCADE" in executed_sql
+    assert "REFERENCES control_mysql_instances (instance_id) ON DELETE CASCADE" in executed_sql
+    assert "PRIMARY KEY (rule_id, instance_id)" in executed_sql
+    assert "CREATE EXTENSION IF NOT EXISTS pgcrypto" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS alert_channel_bindings" in executed_sql
+    assert "PRIMARY KEY (rule_id, channel)" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS notify_history" in executed_sql
+    assert "notify_id UUID PRIMARY KEY" in executed_sql
+    assert "CREATE INDEX IF NOT EXISTS notify_history_rule_attempted_idx" in executed_sql
+    assert "CREATE INDEX IF NOT EXISTS notify_history_status_idx" in executed_sql
     assert "INSERT INTO schema_version" in executed_sql
 
 
@@ -104,14 +115,18 @@ def test_postgres_contract_requires_bootstrapped_version(monkeypatch: pytest.Mon
     cursor = FakeCursor(
         fetchall_results=[
             [
+                ("alert_channel_bindings",),
                 ("alert_history",),
                 ("alert_records",),
                 ("alert_rules",),
                 ("audit_entries",),
                 ("control_mysql_instances",),
                 ("control_settings",),
+                ("instance_parameters",),
+                ("notify_history",),
                 ("organization_memberships",),
                 ("organizations",),
+                ("rule_instance_overrides",),
                 ("schema_version",),
             ]
         ],
@@ -153,6 +168,20 @@ def test_clickhouse_bootstrap_creates_database_tables_and_version_row(
     assert "CREATE TABLE IF NOT EXISTS schema_version" in executed_sql
     assert "CREATE TABLE IF NOT EXISTS metric_samples" in executed_sql
     assert "engine String" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS mysql_processlist" in executed_sql
+    assert "PARTITION BY toYYYYMMDD(collected_at)" in executed_sql
+    assert "ORDER BY (instance_id, collected_at, process_id)" in executed_sql
+    assert "TTL toDateTime(collected_at) + INTERVAL 7 DAY" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS mysql_slow_query_events" in executed_sql
+    assert "PARTITION BY toYYYYMMDD(started_at)" in executed_sql
+    assert "ORDER BY (instance_id, started_at, event_id)" in executed_sql
+    assert "digest_text String" in executed_sql
+    assert "timer_wait_ms Float64" in executed_sql
+    assert "CREATE TABLE IF NOT EXISTS oracle_tablespaces" in executed_sql
+    assert "ORDER BY (instance_id, collected_at, tablespace_name)" in executed_sql
+    assert "TTL toDateTime(collected_at) + INTERVAL 30 DAY" in executed_sql
+    assert "autoextensible UInt8" in executed_sql
+    assert "used_rate_percent Float64" in executed_sql
     assert "INSERT INTO schema_version FORMAT JSONEachRow" in executed_sql
 
 
@@ -162,7 +191,13 @@ def test_clickhouse_contract_requires_bootstrapped_version(
     responses = iter(
         [
             '{"name":"db_monitor"}\n',
-            '{"name":"metric_samples"}\n{"name":"schema_version"}\n',
+            (
+                '{"name":"metric_samples"}\n'
+                '{"name":"mysql_processlist"}\n'
+                '{"name":"mysql_slow_query_events"}\n'
+                '{"name":"oracle_tablespaces"}\n'
+                '{"name":"schema_version"}\n'
+            ),
             "",
         ]
     )

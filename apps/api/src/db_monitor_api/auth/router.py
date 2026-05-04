@@ -1,10 +1,15 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from db_monitor_api.auth.domain import AuthContext, Permission
-from db_monitor_api.auth.service import AuthenticationError, SESSION_COOKIE_NAME
+from db_monitor_api.auth.domain import AuthContext, ManagedUser, Permission, RoleCatalogEntry
+from db_monitor_api.auth.service import (
+    AuthenticationError,
+    ManagedUserNotFoundError,
+    SESSION_COOKIE_NAME,
+    UnknownRoleError,
+)
 from db_monitor_api.dependencies import (
     get_runtime,
     require_auth_context,
@@ -48,6 +53,24 @@ class AuditEntryResponse(BaseModel):
     organization_id: str
     outcome: str
     resource: str
+
+
+class ManagedUserResponse(BaseModel):
+    active_organization_id: str
+    display_name: str
+    effective_permissions: list[str]
+    roles: list[str]
+    user_id: str
+    username: str
+
+
+class RoleCatalogEntryResponse(BaseModel):
+    permissions: list[str]
+    role: str
+
+
+class UpdateUserRolesRequest(BaseModel):
+    roles: list[str] = Field(default_factory=list)
 
 
 def build_auth_router() -> APIRouter:
@@ -118,6 +141,57 @@ def list_audit_entries(
     ]
 
 
+@router.get("/auth/users", response_model=list[ManagedUserResponse])
+def list_users(
+    context: AuthContext = Depends(
+        require_permission_dependency(Permission.SETTINGS_WRITE, "users")
+    ),
+    runtime: AppRuntime = Depends(get_runtime),
+) -> list[ManagedUserResponse]:
+    return [
+        _build_managed_user_response(user)
+        for user in runtime.auth_service.list_managed_users(
+            organization_id=context.active_organization.organization_id
+        )
+    ]
+
+
+@router.get("/auth/roles", response_model=list[RoleCatalogEntryResponse])
+def list_roles(
+    _: AuthContext = Depends(
+        require_permission_dependency(Permission.SETTINGS_WRITE, "users")
+    ),
+    runtime: AppRuntime = Depends(get_runtime),
+) -> list[RoleCatalogEntryResponse]:
+    return [
+        _build_role_catalog_entry_response(entry)
+        for entry in runtime.auth_service.list_role_catalog()
+    ]
+
+
+@router.put("/auth/users/{user_id}/roles", response_model=ManagedUserResponse)
+def update_user_roles(
+    user_id: str,
+    payload: UpdateUserRolesRequest,
+    context: AuthContext = Depends(
+        require_permission_dependency(Permission.SETTINGS_WRITE, "users")
+    ),
+    runtime: AppRuntime = Depends(get_runtime),
+) -> ManagedUserResponse:
+    try:
+        user = runtime.auth_service.update_user_roles(
+            actor_user_id=context.user.user_id,
+            organization_id=context.active_organization.organization_id,
+            roles=frozenset(payload.roles),
+            target_user_id=user_id,
+        )
+    except ManagedUserNotFoundError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except UnknownRoleError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    return _build_managed_user_response(user)
+
+
 def _build_session_response(context: AuthContext) -> SessionUserResponse:
     return SessionUserResponse(
         active_organization=OrganizationResponse(
@@ -144,4 +218,26 @@ def _build_session_response(context: AuthContext) -> SessionUserResponse:
         roles=sorted(context.user.roles),
         user_id=context.user.user_id,
         username=context.user.username,
+    )
+
+
+def _build_managed_user_response(user: ManagedUser) -> ManagedUserResponse:
+    return ManagedUserResponse(
+        active_organization_id=user.active_organization_id,
+        display_name=user.display_name,
+        effective_permissions=sorted(
+            permission.value for permission in user.effective_permissions
+        ),
+        roles=sorted(user.roles),
+        user_id=user.user_id,
+        username=user.username,
+    )
+
+
+def _build_role_catalog_entry_response(
+    entry: RoleCatalogEntry,
+) -> RoleCatalogEntryResponse:
+    return RoleCatalogEntryResponse(
+        permissions=sorted(permission.value for permission in entry.permissions),
+        role=entry.role,
     )

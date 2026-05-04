@@ -1,0 +1,16 @@
+
+> web@ test:e2e /Users/lmj/projects/ai-project/db-monitor/apps/web
+> playwright test --config playwright.config.ts
+
+
+Running 50 tests using 1 worker
+
+  ✓   1 [chromium] › tests-e2e/specs/01-login.spec.ts:6:2 › login page (Q16) › renders 60/40 splitscreen with hero + form (327ms)
+  ✓   2 [chromium] › tests-e2e/specs/01-login.spec.ts:15:2 › login page (Q16) › successful login via real /api/login redirects to /overview (1.2s)
+  ✓   3 [chromium] › tests-e2e/specs/01-login.spec.ts:28:2 › login page (Q16) › wrong password does not grant overview access (4.2s)
+  ✓   4 [chromium] › tests-e2e/specs/01-login.spec.ts:47:2 › login page (Q16) › login endpoint exposes trace_id on failure payload (106ms)
+  ✓   5 [chromium] › tests-e2e/specs/02-overview.spec.ts:10:2 › overview page (Q9) › renders canonical template with summary, quick metrics, and chart grid (1.2s)
+  ✓   6 [chromium] › tests-e2e/specs/02-overview.spec.ts:24:2 › overview page (Q9) › time-window selector supports 24h via direct URL param (1.2s)
+  ✓   7 [chromium] › tests-e2e/specs/02-overview.spec.ts:35:2 › overview page (Q9) › fleet matrix or table container is present (1.2s)
+  ✓   8 [chromium] › tests-e2e/specs/03-instances-list.spec.ts:10:2 › instances list page (Q12) › renders page with title and filter chips form (1.2s)
+  ✓   9 [chromium] › tests-e2e/specs/03-instances-list.spec.ts:16:2 › instances list page (Q12) › double-view toggle: table ↔ grid exposes aria-pressed state (1.3s)

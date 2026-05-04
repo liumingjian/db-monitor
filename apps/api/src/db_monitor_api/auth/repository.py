@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from dataclasses import replace
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -14,6 +15,37 @@ from db_monitor_api.auth.domain import (
 
 class PasswordHasherLike(Protocol):
     def hash_password(self, password: str) -> PasswordDigest:
+        ...
+
+
+class UserRepository(Protocol):
+    def get_by_id(self, user_id: str) -> UserRecord | None:
+        ...
+
+    def get_by_username(self, username: str) -> UserRecord | None:
+        ...
+
+    def list_by_organization(self, *, organization_id: str) -> tuple[UserRecord, ...]:
+        ...
+
+    def update_roles(
+        self,
+        *,
+        organization_id: str,
+        roles: frozenset[str],
+        user_id: str,
+    ) -> UserRecord | None:
+        ...
+
+
+class SessionRepository(Protocol):
+    def create(self, session: Session) -> None:
+        ...
+
+    def delete(self, session_id: str) -> Session | None:
+        ...
+
+    def get(self, session_id: str) -> Session | None:
         ...
 
 
@@ -80,6 +112,53 @@ class InMemoryUserRepository:
 
     def get_by_username(self, username: str) -> UserRecord | None:
         return self._by_username.get(username)
+
+    def list_by_organization(self, *, organization_id: str) -> tuple[UserRecord, ...]:
+        return tuple(
+            sorted(
+                (
+                    user
+                    for user in self._by_id.values()
+                    if any(
+                        membership.organization.organization_id == organization_id
+                        for membership in user.user.organization_memberships
+                    )
+                ),
+                key=lambda user: (user.user.display_name, user.user.username),
+            )
+        )
+
+    def update_roles(
+        self,
+        *,
+        organization_id: str,
+        roles: frozenset[str],
+        user_id: str,
+    ) -> UserRecord | None:
+        user_record = self._by_id.get(user_id)
+        if user_record is None:
+            return None
+        memberships = []
+        updated = False
+        for membership in user_record.user.organization_memberships:
+            if membership.organization.organization_id == organization_id:
+                memberships.append(replace(membership, roles=roles))
+                updated = True
+                continue
+            memberships.append(membership)
+        if not updated:
+            return None
+        next_user = replace(
+            user_record.user,
+            organization_memberships=tuple(memberships),
+            roles=roles
+            if user_record.user.active_organization_id == organization_id
+            else user_record.user.roles,
+        )
+        next_record = replace(user_record, user=next_user)
+        self._by_id[user_id] = next_record
+        self._by_username[next_user.username] = next_record
+        return next_record
 
 
 class InMemorySessionRepository:

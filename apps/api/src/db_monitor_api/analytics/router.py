@@ -64,12 +64,9 @@ class OverviewInstanceResponse(BaseModel):
     engine: DatabaseEngine
     instance_id: str
     labels: list[str]
+    metrics: list[MetricCardResponse]
     name: str
-    qps: float
-    replication_lag_seconds: float
     status: str
-    threads_connected: float
-    threads_running: float
 
 
 class OverviewResponse(BaseModel):
@@ -88,6 +85,8 @@ class InstanceMetadataResponse(BaseModel):
     instance_id: str
     labels: list[str]
     name: str
+    server_role: str | None
+    server_version: str | None
     status: str
 
 
@@ -151,12 +150,12 @@ def _build_overview_response(snapshot: OverviewSnapshot) -> OverviewResponse:
                 engine=instance.engine,
                 instance_id=instance.instance_id,
                 labels=list(instance.labels),
+                metrics=[
+                    _build_metric_card_response(metric)
+                    for metric in instance.metrics
+                ],
                 name=instance.name,
-                qps=instance.qps,
-                replication_lag_seconds=instance.replication_lag_seconds,
                 status=instance.status.value,
-                threads_connected=instance.threads_connected,
-                threads_running=instance.threads_running,
             )
             for instance in snapshot.instances
         ],
@@ -206,6 +205,8 @@ def _build_instance_trend_response(snapshot: InstanceTrendSnapshot) -> InstanceT
             instance_id=snapshot.instance.instance_id,
             labels=list(snapshot.instance.labels),
             name=snapshot.instance.name,
+            server_role=snapshot.instance.server_role,
+            server_version=snapshot.instance.server_version,
             status=snapshot.instance.status.value,
         ),
         window=snapshot.window.value,

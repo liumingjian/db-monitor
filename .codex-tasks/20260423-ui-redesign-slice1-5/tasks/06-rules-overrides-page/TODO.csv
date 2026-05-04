@@ -1,0 +1,7 @@
+id,step,status,notes
+1,"追加 rulesPage.* i18n namespace",DONE,zh-CN.json 尾部 Edit append
+2,"在 apps/web/src/components/rules/ 落地 TriStateControl + BatchActionBar + EditOverrideDialog + OverridesPanel + RuleAuditTimeline + RulesCatalog",DONE,SSR 友好，client 组件标 "use client"
+3,"重写 /rules/page.tsx：Catalog + filter chips + 批量",DONE,Server 组件 + 嵌入 Client filter form
+4,"重写 /rules/[ruleId]/page.tsx：4 tab EntitySummary 壳",DONE,Server 组件 + 4 tab Client
+5,"重构 rule-edit-form.tsx → 扩展 overrides + Dialog 抽屉编辑",DONE,保留 server action 契约
+6,"pnpm --filter web lint + typecheck + test + build 全绿",DONE,记录至 PROGRESS.md

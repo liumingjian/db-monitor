@@ -25,6 +25,8 @@ class StaticCollector(MySQLMetricsCollector):
         return {
             "Bytes_received": "128",
             "Bytes_sent": "256",
+            "Com_commit": "20",
+            "Com_rollback": "1",
             "Innodb_buffer_pool_reads": "2",
             "Questions": "42",
             "Seconds_Behind_Source": "0",
@@ -55,6 +57,7 @@ def test_scheduler_to_worker_pipeline_writes_normalized_metrics() -> None:
     assert result.processed_metrics == len(sink.samples)
     assert {sample.metric_name for sample in sink.samples} >= {
         "mysql_server_available",
+        "mysql_transactions_total",
         "mysql_threads_connected",
         "mysql_queries_total",
     }

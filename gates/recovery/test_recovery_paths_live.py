@@ -21,6 +21,7 @@ from db_monitor_api.auth.repository import InMemoryAuditRepository
 from db_monitor_api.auth.service import AuditService
 from db_monitor_api.control_plane.domain import (
     ConnectionValidation,
+    DatabaseEngine,
     MySQLConnectionConfig,
     MySQLInstance,
     ValidationStatus,
@@ -113,6 +114,7 @@ def test_live_recovery_paths_dedupe_pending_jobs_retry_safe_failures_and_resume_
     alert_service.create_rule(
         actor_user_id="user-admin",
         enabled=True,
+        engine=DatabaseEngine.MYSQL,
         instance_ids=("inst-recovery-live",),
         metric_name="mysql_replication_lag_seconds",
         name="Replication Lag High",
@@ -158,6 +160,7 @@ def test_live_recovery_paths_dedupe_pending_jobs_retry_safe_failures_and_resume_
     suppression_service.create_rule(
         actor_user_id="user-admin",
         enabled=True,
+        engine=DatabaseEngine.MYSQL,
         instance_ids=("inst-recovery-live-ack",),
         metric_name="mysql_replication_lag_seconds",
         name="Replication Lag High Acked",
@@ -231,6 +234,7 @@ def _build_instance() -> MySQLInstance:
         instance_id="inst-recovery-live",
         labels=("primary", "live-gate"),
         name="prod-primary-live",
+        organization_id="org-internal",
         validation=ConnectionValidation(
             checked_at=utc_now(),
             detail="ok",
@@ -253,6 +257,7 @@ def _reset_postgres_state(postgres_dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
 
 

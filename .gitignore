@@ -20,3 +20,7 @@ test-results/
 lepus-v3.8/logs/
 lepus-v3.8/etc/config.ini
 lepus-v3.8/web/application/config/database.php
+
+# Reference implementations checked out for cross-reading; not part of build.
+ape-dts/
+AGENT_bak.md

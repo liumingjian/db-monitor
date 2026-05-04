@@ -101,6 +101,7 @@ def _worker_settings() -> WorkerProcessSettings:
             "DB_MONITOR_CLICKHOUSE_ENDPOINT": _required_env(CLICKHOUSE_ENDPOINT_ENV),
             "DB_MONITOR_CLICKHOUSE_PASSWORD": _required_env(CLICKHOUSE_PASSWORD_ENV),
             "DB_MONITOR_CLICKHOUSE_USERNAME": _required_env(CLICKHOUSE_USERNAME_ENV),
+            "DB_MONITOR_POSTGRES_DSN": _required_env(POSTGRES_DSN_ENV),
             "DB_MONITOR_REDIS_URL": "redis://127.0.0.1:6379/0",
         }
     )
@@ -156,7 +157,9 @@ def _reset_postgres_schema(postgres_dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS schema_version")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
+            cursor.execute("DROP TABLE IF EXISTS instance_parameters")
             cursor.execute("DROP TABLE IF EXISTS control_mysql_instances")
             cursor.execute("DROP TABLE IF EXISTS control_settings")
 
@@ -164,20 +167,20 @@ def _reset_postgres_schema(postgres_dsn: str) -> None:
 def _reset_clickhouse_schema(settings: ApiSettings) -> None:
     database = _required_env(CLICKHOUSE_DATABASE_ENV)
     clickhouse = _clickhouse_settings(settings)
-    _run_clickhouse_query(
-        database=database,
-        endpoint=clickhouse.endpoint,
-        password=clickhouse.password,
-        query="DROP TABLE IF EXISTS schema_version",
-        username=clickhouse.username,
-    )
-    _run_clickhouse_query(
-        database=database,
-        endpoint=clickhouse.endpoint,
-        password=clickhouse.password,
-        query="DROP TABLE IF EXISTS metric_samples",
-        username=clickhouse.username,
-    )
+    for table in (
+        "schema_version",
+        "metric_samples",
+        "mysql_processlist",
+        "mysql_slow_query_events",
+        "oracle_tablespaces",
+    ):
+        _run_clickhouse_query(
+            database=database,
+            endpoint=clickhouse.endpoint,
+            password=clickhouse.password,
+            query=f"DROP TABLE IF EXISTS {table}",
+            username=clickhouse.username,
+        )
 
 
 def _clickhouse_settings(settings: ApiSettings) -> ClickHouseSettings:

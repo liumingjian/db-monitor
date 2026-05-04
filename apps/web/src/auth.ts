@@ -1,7 +1,4 @@
-import type {
-	OrganizationMembership,
-	OrganizationSummary,
-} from "@db-monitor/api-client";
+import type { OrganizationMembership, OrganizationSummary } from "@db-monitor/api-client";
 
 export interface SessionSnapshot {
 	readonly activeOrganization: OrganizationSummary | null;
@@ -45,17 +42,14 @@ export function resolveRouteAccess(
 	};
 }
 
-export function resolveActiveMembership(
-	session: SessionSnapshot,
-): OrganizationMembership | null {
+export function resolveActiveMembership(session: SessionSnapshot): OrganizationMembership | null {
 	if (session.activeOrganization === null) {
 		return null;
 	}
 	return (
 		session.organizationMemberships.find(
 			(membership) =>
-				membership.organization.organization_id ===
-				session.activeOrganization?.organization_id,
+				membership.organization.organization_id === session.activeOrganization?.organization_id,
 		) ?? null
 	);
 }

@@ -7,12 +7,12 @@
 
 ## Recovery
 
-- 任务: child `#3` 已激活，当前进入 backend contract 落点阶段
+- 任务: child `#3` 已完成
 - 形态: single-full
-- 进度: 1/4
-- 当前: step `#2` `Implement user and role management backend semantics`
+- 进度: 4/4
+- 当前: 无。用户管理产品面与 child 级 signoff 已完成
 - 文件: `.codex-tasks/20260421-prd-debt-closeout-epic/tasks/20260421-03-user-role-management/TODO.csv`
-- 下一步: 在现有 auth/session/RBAC 之上确认最小后端 contract，把 user list / role update 的状态面与 audit 写路径收口到可验证实现
+- 下一步: 回到 parent epic，激活 child `#4` 实例详情语义收口
 
 ## Control Contract
 
@@ -24,25 +24,19 @@
 
 ## Latest Evidence
 
-- 当前 repo 已有：
-  - `auth.login/logout/me`
-  - role 常量与 permission 解析
-  - organization membership readout
-  - RBAC enforcement
-- 当前 repo 缺少：
-  - 用户列表 API
-  - 角色更新 API
-  - 管理产品面
-- 冻结后的最小交付边界：
-  - API: admin-only organization-scoped user list + existing-user role update
-  - UI: 放在现有 settings / governance shell 里，用最小 server-rendered 表单完成
-  - 审计: 管理写路径必须记录用户角色变更 action，挂到 PostgreSQL audit truth
-- 明确排除：
-  - 用户创建 / 删除
-  - 密码重置
-  - 自定义 permission authoring
-  - 复杂 IAM / invitation / org transfer 流程
+- 后端 contract 已收口：
+  - `apps/api/src/db_monitor_api/auth/router.py` 新增 admin-only `/auth/users`、`/auth/roles`、`/auth/users/{id}/roles`
+  - `apps/api/src/db_monitor_api/auth/service.py` 与 `repository.py` 现在支持 organization-scoped user listing、role catalog 和 existing-user role update
+  - 管理写路径会记 `users.roles.update` 审计，并复用 child `#2` 已落地的持久化 audit truth
+- Web surface 已收口：
+  - `packages/api-client/src/index.ts` 新增 user-management typed contract
+  - `apps/web/app/settings/page.tsx` 在现有 settings shell 中提供最小 server-rendered 用户列表、有效权限 readout 和角色更新表单
+- Focused gates 已通过：
+  - `uv run pytest tests/api/auth tests/api/rbac -q`
+  - `pnpm openapi:check`
+  - `pnpm --filter web test`
+  - `pnpm --filter web typecheck`
 
 ## Notes
 
-- 当前 repo 已有 session、permissions、roles、RBAC enforcement，但没有完整管理面
+- 本 child 保持在 organization-scoped admin surface，不扩到用户创建、密码重置、邀请流或复杂 IAM

@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, IBM_Plex_Sans } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { ShellProviders } from "../src/providers";
 import "./globals.css";
 
-const bodyFont = IBM_Plex_Sans({
-	subsets: ["latin"],
-	variable: "--font-body",
-	weight: ["400", "500", "600"],
-});
-
-const displayFont = Bricolage_Grotesque({
-	subsets: ["latin"],
-	variable: "--font-display",
-	weight: ["500", "700"],
-});
-
-export const metadata: Metadata = {
-	description: "Mixed-engine monitoring shell with honest overview coverage boundaries",
-	title: "DB Monitor",
-};
+export async function generateMetadata(): Promise<Metadata> {
+	const t = await getTranslations("common");
+	return {
+		title: t("appName"),
+		description: t("appTaglineLong"),
+	};
+}
 
 interface RootLayoutProps {
 	readonly children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+	const locale = await getLocale();
+	const messages = await getMessages();
+
 	return (
-		<html className={`${bodyFont.variable} ${displayFont.variable}`} lang="en">
+		<html lang={locale} data-theme="dark" suppressHydrationWarning>
 			<body>
-				<ShellProviders>{children}</ShellProviders>
+				<NextIntlClientProvider locale={locale} messages={messages}>
+					<ShellProviders>{children}</ShellProviders>
+				</NextIntlClientProvider>
 			</body>
 		</html>
 	);

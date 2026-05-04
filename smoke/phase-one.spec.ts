@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+const smokeInstanceDatabase = process.env.DB_MONITOR_SMOKE_INSTANCE_DATABASE ?? "mysql";
+const smokeInstanceHost = process.env.DB_MONITOR_SMOKE_INSTANCE_HOST ?? "127.0.0.1";
+const smokeInstancePassword = process.env.DB_MONITOR_SMOKE_INSTANCE_PASSWORD ?? "secret";
+const smokeInstancePort = process.env.DB_MONITOR_SMOKE_INSTANCE_PORT ?? "3306";
+const smokeInstanceUsername = process.env.DB_MONITOR_SMOKE_INSTANCE_USERNAME ?? "db_monitor";
+
 test("phase-one release smoke flow", async ({ page }) => {
 	await page.goto("/login");
 	await page.getByLabel("Username").fill("admin");
@@ -13,14 +19,41 @@ test("phase-one release smoke flow", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "prod-primary" })).toBeVisible();
 	await expect(page.locator("canvas").first()).toBeVisible();
 
+	// Only Oracle instances surface the `表空间` tab (Epic 15 Slice 1 child #4).
+	// prod-primary is MySQL in the smoke fixture, so we assert the tab is absent.
+	await expect(page.getByRole("link", { name: "表空间" })).toHaveCount(0);
+
+	await page.getByRole("link", { name: "Processes" }).click();
+	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/processes$/);
+	await expect(page.getByRole("heading", { name: "Processes" })).toBeVisible();
+	await page.getByLabel("User").fill("root");
+	await page.getByRole("button", { name: "Apply filters" }).click();
+	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/processes\?.*user=root/);
+	await expect(page.getByLabel("User")).toHaveValue("root");
+	// Admin session has instances:action, so Kill UI (button/dialog) MUST load without runtime errors.
+	// Smoke fixture seeds no processlist entries, so we only assert the page still renders cleanly
+	// (validation heading shows empty-state) and that no stray enabled Kill control leaks into DOM.
+	await expect(page.locator("table")).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Kill" })).toHaveCount(0);
+
+	await page.getByRole("link", { name: "Slow queries" }).click();
+	await expect(page).toHaveURL(/\/instances\/inst-prod-primary\/slow-queries$/);
+	await expect(page.getByRole("heading", { name: "Slow queries" })).toBeVisible();
+	await page.getByLabel("Min duration (ms)").fill("1000");
+	await page.getByRole("button", { name: "Apply filters" }).click();
+	await expect(page).toHaveURL(
+		/\/instances\/inst-prod-primary\/slow-queries\?.*minDurationMs=1000/,
+	);
+	await expect(page.getByLabel("Min duration (ms)")).toHaveValue("1000");
+
 	await page.goto("/instances");
 	await page.getByLabel("Name", { exact: true }).fill("smoke-secondary");
 	await page.getByLabel("Environment").fill("stage");
-	await page.getByLabel("Database").fill("mysql");
-	await page.getByLabel("Host").fill("127.0.0.1");
-	await page.getByLabel("Port").fill("3306");
-	await page.getByLabel("Username").fill("db_monitor");
-	await page.getByLabel("Password").fill("secret");
+	await page.getByLabel("Database").fill(smokeInstanceDatabase);
+	await page.getByLabel("Host").fill(smokeInstanceHost);
+	await page.getByLabel("Port").fill(smokeInstancePort);
+	await page.getByLabel("Username").fill(smokeInstanceUsername);
+	await page.getByLabel("Password").fill(smokeInstancePassword);
 	await page.getByLabel("Labels").fill("smoke,secondary");
 	await page.getByRole("button", { name: "Create and validate instance" }).click();
 	await expect(page).toHaveURL(/\/instances\/inst-/);

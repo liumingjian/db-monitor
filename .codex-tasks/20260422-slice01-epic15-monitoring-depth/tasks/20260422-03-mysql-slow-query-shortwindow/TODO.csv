@@ -1,0 +1,8 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Freeze CH mysql_slow_query_events schema and PG slow_threshold_seconds column,PENDING,"CH 表 DDL 加入 schema；PG migration 增列 slow_threshold_seconds (默认 1.0)；test:schema:bootstrap 成立","pnpm test:schema:bootstrap",,0,"ADR-0007 schema；digest 字段存但 UI 暂不展示"
+2,Implement slow query collector with event_id cursor,PENDING,"worker 按 60s 从 events_statements_history_long 增量拉（WHERE event_id > last_event_id AND timer_wait/1e9 >= slow_threshold_seconds），写入 CH；游标 Redis 存；PS 未启用时 graceful skip","uv run pytest tests/worker_mysql/test_slow_query_collector.py -q",,0,"游标丢失时从 max(event_id) 继续，不回填历史"
+3,Add GET /instances/{id}/slow-queries API,PENDING,"router + service + repository；默认窗口 15m + Top 50；筛选维度齐全","uv run pytest tests/api/runtime/test_mysql_slow_queries.py -q",,0,"INSTANCES_READ；limit 上限 200"
+4,Extend instance validation to probe performance_schema,PENDING,"validation 期间附加 @@performance_schema 与 events_statements_history_long_size 探测；结果写 validation.detail；不阻塞 PASSED","uv run pytest tests/api/control_plane/test_validation_ps_probe.py -q",,0,"探测失败仅提示，不让整个 validation 失败"
+5,Regenerate OpenAPI snapshot and typed client,PENDING,"contracts/openapi.snapshot.json 更新；typed client 暴露 listSlowQueries","pnpm openapi:check",,0,
+6,Build web Slow queries tab,PENDING,"tab 存在；筛选正常；PS 未启用提示正确；sql_text 悬浮全文","pnpm --filter web typecheck && pnpm --filter web test",,0,
+7,Wire child-level smoke and close task,PENDING,"Smoke 覆盖 tab 打开 → min_duration 筛选 → 结果渲染","pnpm smoke:web",,0,

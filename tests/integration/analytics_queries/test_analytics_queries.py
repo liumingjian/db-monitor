@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from typing import cast
 
 from db_monitor_api.control_plane.domain import DatabaseEngine
 from db_monitor_pipeline.domain import MetricKind
@@ -9,6 +10,14 @@ from tests.analytics_support import (
     login_admin,
     sample_anchor,
 )
+
+
+def _instance_metrics(instance: dict[str, object]) -> dict[str, float]:
+    metrics = cast(list[dict[str, object]], instance["metrics"])
+    return {
+        cast(str, metric["metric_name"]): float(cast(float | int | str, metric["value"]))
+        for metric in metrics
+    }
 
 
 def test_analytics_queries_return_overview_and_instance_trends() -> None:
@@ -49,6 +58,7 @@ def test_analytics_queries_return_overview_and_instance_trends() -> None:
     assert overview_response.json()["instances"][0]["instance_id"] == instance_id
     assert overview_response.json()["instances"][0]["engine"] == "mysql"
     assert overview_response.json()["coverage"]["overview_metric_engines"] == ["mysql"]
+    assert _instance_metrics(overview_response.json()["instances"][0])["mysql_queries_per_second"] == 0.4
     assert any(
         card["metric_name"] == "mysql_innodb_buffer_pool_reads_per_second"
         for card in overview_response.json()["cards"]
@@ -212,3 +222,66 @@ def test_analytics_queries_return_oracle_instance_trends() -> None:
         series["metric_name"] == "oracle_physical_reads_per_second"
         for series in detail_response.json()["charts"]
     )
+
+
+def test_analytics_queries_return_mixed_engine_overview_parity() -> None:
+    anchor = sample_anchor()
+    mysql_id = "inst-mysql-overview-route"
+    oracle_id = "inst-oracle-overview-route"
+    engine = DatabaseEngine.ORACLE
+    app = build_app(
+        instances=(
+            build_instance(created_at=anchor, instance_id=mysql_id, name="primary"),
+            build_instance(
+                created_at=anchor,
+                engine=engine,
+                instance_id=oracle_id,
+                name="oracle-primary",
+            ),
+        ),
+        samples=(
+            build_sample(anchor=anchor, instance_id=mysql_id, metric_kind=MetricKind.GAUGE, metric_name="mysql_server_available", metric_value=1, minutes_ago=5),
+            build_sample(anchor=anchor, instance_id=mysql_id, metric_kind=MetricKind.GAUGE, metric_name="mysql_threads_connected", metric_value=12, minutes_ago=5),
+            build_sample(anchor=anchor, instance_id=mysql_id, metric_kind=MetricKind.GAUGE, metric_name="mysql_threads_running", metric_value=4, minutes_ago=5),
+            build_sample(anchor=anchor, instance_id=mysql_id, metric_kind=MetricKind.COUNTER, metric_name="mysql_queries_total", metric_value=100, minutes_ago=10),
+            build_sample(anchor=anchor, instance_id=mysql_id, metric_kind=MetricKind.COUNTER, metric_name="mysql_queries_total", metric_value=220, minutes_ago=5),
+            build_sample(anchor=anchor, instance_id=mysql_id, metric_kind=MetricKind.GAUGE, metric_name="mysql_replication_lag_seconds", metric_value=2, minutes_ago=5),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_server_available", metric_value=1, minutes_ago=10),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_server_available", metric_value=1, minutes_ago=5),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_sessions_total", metric_value=18, minutes_ago=10),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_sessions_total", metric_value=24, minutes_ago=5),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_sessions_active", metric_value=4, minutes_ago=10),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_sessions_active", metric_value=6, minutes_ago=5),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_session_waits", metric_value=1, minutes_ago=10),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.GAUGE, metric_name="oracle_session_waits", metric_value=2, minutes_ago=5),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.COUNTER, metric_name="oracle_user_calls_total", metric_value=60, minutes_ago=10),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.COUNTER, metric_name="oracle_user_calls_total", metric_value=120, minutes_ago=5),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.COUNTER, metric_name="oracle_physical_reads_total", metric_value=30, minutes_ago=10),
+            build_sample(anchor=anchor, engine=engine, instance_id=oracle_id, metric_kind=MetricKind.COUNTER, metric_name="oracle_physical_reads_total", metric_value=60, minutes_ago=5),
+        ),
+    )
+
+    with TestClient(app) as client:
+        login_admin(client)
+        overview_response = client.get("/analytics/overview", params={"window": "1h"})
+
+    assert overview_response.status_code == 200
+    overview = overview_response.json()
+    instances = {instance["instance_id"]: instance for instance in overview["instances"]}
+
+    assert overview["coverage"]["overview_instance_metric_engines"] == ["mysql", "oracle"]
+    assert overview["coverage"]["overview_metric_engines"] == ["mysql", "oracle"]
+    assert {card["metric_name"] for card in overview["cards"]} >= {
+        "oracle_sessions_total",
+        "oracle_sessions_active",
+        "oracle_session_waits",
+        "oracle_user_calls_per_second",
+        "oracle_physical_reads_per_second",
+    }
+    assert _instance_metrics(instances[oracle_id]) == {
+        "oracle_sessions_total": 24,
+        "oracle_sessions_active": 6,
+        "oracle_session_waits": 2,
+        "oracle_user_calls_per_second": 0.2,
+        "oracle_physical_reads_per_second": 0.1,
+    }

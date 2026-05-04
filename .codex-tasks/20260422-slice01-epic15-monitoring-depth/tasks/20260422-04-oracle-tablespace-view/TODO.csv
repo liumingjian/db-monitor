@@ -1,0 +1,8 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Freeze CH oracle_tablespaces schema,PENDING,"专表 DDL 加入 schema；TTL 30d；PARTITION BY toYYYYMMDD(collected_at)；ORDER BY (instance_id, collected_at, tablespace_name)","pnpm test:schema:bootstrap && uv run pytest tests/schema/test_clickhouse_schema.py -q",,0,"ADR-0008 要求：多维指标走专表"
+2,Implement Oracle tablespace collector,PENDING,"worker 按 300s 采集 dba_tablespace_usage_metrics；bytes 归一；batch insert CH","uv run pytest tests/worker_oracle/test_tablespace_collector.py -q",,0,"复用现有 Oracle validation 连接路径；错误日志完整；不复用 lepus 的 dba_data_files 组合"
+3,Add GET /instances/{id}/tablespaces (snapshot) API,PENDING,"router + service + repository；返回最新快照；支持历史回放窗口","uv run pytest tests/api/runtime/test_oracle_tablespaces.py::test_snapshot -q",,0,"INSTANCES_READ"
+4,Add GET /instances/{id}/tablespaces/{name}/history API,PENDING,"最长 30d 窗口；降采样策略：<=7d 原始 / >7d 按小时 avg","uv run pytest tests/api/runtime/test_oracle_tablespaces.py::test_history -q",,0,
+5,Regenerate OpenAPI snapshot and typed client,PENDING,"contracts/openapi.snapshot.json 更新；typed client 暴露 listTablespaces / getTablespaceHistory","pnpm openapi:check",,0,
+6,Build web Tablespaces tab + 24h sparkline + 30d fullscreen chart,PENDING,"tab 仅在 engine==oracle 显示；排序/颜色条/sparkline/全屏 trend 图均正常","pnpm --filter web typecheck && pnpm --filter web test",,0,
+7,Wire child-level smoke and close task,PENDING,"Smoke 覆盖 tab 打开 → 点击 tablespace → 全屏 trend 图","pnpm smoke:web",,0,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDashboardModel } from "../src/monitoring-ui";
 import { PREVIEW_OVERVIEW } from "../src/monitoring-preview";
+import { buildDashboardModel } from "../src/monitoring-ui";
 
 describe("dashboard views", () => {
 	it("maps overview cards and chart series into dashboard sections", () => {
@@ -68,14 +68,13 @@ describe("dashboard views", () => {
 			instances: [
 				...PREVIEW_OVERVIEW.instances,
 				{
-					...PREVIEW_OVERVIEW.instances[0],
+					environment: "prod",
 					engine: "oracle",
 					instance_id: "inst-prod-oracle",
+					labels: ["oracle", "baseline"],
+					metrics: [],
 					name: "prod-oracle-primary",
-					qps: 0,
-					replication_lag_seconds: 0,
-					threads_connected: 0,
-					threads_running: 0,
+					status: "healthy",
 				},
 			],
 			summary: {
@@ -117,9 +116,187 @@ describe("dashboard views", () => {
 			"MySQL + Oracle",
 			"MySQL",
 		]);
-		expect(model.engineSummaries.map((summary) => summary.title)).toEqual([
-			"MySQL",
-			"Oracle",
+		expect(model.engineSummaries.map((summary) => summary.title)).toEqual(["MySQL", "Oracle"]);
+	});
+
+	it("surfaces mixed-engine fleet parity once oracle overview metrics are available", () => {
+		const model = buildDashboardModel({
+			...PREVIEW_OVERVIEW,
+			cards: [
+				...PREVIEW_OVERVIEW.cards,
+				{
+					label: "Sessions Total",
+					metric_name: "oracle_sessions_total",
+					unit: "sessions",
+					value: 24,
+				},
+				{
+					label: "Sessions Active",
+					metric_name: "oracle_sessions_active",
+					unit: "sessions",
+					value: 6,
+				},
+				{
+					label: "Session Waits",
+					metric_name: "oracle_session_waits",
+					unit: "sessions",
+					value: 2,
+				},
+				{
+					label: "User Calls",
+					metric_name: "oracle_user_calls_per_second",
+					unit: "calls/s",
+					value: 0.2,
+				},
+				{
+					label: "Physical Reads",
+					metric_name: "oracle_physical_reads_per_second",
+					unit: "reads/s",
+					value: 0.1,
+				},
+			],
+			charts: [
+				...PREVIEW_OVERVIEW.charts,
+				{
+					label: "Sessions Total",
+					metric_name: "oracle_sessions_total",
+					points: [
+						{ timestamp: "2026-04-19T19:45:00+08:00", value: 18 },
+						{ timestamp: "2026-04-19T19:50:00+08:00", value: 24 },
+					],
+					unit: "sessions",
+				},
+				{
+					label: "Sessions Active",
+					metric_name: "oracle_sessions_active",
+					points: [
+						{ timestamp: "2026-04-19T19:45:00+08:00", value: 4 },
+						{ timestamp: "2026-04-19T19:50:00+08:00", value: 6 },
+					],
+					unit: "sessions",
+				},
+				{
+					label: "Session Waits",
+					metric_name: "oracle_session_waits",
+					points: [
+						{ timestamp: "2026-04-19T19:45:00+08:00", value: 1 },
+						{ timestamp: "2026-04-19T19:50:00+08:00", value: 2 },
+					],
+					unit: "sessions",
+				},
+				{
+					label: "User Calls",
+					metric_name: "oracle_user_calls_per_second",
+					points: [
+						{ timestamp: "2026-04-19T19:45:00+08:00", value: 0.1 },
+						{ timestamp: "2026-04-19T19:50:00+08:00", value: 0.2 },
+					],
+					unit: "calls/s",
+				},
+				{
+					label: "Physical Reads",
+					metric_name: "oracle_physical_reads_per_second",
+					points: [
+						{ timestamp: "2026-04-19T19:45:00+08:00", value: 0.05 },
+						{ timestamp: "2026-04-19T19:50:00+08:00", value: 0.1 },
+					],
+					unit: "reads/s",
+				},
+			],
+			coverage: {
+				detail_analytics_engines: ["mysql", "oracle"],
+				fleet_health_engines: ["mysql", "oracle"],
+				overview_instance_metric_engines: ["mysql", "oracle"],
+				overview_metric_engines: ["mysql", "oracle"],
+			},
+			instances: [
+				...PREVIEW_OVERVIEW.instances,
+				{
+					environment: "prod",
+					engine: "oracle",
+					instance_id: "inst-prod-oracle",
+					labels: ["oracle", "baseline"],
+					metrics: [
+						{
+							label: "Sessions Total",
+							metric_name: "oracle_sessions_total",
+							unit: "sessions",
+							value: 24,
+						},
+						{
+							label: "Sessions Active",
+							metric_name: "oracle_sessions_active",
+							unit: "sessions",
+							value: 6,
+						},
+						{
+							label: "Session Waits",
+							metric_name: "oracle_session_waits",
+							unit: "sessions",
+							value: 2,
+						},
+						{
+							label: "User Calls",
+							metric_name: "oracle_user_calls_per_second",
+							unit: "calls/s",
+							value: 0.2,
+						},
+						{
+							label: "Physical Reads",
+							metric_name: "oracle_physical_reads_per_second",
+							unit: "reads/s",
+							value: 0.1,
+						},
+					],
+					name: "prod-oracle-primary",
+					status: "healthy",
+				},
+			],
+			summary: {
+				engines: [
+					{
+						engine: "mysql",
+						healthy_instances: 1,
+						total_instances: 1,
+						unhealthy_instances: 0,
+					},
+					{
+						engine: "oracle",
+						healthy_instances: 1,
+						total_instances: 1,
+						unhealthy_instances: 0,
+					},
+				],
+				healthy_instances: 2,
+				total_instances: 2,
+				unhealthy_instances: 0,
+			},
+		});
+
+		expect(model.capabilityBoundary.value).toBe("Fleet metrics available");
+		expect(model.chartFrame.title).toBe("Mixed-Engine Fleet Activity");
+		expect(model.heroMetrics.map((metric) => metric.label)).toContain("MySQL QPS");
+		expect(model.heroMetrics.map((metric) => metric.label)).toContain("Oracle Sessions Total");
+		expect(model.capacityInsights.map((insight) => insight.title)).toEqual([
+			"MySQL traffic direction",
+			"MySQL engine pressure",
+			"MySQL replica headroom",
+			"Oracle workload direction",
+			"Oracle engine pressure",
+			"Oracle concurrency posture",
+		]);
+		expect(model.capacityLeaders.map((leader) => leader.title)).toEqual([
+			"Highest MySQL QPS",
+			"Most MySQL Running Threads",
+			"Worst MySQL Replication Lag",
+			"Highest Oracle User Calls",
+			"Most Oracle Active Sessions",
+			"Highest Oracle Session Waits",
+		]);
+		expect(model.coverageReadout.map((readout) => readout.value)).toEqual([
+			"MySQL + Oracle",
+			"MySQL + Oracle",
+			"MySQL + Oracle",
 		]);
 	});
 });

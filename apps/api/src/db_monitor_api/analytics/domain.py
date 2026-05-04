@@ -73,12 +73,9 @@ class OverviewInstanceSnapshot:
     engine: DatabaseEngine
     instance_id: str
     labels: tuple[str, ...]
+    metrics: tuple[MetricCard, ...]
     name: str
-    qps: float
-    replication_lag_seconds: float
     status: InstanceHealthStatus
-    threads_connected: float
-    threads_running: float
 
 
 @dataclass(frozen=True)
@@ -115,6 +112,8 @@ class InstanceMetadata:
     instance_id: str
     labels: tuple[str, ...]
     name: str
+    server_role: str | None
+    server_version: str | None
     status: InstanceHealthStatus
 
 

@@ -1,6 +1,8 @@
 from collections.abc import Mapping
 import subprocess
 
+from pytest import MonkeyPatch
+
 from db_monitor_api.auth.domain import utc_now
 from db_monitor_api.control_plane.domain import DatabaseEngine, InstanceConnectionConfig
 from db_monitor_pipeline.collector import OracleMetricsCollector, PythonOracleMetricsCollector
@@ -63,7 +65,9 @@ def test_worker_exposes_oracle_collection_failures_without_fake_success() -> Non
     assert sink.samples == []
 
 
-def test_oracle_collector_uses_sqlplus_fallback_for_localhost(monkeypatch) -> None:
+def test_oracle_collector_uses_sqlplus_fallback_for_localhost(
+    monkeypatch: MonkeyPatch,
+) -> None:
     config = InstanceConnectionConfig(
         database="XE",
         host="127.0.0.1",

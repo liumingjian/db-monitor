@@ -41,6 +41,24 @@ export interface SessionUser {
 	readonly username: string;
 }
 
+export interface ManagedUserResponse {
+	readonly active_organization_id: string;
+	readonly display_name: string;
+	readonly effective_permissions: readonly string[];
+	readonly roles: readonly string[];
+	readonly user_id: string;
+	readonly username: string;
+}
+
+export interface RoleCatalogEntryResponse {
+	readonly permissions: readonly string[];
+	readonly role: string;
+}
+
+export interface UpdateUserRolesRequest {
+	readonly roles: readonly string[];
+}
+
 export type TimeWindow = "15m" | "1h" | "6h" | "24h";
 
 export interface ValidationResponse {
@@ -121,12 +139,9 @@ export interface OverviewInstanceResponse {
 	readonly engine: DatabaseEngine;
 	readonly instance_id: string;
 	readonly labels: readonly string[];
+	readonly metrics: readonly MetricCardResponse[];
 	readonly name: string;
-	readonly qps: number;
-	readonly replication_lag_seconds: number;
 	readonly status: string;
-	readonly threads_connected: number;
-	readonly threads_running: number;
 }
 
 export interface OverviewResponse {
@@ -165,9 +180,24 @@ export interface InstanceTrendResponse {
 		readonly instance_id: string;
 		readonly labels: readonly string[];
 		readonly name: string;
+		readonly server_role: string | null;
+		readonly server_version: string | null;
 		readonly status: string;
 	};
 	readonly window: TimeWindow;
+}
+
+export interface RuleOverrideRequest {
+	readonly instance_id: string;
+	readonly enabled?: boolean | null;
+	readonly threshold?: number | null;
+}
+
+export interface RuleOverrideResponse {
+	readonly enabled: boolean | null;
+	readonly instance_id: string;
+	readonly threshold: number | null;
+	readonly updated_at: string;
 }
 
 export interface AlertRuleResponse {
@@ -178,6 +208,7 @@ export interface AlertRuleResponse {
 	readonly metric_name: string;
 	readonly name: string;
 	readonly operator: string;
+	readonly overrides: readonly RuleOverrideResponse[];
 	readonly rule_id: string;
 	readonly severity: string;
 	readonly threshold: number;
@@ -190,6 +221,19 @@ export interface CreateAlertRuleRequest {
 	readonly metric_name: string;
 	readonly name: string;
 	readonly operator: "gt" | "gte" | "lt" | "lte";
+	readonly overrides?: readonly RuleOverrideRequest[];
+	readonly severity: "warning" | "critical";
+	readonly threshold: number;
+}
+
+export interface UpdateAlertRuleRequest {
+	readonly enabled: boolean;
+	readonly engine: DatabaseEngine;
+	readonly instance_ids: readonly string[];
+	readonly metric_name: string;
+	readonly name: string;
+	readonly operator: "gt" | "gte" | "lt" | "lte";
+	readonly overrides?: readonly RuleOverrideRequest[];
 	readonly severity: "warning" | "critical";
 	readonly threshold: number;
 }
@@ -251,6 +295,131 @@ export interface AlertDetailResponse {
 	readonly record: AlertRecordResponse;
 }
 
+export interface ProcesslistEntryResponse {
+	readonly process_id: number;
+	readonly user: string;
+	readonly host: string;
+	readonly db: string;
+	readonly command: string;
+	readonly time_seconds: number;
+	readonly state: string;
+	readonly info: string;
+	readonly trx_started_at: string | null;
+}
+
+export interface ProcesslistSnapshotResponse {
+	readonly snapshot_at: string | null;
+	readonly entries: readonly ProcesslistEntryResponse[];
+}
+
+export interface ListProcesslistFilters {
+	readonly collected_after?: string;
+	readonly collected_before?: string;
+	readonly command?: string;
+	readonly host?: string;
+	readonly limit?: number;
+	readonly min_time_seconds?: number;
+	readonly user?: string;
+}
+
+export interface KillProcesslistRequest {
+	readonly reason?: string;
+}
+
+export interface KillProcesslistResponse {
+	readonly checked_at: string;
+	readonly killed: boolean;
+	readonly notes: string | null;
+}
+
+export interface SlowQueryEntryResponse {
+	readonly event_id: number;
+	readonly started_at: string;
+	readonly user: string;
+	readonly schema_name: string;
+	readonly sql_text: string;
+	readonly digest: string;
+	readonly timer_wait_ms: number;
+	readonly rows_examined: number;
+	readonly rows_sent: number;
+	readonly rows_affected: number;
+	readonly errors: number;
+}
+
+export interface SlowQueryWindowResponse {
+	readonly from_at: string;
+	readonly to_at: string;
+}
+
+export interface SlowQuerySnapshotResponse {
+	readonly window: SlowQueryWindowResponse;
+	readonly entries: readonly SlowQueryEntryResponse[];
+}
+
+export interface ListSlowQueriesFilters {
+	readonly digest_prefix?: string;
+	readonly limit?: number;
+	readonly min_duration_ms?: number;
+	readonly schema?: string;
+	readonly started_after?: string;
+	readonly started_before?: string;
+	readonly user?: string;
+}
+
+export interface TablespaceEntryResponse {
+	readonly tablespace_name: string;
+	readonly status: string;
+	readonly used_bytes: number;
+	readonly total_bytes: number;
+	readonly used_rate_percent: number;
+	readonly autoextensible: boolean;
+}
+
+export interface TablespaceSnapshotResponse {
+	readonly snapshot_at: string | null;
+	readonly entries: readonly TablespaceEntryResponse[];
+}
+
+export interface TablespaceHistoryEntryResponse {
+	readonly collected_at: string;
+	readonly used_bytes: number;
+	readonly total_bytes: number;
+	readonly used_rate_percent: number;
+}
+
+export interface TablespaceHistoryResponse {
+	readonly entries: readonly TablespaceHistoryEntryResponse[];
+}
+
+export interface ListTablespacesFilters {
+	readonly collected_after?: string;
+	readonly collected_before?: string;
+}
+
+export interface NotifyHistoryResponse {
+	readonly attempt: number;
+	readonly attempted_at: string;
+	readonly channel: string;
+	readonly delivered_at: string | null;
+	readonly error: string | null;
+	readonly instance_id: string | null;
+	readonly organization_id: string;
+	readonly rule_id: string;
+	readonly status: string;
+}
+
+export interface ListNotifyHistoryFilters {
+	readonly channel?: string;
+	readonly limit?: number;
+	readonly rule_id?: string;
+	readonly status?: string;
+}
+
+export interface TablespaceHistoryFilters {
+	readonly from: string;
+	readonly to: string;
+}
+
 export interface ApiClient {
 	readonly baseUrl: string;
 	readonly contractVersion: string;
@@ -261,16 +430,43 @@ export interface ApiClient {
 	createMySQLInstance(request: CreateMySQLInstanceRequest): Promise<InstanceResponse>;
 	createRule(request: CreateAlertRuleRequest): Promise<AlertRuleResponse>;
 	getAlert(alertId: string): Promise<AlertDetailResponse>;
+	getRule(ruleId: string): Promise<AlertRuleResponse>;
+	updateRule(ruleId: string, request: UpdateAlertRuleRequest): Promise<AlertRuleResponse>;
 	getInstance(instanceId: string): Promise<InstanceResponse>;
 	getMySQLInstance(instanceId: string): Promise<InstanceResponse>;
+	getInstanceProcesslist(
+		instanceId: string,
+		filters?: ListProcesslistFilters,
+	): Promise<ProcesslistSnapshotResponse>;
+	getInstanceSlowQueries(
+		instanceId: string,
+		filters?: ListSlowQueriesFilters,
+	): Promise<SlowQuerySnapshotResponse>;
+	killProcess(
+		instanceId: string,
+		processId: number,
+		request?: KillProcesslistRequest,
+	): Promise<KillProcesslistResponse>;
+	listTablespaces(
+		instanceId: string,
+		filters?: ListTablespacesFilters,
+	): Promise<TablespaceSnapshotResponse>;
+	getTablespaceHistory(
+		instanceId: string,
+		tablespaceName: string,
+		filters: TablespaceHistoryFilters,
+	): Promise<TablespaceHistoryResponse>;
 	getInstanceTrends(instanceId: string, window: TimeWindow): Promise<InstanceTrendResponse>;
 	getOverview(window: TimeWindow): Promise<OverviewResponse>;
 	listInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
 	listMySQLInstances(filters?: ListInstancesFilters): Promise<readonly InstanceResponse[]>;
 	listAlerts(filters?: ListAlertsFilters): Promise<readonly AlertRecordResponse[]>;
+	listNotifyHistory(filters?: ListNotifyHistoryFilters): Promise<readonly NotifyHistoryResponse[]>;
 	listRuleCatalog(): Promise<readonly AlertEngineCatalogResponse[]>;
 	listRules(): Promise<readonly AlertRuleResponse[]>;
+	listRoleCatalog(): Promise<readonly RoleCatalogEntryResponse[]>;
 	listSettings(): Promise<readonly SystemSettingResponse[]>;
+	listUsers(): Promise<readonly ManagedUserResponse[]>;
 	login(credentials: {
 		readonly password: string;
 		readonly username: string;
@@ -278,9 +474,10 @@ export interface ApiClient {
 	logout(): Promise<void>;
 	me(): Promise<SessionUser>;
 	updateSetting(key: string, value: string): Promise<SystemSettingResponse>;
+	updateUserRoles(userId: string, request: UpdateUserRolesRequest): Promise<ManagedUserResponse>;
 }
 
-export const API_CONTRACT_VERSION = "0.8.0";
+export const API_CONTRACT_VERSION = "0.15.0";
 export const apiClientPackageName = "@db-monitor/api-client";
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -318,7 +515,34 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 				method: "POST",
 			}),
 		getAlert: (alertId) => request<AlertDetailResponse>(`/alerts/${alertId}`),
+		getRule: (ruleId) => request<AlertRuleResponse>(`/alerts/rules/${ruleId}`),
+		updateRule: (ruleId, payload) =>
+			request<AlertRuleResponse>(`/alerts/rules/${ruleId}`, {
+				body: JSON.stringify(payload),
+				method: "PUT",
+			}),
 		getInstance: (instanceId) => request<InstanceResponse>(`/control/instances/${instanceId}`),
+		getInstanceProcesslist: (instanceId, filters) =>
+			request<ProcesslistSnapshotResponse>(
+				`/instances/${instanceId}/processlist${buildQueryString(filters)}`,
+			),
+		getInstanceSlowQueries: (instanceId, filters) =>
+			request<SlowQuerySnapshotResponse>(
+				`/instances/${instanceId}/slow-queries${buildQueryString(filters)}`,
+			),
+		killProcess: (instanceId, processId, payload) =>
+			request<KillProcesslistResponse>(`/instances/${instanceId}/processlist/${processId}/kill`, {
+				body: JSON.stringify(payload ?? {}),
+				method: "POST",
+			}),
+		listTablespaces: (instanceId, filters) =>
+			request<TablespaceSnapshotResponse>(
+				`/instances/${instanceId}/tablespaces${buildQueryString(filters)}`,
+			),
+		getTablespaceHistory: (instanceId, tablespaceName, filters) =>
+			request<TablespaceHistoryResponse>(
+				`/instances/${instanceId}/tablespaces/${encodeURIComponent(tablespaceName)}/history${buildQueryString(filters)}`,
+			),
 		getMySQLInstance: (instanceId) =>
 			request<InstanceResponse>(`/control/mysql-instances/${instanceId}`),
 		getInstanceTrends: (instanceId, window) =>
@@ -327,14 +551,18 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 		listInstances: (filters) =>
 			request<readonly InstanceResponse[]>(`/control/instances${buildQueryString(filters)}`),
 		listMySQLInstances: (filters) =>
-			request<readonly InstanceResponse[]>(
-				`/control/mysql-instances${buildQueryString(filters)}`,
-			),
+			request<readonly InstanceResponse[]>(`/control/mysql-instances${buildQueryString(filters)}`),
 		listAlerts: (filters) =>
 			request<readonly AlertRecordResponse[]>(`/alerts${buildQueryString(filters)}`),
+		listNotifyHistory: (filters) =>
+			request<readonly NotifyHistoryResponse[]>(
+				`/admin/notify-history${buildQueryString(filters)}`,
+			),
 		listRuleCatalog: () => request<readonly AlertEngineCatalogResponse[]>("/alerts/rule-catalog"),
 		listRules: () => request<readonly AlertRuleResponse[]>("/alerts/rules"),
+		listRoleCatalog: () => request<readonly RoleCatalogEntryResponse[]>("/auth/roles"),
 		listSettings: () => request<readonly SystemSettingResponse[]>("/control/settings"),
+		listUsers: () => request<readonly ManagedUserResponse[]>("/auth/users"),
 		login: (credentials) =>
 			request<SessionUser>("/auth/login", {
 				body: JSON.stringify(credentials),
@@ -349,11 +577,24 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 				body: JSON.stringify({ value }),
 				method: "PUT",
 			}),
+		updateUserRoles: (userId, payload) =>
+			request<ManagedUserResponse>(`/auth/users/${userId}/roles`, {
+				body: JSON.stringify(payload),
+				method: "PUT",
+			}),
 	};
 }
 
 function buildQueryString(
-	filters: ListAlertsFilters | ListInstancesFilters | undefined,
+	filters:
+		| ListAlertsFilters
+		| ListInstancesFilters
+		| ListNotifyHistoryFilters
+		| ListProcesslistFilters
+		| ListSlowQueriesFilters
+		| ListTablespacesFilters
+		| TablespaceHistoryFilters
+		| undefined,
 ): string {
 	if (filters === undefined) {
 		return "";

@@ -7,12 +7,12 @@
 
 ## Recovery
 
-- 任务: child `#1`、`#2` 已完成；当前 active child 已切换为 `#3` 用户/角色管理产品面
+- 任务: Epic 10 已完成
 - 形态: epic
-- 进度: 2/5
-- 当前: child `#3` `Implement user and role management product surface`
+- 进度: 5/5
+- 当前: 无 active child；所有 closeout child 与 root signoff 已完成
 - 文件: `.codex-tasks/20260421-prd-debt-closeout-epic/SUBTASKS.csv`
-- 下一步: 把 user-management backend contract 落成代码，避免管理面继续停留在 seed-user-only seam
+- 下一步: 无。若后续继续开发，先回到 roadmap close-out / extension 流程
 
 ## Control Contract
 
@@ -24,37 +24,25 @@
 
 ## Latest Evidence
 
-- child `#1` 已完成并通过 focused signoff：
-  - `uv run pytest tests/integration/control_plane/test_control_plane.py tests/api/alerting/test_alerting_contract.py -q`
+- child `#1` 已关闭实例/告警筛选 gap：
+  - `/control/instances` 与 `/alerts` 都具备显式 filter contract、typed client 支持和 server-rendered filter surface
+- child `#2` 已关闭审计持久化 gap：
+  - `audit_entries`、`PostgresAuditRepository` 与 admin-only `/auth/audit-entries` 已成为最小审计真相
+- child `#3` 已关闭用户/角色管理 gap：
+  - admin-only `/auth/users`、`/auth/roles`、`/auth/users/{id}/roles` 已落地
+  - `/settings` 现在能显式查看用户、角色和有效权限，并更新现有用户角色
+- child `#4` 已关闭 detail semantics gap：
+  - MySQL detail cards 现在显式包含 TPS
+  - 实例详情页现在显式展示 validation、server role、server version readout
+- child `#5` 已完成 root signoff：
   - `pnpm openapi:check`
+  - `uv run pytest tests/api/auth tests/api/rbac tests/api/alerting/test_alerting_contract.py tests/api/analytics tests/integration/control_plane/test_control_plane.py tests/integration/control_plane/test_control_plane_postgres.py tests/schema/test_schema_bootstrap.py -q`
   - `pnpm --filter web test`
-  - `pnpm typecheck`
-- child `#1` 关闭的产品 gap：
-  - `/control/instances` 现在支持 `name` / `environment` / `label` / `status`
-  - `/alerts` 现在支持 `status` / `severity` / `instance` / `opened_after` / `opened_before`
-  - `packages/api-client` 已提供对应 filter objects
-  - `/instances` 与 `/alerts` 页面都已变成 server-rendered GET filter form
-- child `#2` 已完成并通过 focused signoff：
-  - `audit_entries` 已进入 PostgreSQL schema truth，schema contract 升到 `v8`
-  - `RuntimeMode.POSTGRES` 现在显式使用 `PostgresAuditRepository`
-  - `/auth/audit-entries` 已作为 admin-only 最小审计查询面落地
-  - 审计写路径现在都带 `organization_id`
-  - focused gates:
-    - `uv run pytest tests/api/auth tests/integration/control_plane/test_control_plane_postgres.py tests/schema/test_schema_bootstrap.py -q`
-    - `pnpm openapi:update`
-    - `pnpm openapi:check`
-    - `uv run pytest tests/api/rbac -q`
-- `docs/prd-closeout.md` 现在应从 “4 项 remaining gaps” 收敛为 “3 项 remaining gaps”
-- `EPIC_ROADMAP.md` 已把 `Epic 10: PRD Debt and Control-Plane Closeout` 设为当前 active epic
-- `.codex-tasks/20260421-prd-debt-closeout-epic/` 及所有 child recovery skeleton 已创建完成，满足 `AGENT.md` 的 planning materialization 规则
-- 当前新的主误差已转移到 child `#3`：
-  - repo 仍没有正式的用户列表/角色更新产品面
-  - settings / governance shell 还无法承担管理员管理现有用户的职责
-  - 这是现在最合适的 control-plane closeout 收口点
+  - `pnpm --filter web typecheck`
+- `docs/prd-closeout.md` 已更新为“PRD closeout gaps 已完成收口”
+- `EPIC_ROADMAP.md` 已将 Epic 10 标记为 `Done`，roadmap 01-10 当前全部完成
 
 ## Notes
 
 - 这是 closeout epic，不是新的产品扩展 epic
-- child `#1` 已证明：列表筛选可以先在 service 层诚实收口，而不需要提前把 repository/query model 改成更重的 shared contract
-- child `#2` 已证明：shared-state closeout 不一定要扩成大平台，只要把真相源、查询面和 focused gates 对齐即可
-- child `#3` 仍会触碰共享状态与管理写路径，下一轮必须继续遵循 schema-sensitive gate
+- Oracle live gate 没有在这轮 debt pass 中重跑；既有 live baseline 仍保留在 `.codex-tasks/20260420-oracle-live-gate/`
