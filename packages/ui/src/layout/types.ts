@@ -34,8 +34,10 @@ export interface QuickMetricItem {
 	readonly key: string;
 	readonly label: string;
 	readonly value: string;
+	readonly unit?: string;
 	readonly hint?: string;
 	readonly sparkline?: ReactNode;
+	readonly numeric?: boolean;
 }
 
 export interface TabItem {
