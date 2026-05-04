@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Implement WeComNotifier markdown payload + at-rendering,DONE,"markdown content 含 5 字段 + @user 内嵌；at_all/at_user_ids/at_mobile_list 全部生效","uv run pytest tests/alerting_notification/test_wecom.py -q -k payload",,0,
+2,Implement WeComNotifier send + retry policy,DONE,"3 次指数退避；429/5xx/timeout/transport 可重试；其他 4xx 不重试","uv run pytest tests/alerting_notification/test_wecom.py -q -k send",,0,
+3,Implement mobile text-followup as best-effort,DONE,"at_mobile_list 触发第二个 text 请求；mobile 失败不污染主 NotifyResult","uv run pytest tests/alerting_notification/test_wecom.py -q -k mobile",,0,
+4,Add wecom→smtp fallback integration,DONE,"dispatch_with_fallback 在 wecom 失败时走 smtp；history 写两行","uv run pytest tests/alerting_notification/test_fallback.py -q -k wecom",,0,
+5,Run static gates + module-level validation,DONE,"ruff/mypy/pytest 全绿","uv run pytest tests/alerting_notification -q",,0,

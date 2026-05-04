@@ -9,10 +9,10 @@
 
 - 任务: Slice 2 child #1
 - 形态: single-full
-- 进度: 0/N（待 ADR-0013 转 Accepted 后展开 SPEC.md + TODO.csv）
-- 当前: PLANNED（依赖 ADR-0013 决议）
+- 进度: 5/5
+- 当前: IN_PROGRESS — 实现 + 单测 + fallback 集成 + 静态/动态 gate 全绿；待 Boss review PR
 - 文件: `.codex-tasks/20260504-slice02-alert-maturity-epic/tasks/20260504-01-wecom-channel/`
-- 下一步: ADR-0013 转 Accepted → 撰写 SPEC.md（fixture / config schema / 测试矩阵） → TODO.csv 展开
+- 下一步: PR 合并后切 SUBTASKS.csv child #1 → DONE，触发 child #2（SMS 通道）
 
 ## Reference
 

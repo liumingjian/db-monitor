@@ -1,7 +1,8 @@
 # ADR-0013: WeCom (企业微信) and SMS Channel Expansion
 
-> Status: Draft（Slice 2 Epic 起步前 Boss 决议后转 Accepted）
+> Status: Accepted
 > Date: 2026-05-04
+> Accepted: 2026-05-04（Boss 在 PR #2 合并后显式锁定）
 > Supersedes: 无
 > Related: ADR-0009（Notifier dynamic control discipline）
 
@@ -83,4 +84,5 @@ Epic 16 已落地 Notifier 抽象层（`ChannelRegistry` + pluggable factory）+
 ## Decision Window
 
 - 2026-05-04 起草
-- Slice 2 Epic 起步前 Boss 决议；锁定后转 Accepted
+- 2026-05-04 Boss 在 PR #2（kickoff）合并后显式 Accept；child #1（WeCom）随即解锁开工
+- SMS（child #2）锁定的实现路径：阿里云单 provider + `AliyunSmsProvider`；模板审批走 child #1 完成前的并行准备

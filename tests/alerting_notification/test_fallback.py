@@ -170,6 +170,34 @@ def test_fallback_other_channels_dispatched_regardless() -> None:
     assert {r.channel for r in results} == {"feishu", "wecom"}
 
 
+def test_dispatch_falls_back_from_wecom_to_smtp() -> None:
+    registry = ChannelRegistry()
+    wecom = _FailNotifier("wecom")
+    smtp = _SuccessNotifier("smtp")
+    registry.register("wecom", wecom)
+    registry.register("smtp", smtp)
+    bindings = _StaticBindings([_binding("wecom"), _binding("smtp")])
+    history = InMemoryNotifyHistoryRepository()
+
+    results = asyncio.run(
+        dispatch_with_fallback(
+            _event(),
+            registry=registry,
+            bindings=bindings,
+            history=history,
+            primary_channel="wecom",
+            fallback_channel="smtp",
+        )
+    )
+
+    assert [r.channel for r in results] == ["wecom", "smtp"]
+    assert results[0].status is NotifyStatus.FAILED
+    assert results[1].status is NotifyStatus.DELIVERED
+    assert smtp.calls == 1
+    entries = history.list_entries(organization_id="org-internal")
+    assert {entry.channel for entry in entries} == {"wecom", "smtp"}
+
+
 def test_fallback_records_two_history_rows_when_both_fail() -> None:
     registry = ChannelRegistry()
     registry.register("feishu", _FailNotifier("feishu"))
