@@ -14,7 +14,7 @@ import {
 import {
 	Activity as ActivityIcon,
 	Bell as BellIcon,
-	LifeBuoy as LifeBuoyIcon,
+	SlidersHorizontal as RulesIcon,
 	Settings as SettingsIcon,
 	Wrench as WrenchIcon,
 } from "lucide-react";
@@ -56,7 +56,7 @@ const ICON_GROUPS: readonly IconRailGroup[] = [
 
 const SIDEBAR_ITEMS: readonly SidebarItemModel[] = [
 	{ href: "/alerts", label: "告警", icon: BellIcon },
-	{ href: "/rules", label: "规则", icon: LifeBuoyIcon },
+	{ href: "/rules", label: "规则", icon: RulesIcon },
 ];
 
 interface AlertsAppShellProps {
