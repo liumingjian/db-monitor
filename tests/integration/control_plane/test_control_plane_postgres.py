@@ -334,6 +334,8 @@ def _reset_control_plane_tables(dsn: str) -> None:
             cursor.execute("DROP TABLE IF EXISTS audit_entries")
             cursor.execute("DROP TABLE IF EXISTS alert_history")
             cursor.execute("DROP TABLE IF EXISTS alert_records")
+            cursor.execute("DROP TABLE IF EXISTS notify_history")
+            cursor.execute("DROP TABLE IF EXISTS alert_channel_bindings")
             cursor.execute("DROP TABLE IF EXISTS rule_instance_overrides")
             cursor.execute("DROP TABLE IF EXISTS alert_rules")
             cursor.execute("DROP TABLE IF EXISTS instance_parameters")
