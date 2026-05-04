@@ -1,0 +1,10 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,调 ui-ux-pro-max skill 出 3 个 overview layout 候选 + 截图存 raw/,TODO,raw/ 下有 3 张候选截图 + 1 个候选方案对比 md,ls raw/*.png | wc -l,,0,候选必须守 ADR-0012 D1-D3/D5-D7 锁死的视觉语言；layout 维度 = section-heading + hairline divider 模式
+2,Boss 在三个候选里拍板一个并锁定,TODO,raw/CHOSEN.md 写明选定方案 + 理由 + 守哪条 D 钉子,test -f raw/CHOSEN.md,,0,Boss 决策点；不能跳过；选定后此行 status = DONE 并写入 raw/CHOSEN.md
+3,重排 overview-shell.tsx 套用选定 layout,TODO,文件按 SectionHeading + hairline 模式重组；不再裹 rounded-md border,pnpm --filter web typecheck,,0,守 ADR-0012 D4 钉子（不压 card padding）
+4,重排 fleet-health-matrix.tsx 套用选定 layout,TODO,fleet 段移除外层 panel；保留 tile primitive 本身,pnpm --filter web typecheck,,0,
+5,重排 instances-snapshot-table.tsx 套用选定 layout,TODO,table 段头部使用 SectionHeading；行高保持现状,pnpm --filter web typecheck,,0,密度只控行高（表格三分法允许）；不变 card padding
+6,重排 overview-line-chart.tsx 套用选定 layout,TODO,chart 段头部使用 SectionHeading；ECharts 配置不动,pnpm --filter web typecheck,,0,
+7,Mobile 500×844 + 桌面 1440 双视口走查,TODO,raw/ 下有 mobile + desktop 两组 before-after 截图,test $(ls raw/after-*.png | wc -l) -ge 2,,0,优先 chrome-devtools MCP；如 MCP 不通可手工 next dev + 截图
+8,Workspace 闸门：typecheck + lint + smoke,TODO,三命令全绿,pnpm typecheck && pnpm lint && pnpm smoke:web,,0,
+9,提交 + push + 开 PR β.1 + 待 Boss 合并,TODO,PR opened on GitHub; URL 写入 PROGRESS.md,gh pr view --json url,,0,base=main; head=codex/slice15b-pr-beta-1-overview-panel-rework
