@@ -1,0 +1,49 @@
+[
+  {
+    "route": "/overview",
+    "url": "http://127.0.0.1:3000/overview",
+    "scores": {
+      "performance": 64,
+      "accessibility": 98,
+      "best-practices": 96
+    },
+    "below_threshold": true
+  },
+  {
+    "route": "/instances",
+    "url": "http://127.0.0.1:3000/instances",
+    "scores": {
+      "performance": 64,
+      "accessibility": 98,
+      "best-practices": 96
+    },
+    "below_threshold": true
+  },
+  {
+    "route": "/alerts",
+    "url": "http://127.0.0.1:3000/alerts",
+    "scores": {
+      "performance": 64,
+      "accessibility": 96,
+      "best-practices": 96
+    },
+    "below_threshold": true
+  },
+  {
+    "route": "/rules",
+    "url": "http://127.0.0.1:3000/rules",
+    "exitCode": 1,
+    "scores": null,
+    "below_threshold": true
+  },
+  {
+    "route": "/settings",
+    "url": "http://127.0.0.1:3000/settings",
+    "scores": {
+      "performance": 64,
+      "accessibility": 98,
+      "best-practices": 96
+    },
+    "below_threshold": true
+  }
+]

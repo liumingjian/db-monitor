@@ -1,9 +1,7 @@
+import { toAlertTabKey } from "../../src/components/alerts/alert-view-model";
+import { AlertsPageShell } from "../../src/components/alerts/alerts-page-shell";
 import { AppChrome } from "../../src/components/app-chrome";
-import {
-	buildAlertListFilterValues,
-	buildOperationsModel,
-	formatDatabaseEngine,
-} from "../../src/monitoring-ui";
+import { buildAlertListFilterValues, buildOperationsModel } from "../../src/monitoring-ui";
 import { createServerApiClient, requireServerSession } from "../../src/server-api";
 
 interface AlertsPageProps {
@@ -13,6 +11,7 @@ interface AlertsPageProps {
 		readonly opened_before?: string;
 		readonly severity?: string;
 		readonly status?: string;
+		readonly tab?: string;
 	}>;
 }
 
@@ -20,6 +19,7 @@ export default async function AlertsPage({ searchParams }: AlertsPageProps) {
 	const session = await requireServerSession("/alerts");
 	const params = await searchParams;
 	const filters = buildAlertListFilterValues(params);
+	const tab = toAlertTabKey(params.tab);
 	const apiClient = await createServerApiClient();
 	const model = buildOperationsModel({
 		alertFilters: filters,
@@ -32,118 +32,79 @@ export default async function AlertsPage({ searchParams }: AlertsPageProps) {
 		}),
 	});
 
+	const queryString = buildQueryString({ filters, tab });
+	const baseHref = queryString.length === 0 ? "/alerts" : `/alerts?${queryString}`;
+
 	return (
 		<AppChrome session={session}>
-			<div className="space-y-4">
-				<h2 className="text-2xl font-semibold">Alert queue</h2>
-				<form
-					className="grid gap-3 rounded-[1.2rem] border border-black/5 bg-white p-4 md:grid-cols-2"
-					method="get"
-				>
-					<label className="grid gap-2" htmlFor="status">
-						<span className="text-sm font-medium">Status</span>
-						<select
-							className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
-							defaultValue={model.alertFilters.status}
-							id="status"
-							name="status"
-						>
-							<option value="">All statuses</option>
-							<option value="open">open</option>
-							<option value="acknowledged">acknowledged</option>
-							<option value="resolved">resolved</option>
-						</select>
-					</label>
-					<label className="grid gap-2" htmlFor="severity">
-						<span className="text-sm font-medium">Severity</span>
-						<select
-							className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
-							defaultValue={model.alertFilters.severity}
-							id="severity"
-							name="severity"
-						>
-							<option value="">All levels</option>
-							<option value="critical">critical</option>
-							<option value="warning">warning</option>
-						</select>
-					</label>
-					<label className="grid gap-2" htmlFor="instance">
-						<span className="text-sm font-medium">Instance</span>
-						<input
-							className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
-							defaultValue={model.alertFilters.instance}
-							id="instance"
-							name="instance"
-							placeholder="inst-alert"
-						/>
-					</label>
-					<label className="grid gap-2" htmlFor="opened_after">
-						<span className="text-sm font-medium">Opened after</span>
-						<input
-							className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
-							defaultValue={model.alertFilters.opened_after}
-							id="opened_after"
-							name="opened_after"
-							type="datetime-local"
-						/>
-					</label>
-					<label className="grid gap-2" htmlFor="opened_before">
-						<span className="text-sm font-medium">Opened before</span>
-						<input
-							className="rounded-[1rem] border border-black/10 bg-[var(--panel)] px-4 py-3"
-							defaultValue={model.alertFilters.opened_before}
-							id="opened_before"
-							name="opened_before"
-							type="datetime-local"
-						/>
-					</label>
-					<div className="flex flex-wrap items-center gap-3 md:col-span-2">
-						<button
-							className="rounded-[1rem] bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white"
-							type="submit"
-						>
-							Apply filters
-						</button>
-						<a className="text-sm font-medium text-[var(--accent)]" href="/alerts">
-							Clear
-						</a>
-						<p className="text-sm text-[var(--muted)]">
-							Showing {model.alerts.length} matching alert{model.alerts.length === 1 ? "" : "s"}.
-						</p>
-					</div>
-				</form>
-				{model.alerts.length === 0 ? (
-					<p className="rounded-[1.2rem] border border-dashed border-black/10 bg-[var(--panel)] p-4 text-sm text-[var(--muted)]">
-						No alerts matched the current filter window.
-					</p>
-				) : null}
-				{model.alerts.map((alert) => (
-					<a
-						className="block rounded-[1.2rem] border border-black/5 bg-[var(--panel)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--accent)]"
-						href={`/alerts/${alert.alert_id}`}
-						key={alert.alert_id}
-					>
-						<p className="font-semibold">{alert.rule_name}</p>
-						<p className="text-sm text-[var(--muted)]">
-							{formatDatabaseEngine(alert.engine)} · {alert.instance_id} · {alert.metric_name}
-						</p>
-						<p className="mt-2 text-sm text-[var(--muted)]">
-							Current value {alert.current_value} vs threshold {alert.threshold}
-						</p>
-						<p className="mt-2 text-sm text-[var(--muted)]">
-							Owner {alert.owner_user_id ?? "unassigned"} · Ack{" "}
-							{alert.acknowledged_by_user_id ?? "pending"}
-						</p>
-						<p className="mt-2 text-xs uppercase tracking-[0.22em] text-[var(--accent)]">
-							{alert.status}
-						</p>
-					</a>
-				))}
-			</div>
+			<AlertsPageShell
+				alerts={model.alerts}
+				baseHref={baseHref}
+				buildDrawerHref={(alertId) => buildDrawerHref(alertId, queryString)}
+				buildTabHref={(nextTab) => buildTabHref(nextTab, filters)}
+				filters={model.alertFilters}
+				isDetail={false}
+				tab={tab}
+			/>
 		</AppChrome>
 	);
 }
 
 function emptyToUndefined<T extends string>(value: T | ""): T | undefined {
 	return value.length === 0 ? undefined : (value as T);
+}
+
+function buildQueryString(options: {
+	readonly filters: ReturnType<typeof buildAlertListFilterValues>;
+	readonly tab: string;
+}): string {
+	const params = new URLSearchParams();
+	const { filters, tab } = options;
+	if (filters.instance.length > 0) {
+		params.set("instance", filters.instance);
+	}
+	if (filters.opened_after.length > 0) {
+		params.set("opened_after", filters.opened_after);
+	}
+	if (filters.opened_before.length > 0) {
+		params.set("opened_before", filters.opened_before);
+	}
+	if (filters.severity.length > 0) {
+		params.set("severity", filters.severity);
+	}
+	if (filters.status.length > 0) {
+		params.set("status", filters.status);
+	}
+	if (tab !== "active") {
+		params.set("tab", tab);
+	}
+	return params.toString();
+}
+
+function buildDrawerHref(alertId: string, queryString: string): string {
+	return queryString.length === 0 ? `/alerts/${alertId}` : `/alerts/${alertId}?${queryString}`;
+}
+
+function buildTabHref(tab: string, filters: ReturnType<typeof buildAlertListFilterValues>): string {
+	const params = new URLSearchParams();
+	if (filters.instance.length > 0) {
+		params.set("instance", filters.instance);
+	}
+	if (filters.opened_after.length > 0) {
+		params.set("opened_after", filters.opened_after);
+	}
+	if (filters.opened_before.length > 0) {
+		params.set("opened_before", filters.opened_before);
+	}
+	if (filters.severity.length > 0) {
+		params.set("severity", filters.severity);
+	}
+	if (filters.status.length > 0) {
+		params.set("status", filters.status);
+	}
+	if (tab !== "active") {
+		params.set("tab", tab);
+	}
+	const query = params.toString();
+	return query.length === 0 ? "/alerts" : `/alerts?${query}`;
 }

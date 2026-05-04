@@ -1,0 +1,9 @@
+id,step,status,notes
+1,Add UI package: fuzzy-match scorer + command-palette + notification-drawer + on-call-banner + index export,DONE,纯受控 UI；不访问 window 外部数据
+2,Add web shell bridges: on-call-context + on-call-math + command-palette-context + app-command-palette + app-notification-drawer + index barrel,DONE,Provider + hook + localStorage + OS Notification API
+3,Add Route Handler /api/command-palette returning nav + instances + rules,DONE,复用 fetchServerSession + createServerApiClient
+4,Wire providers.tsx to mount CommandPaletteProvider + OnCallProvider + NotificationCenterProvider + app bridges,DONE,layout.tsx 保持不动
+5,Append i18n namespaces commandPalette / notifications / oncall to zh-CN.json,DONE,仅追加，未改动他人 namespace
+6,Add vitest coverage for fuzzy-match + on-call 2h math,DONE,17/17 pass
+7,Run lint / typecheck / test / build (scoped),DONE,scope 全绿；跨 scope 红色由其他子任务负责
+8,Update SUBTASKS.csv row id=9 status=DONE + PROGRESS.md signoff,DONE,

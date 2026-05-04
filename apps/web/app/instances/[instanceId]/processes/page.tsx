@@ -1,3 +1,5 @@
+import { PageContent } from "@db-monitor/ui";
+
 import {
 	buildProcesslistFilterValues,
 	buildProcesslistViewModel,
@@ -10,9 +12,7 @@ import { ProcesslistFilterForm } from "../_components/processlist-filter-form";
 import { ProcesslistTable } from "../_components/processlist-table";
 
 interface ProcessesPageProps {
-	readonly params: Promise<{
-		readonly instanceId: string;
-	}>;
+	readonly params: Promise<{ readonly instanceId: string }>;
 	readonly searchParams: Promise<{
 		readonly user?: string;
 		readonly host?: string;
@@ -24,6 +24,10 @@ interface ProcessesPageProps {
 	}>;
 }
 
+/**
+ * Q13 会话 tab。表格 + filter form 从原 header 结构下沉到 CanonicalPageTemplate
+ * 的 PageContent 区域；Kill 行为走二次确认 Dialog（见 KillProcessDialog）。
+ */
 export default async function ProcessesPage({ params, searchParams }: ProcessesPageProps) {
 	const { instanceId } = await params;
 	const resolvedSearchParams = await searchParams;
@@ -39,33 +43,35 @@ export default async function ProcessesPage({ params, searchParams }: ProcessesP
 	const formAction = `/instances/${instanceId}/processes`;
 
 	return (
-		<section aria-labelledby="processlist-heading" className="space-y-4">
-			<header className="flex flex-wrap items-baseline justify-between gap-3">
-				<div>
-					<h2 className="text-2xl font-semibold" id="processlist-heading">
-						Processes
-					</h2>
-					<p className="mt-1 text-sm text-[var(--muted)]">
-						最新采集: <span className="font-mono">{model.snapshotLabel}</span>
+		<PageContent>
+			<section aria-labelledby="processlist-heading" className="space-y-4 p-6">
+				<header className="flex flex-wrap items-baseline justify-between gap-3">
+					<div>
+						<h2 className="text-lg font-semibold text-fg-primary" id="processlist-heading">
+							会话 / Processlist
+						</h2>
+						<p className="mt-1 text-sm text-fg-muted">
+							最新采集: <span className="font-mono tabular-nums">{model.snapshotLabel}</span>
+						</p>
+					</div>
+					<p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] tabular-nums text-fg-muted">
+						{model.entries.length} sessions
 					</p>
-				</div>
-				<p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-					{model.entries.length} sessions
-				</p>
-			</header>
-			<ProcesslistFilterForm action={formAction} filters={model.filters} />
-			{model.emptyState === null ? (
-				<ProcesslistTable
-					canKill={canKill}
-					entries={model.entries}
-					instanceId={instanceId}
-					monitorUsername={instance.connection.username}
-					validationPassed={model.validationPassed}
-				/>
-			) : (
-				<ProcesslistEmptyStateBanner state={model.emptyState} />
-			)}
-		</section>
+				</header>
+				<ProcesslistFilterForm action={formAction} filters={model.filters} />
+				{model.emptyState === null ? (
+					<ProcesslistTable
+						canKill={canKill}
+						entries={model.entries}
+						instanceId={instanceId}
+						monitorUsername={instance.connection.username}
+						validationPassed={model.validationPassed}
+					/>
+				) : (
+					<ProcesslistEmptyStateBanner state={model.emptyState} />
+				)}
+			</section>
+		</PageContent>
 	);
 }
 

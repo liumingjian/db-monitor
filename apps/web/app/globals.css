@@ -1,27 +1,105 @@
 @import "tailwindcss";
 
-:root {
-	--surface: #f3efe7;
-	--panel: #f7f4ee;
-	--panel-strong: #fffaf1;
-	--ink: #172033;
-	--muted: #5c6577;
-	--accent: #c25b2e;
-}
+/* Latin stack — IBM Plex Sans for western text */
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-sans/latin-700.css";
 
-html {
-	background: radial-gradient(circle at top right, rgba(194, 91, 46, 0.18), transparent 28rem),
-		linear-gradient(180deg, #fbf7ef 0%, #f2ede4 100%);
-}
+/* CJK stack — Noto Sans SC (Simplified Chinese subset only to cap weight) */
+@import "@fontsource/noto-sans-sc/chinese-simplified-400.css";
+@import "@fontsource/noto-sans-sc/chinese-simplified-500.css";
+@import "@fontsource/noto-sans-sc/chinese-simplified-600.css";
+@import "@fontsource/noto-sans-sc/chinese-simplified-700.css";
 
-body {
-	color: var(--ink);
-	font-family: "IBM Plex Sans", sans-serif;
-	min-height: 100vh;
-}
+/* Mono stack — JetBrains Mono for code, IDs, numeric columns */
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
 
-h1,
-h2,
-h3 {
-	font-family: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
+/* Design tokens (dual-theme CSS vars + Tailwind v4 @theme) */
+@import "../../../packages/ui/src/styles/tokens.css";
+
+@layer base {
+	html {
+		background-color: var(--bg-deep);
+		color: var(--fg-primary);
+		font-family: var(--font-sans);
+		font-feature-settings: "cv11", "ss01", "ss03";
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+
+	body {
+		background-color: var(--bg-deep);
+		color: var(--fg-primary);
+		min-height: 100vh;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-family: var(--font-sans);
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+
+	code,
+	kbd,
+	pre,
+	samp,
+	.font-mono {
+		font-family: var(--font-mono);
+	}
+
+	.tabular-nums,
+	[data-tabular] {
+		font-variant-numeric: tabular-nums;
+	}
+
+	*,
+	::before,
+	::after {
+		border-color: var(--border-hairline);
+	}
+
+	::selection {
+		background-color: var(--accent-glow);
+		color: var(--fg-primary);
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	::-webkit-scrollbar {
+		width: 10px;
+		height: 10px;
+	}
+	::-webkit-scrollbar-track {
+		background: var(--scrollbar-track);
+	}
+	::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: 8px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: var(--scrollbar-thumb-hover);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		::before,
+		::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
 }

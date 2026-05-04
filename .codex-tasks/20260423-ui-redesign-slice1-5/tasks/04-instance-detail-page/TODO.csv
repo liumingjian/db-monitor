@@ -1,0 +1,9 @@
+id,title,status,notes
+1,Build InstanceDetailShell (AppShell+IconRail+TopBar+tabs) and wire layout.tsx,DONE,"共享 shell（镜像 #3 InstancesListShell）；8 tab 走 TabBar primitive + client usePathname 决 activeKey；InstanceTabsBar"
+2,Build InstanceQuickMetrics client component with 30s auto-refresh,DONE,"useAutoRefresh(30_000) + router.refresh()；5 metric + 1 validation = 6 cell"
+3,Rewrite page.tsx as Overview tab + create performance subroute,DONE,"overview: 3 信息卡 + detail readouts；performance: TimeWindowNav + PresetNav + metric cards + capacity + MetricChart"
+4,Rewrite KillProcessDialog with thread_id confirm + migrate Processes tab to packages/ui tokens,DONE,"shadcn Dialog primitive；exact match；reason 必填；服务端 confirm_thread_id 二次校验；无 spinner"
+5,Create Tier 3 placeholder tabs (replication / configuration),DONE,"Slice 2 交付说明卡（title + slice label + capabilities bullets）"
+6,Build Audit tab (frontend synthesis of alerts + notify history filtered by instance_id),DONE,"listAlerts(instance=id) + listNotifyHistory(limit=200) 前端 instance_id 合成 + 时间倒序"
+7,Append instanceDetail.* namespace to messages/zh-CN.json,DONE,"41 key 追加；无覆盖他人 namespace"
+8,Validate lint+typecheck+test+build; update SUBTASKS.csv + PROGRESS,DONE,"lint 0 error；typecheck 0 error；tests 127→134；build 20→25 路由"

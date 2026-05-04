@@ -108,3 +108,51 @@ _Avoid_: "旧系统"（歧义）、"lepus"（未限定版本时易误解）。
 | 8 | 大屏 + 报表 + 收官 | screen 大屏（overview 实时 AJAX 版）、报表邮件（`task/send_report_mail`）、admin_log 审计增强、永不复刻清单归档 | 3-4 周 | planned |
 
 **永不复刻**：MongoDB 引擎、飞信短信、CodeIgniter widget/language/menu/license/profile/application/auth/error 控制器、`lp_mysql/awrreport` 页。
+
+## UI Terms (Slice 1.5 UI redesign, 2026-04-22 locked)
+
+17 轮 `/domain-model` 访谈锁定，详见 `docs/adr/0012-ui-redesign-design-system-and-page-architecture.md`。
+
+**Tier 1/2/3/4**:
+UI 功能分层。Tier 1 = 必须做的 10 张 Tier 1 页（Login/Overview/Instances/Detail/Alerts/Rules+Overrides/Notify history/Channels/Settings/Audit）；Tier 2 = label 体系替代 `machine_room + application` 二元组；Tier 3 = 占位卡片（Slice 2+ 功能）；Tier 4 = 全局框架件（⌘K / 通知抽屉 / on-call 模式 / 健康指示器）。
+_Avoid_: "Core/Extended/Placeholder"（既有中文生态惯用 Tier 命名）。
+
+**Icon Rail**:
+左侧 64px 窄栏的 4 个分组图标（`OBSERVE / ALERT / OPERATE / ADMIN`），点击后在右侧展开 216px 上下文侧栏。替代原先"全量展开左侧树"范式。
+_Avoid_: "左侧菜单"、"侧边导航"（语义不够精确）。
+
+**Canonical page template**:
+所有 Tier 1 业务页的统一 7 段结构：面包屑 40px / entity summary 88px / quick metrics 64px / tab bar 44px / content。Settings 页与 Login 页是唯二例外。
+_Avoid_: "通用布局"、"标准布局"。
+
+**Catalog / Feed / Snapshot**:
+UI 表格的三种数据形态。**Catalog** 分页（50/页，Instances/Rules/参数），**Feed** 游标分页（Audit/Notify history），**Snapshot** 页面级刷新不分页（Processlist/Tablespace），带 diff-refresh 保留滚动 + 高亮变化。混用视为 bug。
+_Avoid_: "分页表"、"实时表"（粒度不对）。
+
+**Tri-state inheritance (override)**:
+Rule 的 per-instance override 继承态。后端 `RuleInstanceOverride.enabled: bool | None`，`None = 继承基线`。UI 忠实映射为三态 segmented（继承 / 强开 / 强关），不使用二态 switch 糊弄（会把 None 和 False 混淆）。
+_Avoid_: "启用/禁用"（二态误导）。
+
+**四色严重度轴**:
+全局状态色：紧急 `#FF5A67` / 警告 `#FFB547` / 提示 `#5EA8FF` / 健康 `#3DDCCA`。后端 `RuleSeverity` 只有 critical/warning 两级；info 和 healthy 仅用于 UI 展示层（告警派生状态 + 实例健康聚合）。
+_Avoid_: "红黄绿三色"（不匹配）。
+
+**占位卡片 (placeholder card)**:
+Tier 3 功能尚未落地时的统一视觉单元：圆角 + 左侧 Slice 色带 + 大标题 + 一句话解释 + 预期价值 bullet + Slice 标记 + 预计交付窗口。**禁止**在 Tier 1 主路径上出现，**禁止**静默删除。Settings 页的"功能 Slice 状态看板"是所有占位卡片的索引总览。
+_Avoid_: "敬请期待"、"功能开发中"（无承诺语义）。
+
+**On-call 模式**:
+Alerts 页的值班 toggle。开启时紧急告警触发浏览器 Notification + ping sound，2h 自动关闭。与 Notification 抽屉语义切割：on-call = 实时 push 态；抽屉 = 历史 / 个人通知流。
+_Avoid_: "值班开关"（与 schedule 管理混淆）。
+
+**⌘K 命令面板**:
+全页通用快捷键 (`⌘K` / `Ctrl+K`)，640px popup，分组搜索（导航 / 实例 / 规则 / 告警 / 动作 / 最近访问）。前端 local-fuzzy（预加载实体元数据），仅告警走实时后端。特殊前缀：`>` 动作 / `!` 告警 / `@` 用户。
+_Avoid_: "搜索框"、"快捷搜索"（功能被低估）。
+
+### UI 关键不变量
+- UI 默认**中文** + 默认**暗色主题**，主题与语言切换走 SystemSetting 持久化。
+- 业务页使用 Canonical page template；Settings 页侧导航；Login 页 60/40 splitscreen。
+- 组件内禁止 hardcoded hex 色，必须引用 Tailwind token / CSS var（主题切换前提）。
+- 所有中文字符串必须进入 `messages/zh-CN.json`，组件内禁止硬编码中文。
+- Tier 3 占位卡片必须标 Slice + 预计交付窗口，不允许模糊词。
+- Kill 会话 / 删除规则 / 删除 binding 等危险操作必须要求输入关键字二次确认。

@@ -52,11 +52,16 @@ function parseFormInput(formData: FormData): KillRequestInput | null {
 	const instanceId = readString(formData, "instance_id");
 	const processIdRaw = readString(formData, "process_id");
 	const reason = readString(formData, "reason");
+	const confirmation = readString(formData, "confirm_thread_id");
 	if (instanceId === null || processIdRaw === null || reason === null) {
 		return null;
 	}
 	const processId = Number.parseInt(processIdRaw, 10);
 	if (!Number.isFinite(processId) || processId < 0) {
+		return null;
+	}
+	// Q13 规则 3：二次确认；客户端按钮本已 disable，但服务端再校一次以防止表单被重放。
+	if (confirmation === null || confirmation !== String(processId)) {
 		return null;
 	}
 	return { instanceId, processId, reason };

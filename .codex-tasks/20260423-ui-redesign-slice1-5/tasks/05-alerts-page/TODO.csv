@@ -1,0 +1,7 @@
+step,description,status
+1,"Add alertsPage.* namespace to zh-CN.json (append at JSON tail)",DONE
+2,"Build client components in apps/web/src/components/alerts/ (tab-bar / filter-chips / oncall-toggle / list / drawer + 5 sections)",DONE
+3,"Rewrite apps/web/app/alerts/page.tsx with Canonical template: breadcrumb / entity summary / quick metrics / tab bar / chips / list + drawer entry",DONE
+4,"Rewrite apps/web/app/alerts/[alertId]/page.tsx: same Canonical chrome + Alert Drawer 5-section dialog over list (driven by URL alertId)",DONE
+5,"Run pnpm --filter web lint / typecheck / test / build and fix regressions",DONE
+6,"Mark SUBTASKS.csv id=5 DONE and write PROGRESS.md validation results",DONE

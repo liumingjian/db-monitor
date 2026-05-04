@@ -1,0 +1,13 @@
+id,step,status,notes
+1,Draft SPEC.md + TODO.csv + PROGRESS.md skeleton,DONE,scope + 12 specs + lighthouse plan
+2,Write apps/web/playwright.config.ts,DONE,reuseExistingServer=true; 1440x900; timeout 60s; retries=1
+3,Add apps/web/tests-e2e/fixtures/session.ts (real /api/login via env vars),DONE,DB_MONITOR_E2E_USERNAME/PASSWORD 回退 admin/admin-password；pathname+query 匹配
+4,Author 12 business E2E specs,DONE,login/overview/instances-list/instance-detail/alerts/rules/notify-channels/settings-audit/command-palette/notification-drawer/oncall-persistence/theme-toggle
+5,Author visual.spec.ts (24 screenshots dark+light x 12 routes),DONE,12 路由 × 2 主题 = 24 基线
+6,Add scripts to apps/web/package.json,DONE,由初版 agent 落盘
+7,First run: generate baseline screenshots,DONE,24 张全部生成；修复 fixture 对 query-string 路径的 waitForURL
+8,Verify: pnpm exec playwright test all pass (retry 1 max),DONE,50/50 pass (49 pass + 1 flaky retry pass on 09-command-palette)
+9,Run lighthouse for 5 Tier 1 routes,DONE,4/5 成功 overview/instances/alerts/settings Perf=64 A11y=96-98 BP=96；/rules 在 cookie-only GET 下 HTTP 500（e2e 浏览器路径通过），已记遗留
+10,Guard: lint/typecheck/test/build still green,DONE,lint 175 / typecheck / test 134 / build 25 路由
+11,Update PROGRESS.md with validation log,DONE,本次 finisher 落盘
+12,Mark SUBTASKS.csv id=10 DONE + update parent PROGRESS.md,DONE,

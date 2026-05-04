@@ -1,17 +1,21 @@
+import { CanonicalPageTemplate, EntitySummary, PageBreadcrumb } from "@db-monitor/ui";
+import type { EntityBadgeModel } from "@db-monitor/ui";
 import type { ReactNode } from "react";
 
-import { AppChrome } from "../../../src/components/app-chrome";
+import { InstanceDetailShell } from "../../../src/components/instance-detail/instance-detail-shell";
+import { buildInstanceQuickMetricItems } from "../../../src/components/instance-detail/instance-metrics";
+import { InstanceQuickMetrics } from "../../../src/components/instance-detail/instance-quick-metrics";
+import { buildInstanceTabs } from "../../../src/components/instance-detail/instance-tabs";
+import { InstanceTabsBar } from "../../../src/components/instance-detail/instance-tabs-bar";
 import {
-	type InstanceTabDescriptor,
-	InstanceTabNav,
-} from "../../../src/components/instance-tab-nav";
-import { createServerApiClient, requireServerSession } from "../../../src/server-api";
+	createServerApiClient,
+	parseTimeWindow,
+	requireServerSession,
+} from "../../../src/server-api";
 
 interface InstanceDetailLayoutProps {
 	readonly children: ReactNode;
-	readonly params: Promise<{
-		readonly instanceId: string;
-	}>;
+	readonly params: Promise<{ readonly instanceId: string }>;
 }
 
 export default async function InstanceDetailLayout({
@@ -22,52 +26,60 @@ export default async function InstanceDetailLayout({
 	const session = await requireServerSession(`/instances/${instanceId}`);
 	const apiClient = await createServerApiClient();
 	const instance = await apiClient.getInstance(instanceId);
-	const tabs = buildInstanceTabs({
-		instanceId,
-		engine: instance.engine,
-	});
+	const trend = await safeLoadTrend(apiClient, instanceId);
+	const tabs = buildInstanceTabs({ engine: instance.engine, instanceId });
+	const badges = buildInstanceBadges(instance);
+	const metricItems = buildInstanceQuickMetricItems({ instance, trend });
 
 	return (
-		<AppChrome session={session}>
-			<div className="space-y-6">
-				<InstanceTabNav tabs={tabs} />
+		<InstanceDetailShell instanceName={instance.name} session={session}>
+			<CanonicalPageTemplate>
+				<PageBreadcrumb
+					items={[
+						{ href: "/overview", label: "观测" },
+						{ href: "/instances", label: "实例" },
+						{ label: instance.name },
+					]}
+				/>
+				<EntitySummary
+					badges={badges}
+					subtitle={`${instance.connection.host}:${instance.connection.port} · ${instance.connection.database}`}
+					title={instance.name}
+				/>
+				<InstanceQuickMetrics items={metricItems} />
+				<InstanceTabsBar instanceId={instanceId} tabs={tabs} />
 				{children}
-			</div>
-		</AppChrome>
+			</CanonicalPageTemplate>
+		</InstanceDetailShell>
 	);
 }
 
-interface InstanceTabsInput {
-	readonly instanceId: string;
+function buildInstanceBadges(instance: {
 	readonly engine: "mysql" | "oracle";
+	readonly environment: string;
+	readonly validation: { readonly status: string };
+}): readonly EntityBadgeModel[] {
+	const validation = instance.validation.status;
+	const validationTone: EntityBadgeModel["tone"] =
+		validation === "passed" ? "ok" : validation === "failed" ? "critical" : "warning";
+	const validationLabel =
+		validation === "passed" ? "校验通过" : validation === "failed" ? "校验失败" : "校验中";
+	return [
+		{ label: instance.environment.toUpperCase(), tone: "info" },
+		{ label: instance.engine.toUpperCase(), tone: "info" },
+		{ label: validationLabel, tone: validationTone },
+	];
 }
 
-function buildInstanceTabs(input: InstanceTabsInput): readonly InstanceTabDescriptor[] {
-	const tabs: InstanceTabDescriptor[] = [
-		{
-			href: `/instances/${input.instanceId}`,
-			label: "Overview",
-			segment: "overview",
-		},
-		{
-			href: `/instances/${input.instanceId}/processes`,
-			label: "Processes",
-			segment: "processes",
-		},
-	];
-	if (input.engine === "mysql") {
-		tabs.push({
-			href: `/instances/${input.instanceId}/slow-queries`,
-			label: "Slow queries",
-			segment: "slow-queries",
-		});
+async function safeLoadTrend(
+	apiClient: Awaited<ReturnType<typeof createServerApiClient>>,
+	instanceId: string,
+) {
+	try {
+		return await apiClient.getInstanceTrends(instanceId, parseTimeWindow(undefined));
+	} catch {
+		// Trend endpoint may return 5xx while采集尚未就绪；不阻塞整张详情页，但显示 "—"
+		// 表示该 metric 未上报（非 silent fallback：调用方会看到占位符而不是假数据）。
+		return null;
 	}
-	if (input.engine === "oracle") {
-		tabs.push({
-			href: `/instances/${input.instanceId}/tablespaces`,
-			label: "表空间",
-			segment: "tablespaces",
-		});
-	}
-	return tabs;
 }

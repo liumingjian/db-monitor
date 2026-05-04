@@ -1,10 +1,31 @@
-import { OVERVIEW_PRESETS } from "../../src/analytics-presets";
-import { AnalyticsPresetNav } from "../../src/components/analytics-preset-nav";
-import { AppChrome } from "../../src/components/app-chrome";
-import { MetricChart } from "../../src/components/metric-chart";
-import { TimeWindowNav } from "../../src/components/time-window-nav";
-import { type InsightTone, buildDashboardModel } from "../../src/monitoring-ui";
-import { createServerApiClient, parseTimeWindow, requireServerSession } from "../../src/server-api";
+import type {
+	MetricCardResponse,
+	MetricSeriesResponse,
+	OverviewResponse,
+} from "@db-monitor/api-client";
+import {
+	EntitySummary,
+	PageContent,
+	QuickMetrics,
+	formatPercent,
+	formatRelativeTime,
+} from "@db-monitor/ui";
+import type { EntityBadgeModel, QuickMetricItem } from "@db-monitor/ui";
+import { getTranslations } from "next-intl/server";
+
+import { FleetHealthMatrix } from "../../src/components/overview/fleet-health-matrix";
+import { InstancesSnapshotTable } from "../../src/components/overview/instances-snapshot-table";
+import { OverviewAutoRefresh } from "../../src/components/overview/overview-auto-refresh";
+import { OverviewLineChart } from "../../src/components/overview/overview-line-chart";
+import { OverviewShell } from "../../src/components/overview/overview-shell";
+import type { OverviewShellLabels } from "../../src/components/overview/overview-shell";
+import { WindowSelector } from "../../src/components/overview/window-selector";
+import {
+	APPROVED_TIME_WINDOWS,
+	createServerApiClient,
+	parseTimeWindow,
+	requireServerSession,
+} from "../../src/server-api";
 
 interface OverviewPageProps {
 	readonly searchParams: Promise<{
@@ -12,198 +33,230 @@ interface OverviewPageProps {
 	}>;
 }
 
+// Row 2-4: the 8 Q9 charts (metric_name + palette index 1..8 + i18n key).
+const CHART_SLOTS: readonly {
+	readonly metric: string;
+	readonly colorIndex: number;
+	readonly titleKey: string;
+}[] = [
+	{ metric: "mysql_threads_connected", colorIndex: 1, titleKey: "chartThreadsConnected" },
+	{ metric: "mysql_threads_running", colorIndex: 2, titleKey: "chartThreadsRunning" },
+	{ metric: "mysql_queries_per_second", colorIndex: 3, titleKey: "chartQps" },
+	{
+		metric: "mysql_bytes_received_per_second",
+		colorIndex: 4,
+		titleKey: "chartBytesReceived",
+	},
+	{ metric: "mysql_bytes_sent_per_second", colorIndex: 5, titleKey: "chartBytesSent" },
+	{
+		metric: "mysql_innodb_buffer_pool_reads_per_second",
+		colorIndex: 6,
+		titleKey: "chartBufferPoolReads",
+	},
+	{ metric: "mysql_replication_lag_seconds", colorIndex: 7, titleKey: "chartReplicationLag" },
+	{ metric: "mysql_uptime_seconds", colorIndex: 8, titleKey: "chartUptime" },
+];
+
+const KEY_METRIC_FOR_TABLE = "mysql_queries_per_second";
+
 export default async function OverviewPage({ searchParams }: OverviewPageProps) {
 	const session = await requireServerSession("/overview");
 	const params = await searchParams;
-	const window = parseTimeWindow(params.window);
+	const timeWindow = parseTimeWindow(params.window);
+
 	const apiClient = await createServerApiClient();
-	const model = buildDashboardModel(await apiClient.getOverview(window));
+	const overview = await apiClient.getOverview(timeWindow);
+
+	const t = await getTranslations("overviewPage");
+	const tCommon = await getTranslations("common");
+	const tTopbar = await getTranslations("topbar");
+	const tNav = await getTranslations("nav");
+
+	const shellLabels: OverviewShellLabels = {
+		observe: tNav("observe"),
+		alert: tNav("alert"),
+		operate: tNav("operate"),
+		admin: tNav("admin"),
+		sidebarOverview: tNav("overview"),
+		sidebarInstances: tNav("instances"),
+		sidebarAlerts: tNav("alerts"),
+		sidebarRules: tNav("rules"),
+		sidebarSettings: tNav("settings"),
+		breadcrumbObserve: tNav("observe"),
+		breadcrumbOverview: tNav("overview"),
+		commandLabel: tTopbar("commandPalette"),
+		notificationLabel: tTopbar("notifications"),
+		themeToggleDark: tTopbar("themeToggleDark"),
+		themeToggleLight: tTopbar("themeToggleLight"),
+		tabSummary: t("tabSummary"),
+	};
+
+	const username = session.displayName ?? session.username ?? tCommon("appName");
+
+	const entitySummary = (
+		<EntitySummary
+			title={t("summaryTitle")}
+			subtitle={t("summarySubtitle", { window: timeWindow })}
+			badges={buildHealthBadges(overview, t)}
+			actions={
+				<>
+					<WindowSelector
+						currentWindow={timeWindow}
+						windows={APPROVED_TIME_WINDOWS}
+						ariaLabel={t("windowSelectorLabel")}
+					/>
+					<OverviewAutoRefresh
+						generatedAt={formatRelativeTime(overview.generated_at)}
+						generatedAtLabel={t("lastUpdated")}
+						pauseLabel={t("pause")}
+						resumeLabel={t("resume")}
+						refreshLabel={t("refresh")}
+					/>
+				</>
+			}
+		/>
+	);
+
+	const quickMetrics = <QuickMetrics items={buildQuickMetrics(overview, t)} />;
 
 	return (
-		<AppChrome session={session}>
-			<div className="space-y-6">
-				<div className="flex flex-col gap-3 rounded-[1.2rem] border border-black/5 bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
-					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-							Analytics Window
-						</p>
-						<p className="mt-2 text-sm text-[var(--muted)]">
-							Switch the overview between approved observation windows without leaving the route.
-						</p>
-					</div>
-					<TimeWindowNav currentWindow={model.overview.window} pathname="/overview" />
-				</div>
-				<div className="rounded-[1.6rem] border border-black/5 bg-[var(--panel)] p-5">
-					<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-						Preset views
-					</p>
-					<p className="mt-2 text-sm text-[var(--muted)]">
-						Reopen the same fleet analysis route without rebuilding the path and window from memory.
-						Presets keep the current coverage boundary in view while you pivot between approved
-						observation windows.
-					</p>
-					<div className="mt-4">
-						<AnalyticsPresetNav currentWindow={model.overview.window} presets={OVERVIEW_PRESETS} />
-					</div>
-				</div>
-				<div className="rounded-[1.6rem] border border-black/5 bg-white p-5">
-					<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-						{model.capabilityBoundary.label}
-					</p>
-					<p className="mt-3 text-2xl font-semibold">{model.capabilityBoundary.value}</p>
-					<p className="mt-2 max-w-3xl text-sm text-[var(--muted)]">
-						{model.capabilityBoundary.detail}
-					</p>
-					<div className="mt-4 grid gap-3 md:grid-cols-3">
-						{model.coverageReadout.map((readout) => (
-							<div
-								className="rounded-[1rem] border border-black/5 bg-[var(--panel)] px-4 py-3"
-								key={readout.title}
-							>
-								<p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-									{readout.title}
-								</p>
-								<p className="mt-2 text-xl font-semibold">{readout.value}</p>
-								<p className="mt-2 text-sm text-[var(--muted)]">{readout.detail}</p>
-							</div>
-						))}
-					</div>
-				</div>
-				<div className="grid gap-4 md:grid-cols-3">
-					{model.heroMetrics.map((metric) => (
-						<div
-							className="rounded-[1.6rem] border border-black/5 bg-[var(--panel)] p-5"
-							key={metric.label}
-						>
-							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-								{metric.label}
-							</p>
-							<p className="mt-3 text-3xl font-semibold">{metric.value}</p>
-						</div>
-					))}
-				</div>
-				<div className="rounded-[1.6rem] border border-black/5 bg-white p-5">
-					<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-						{model.chartFrame.title}
-					</p>
-					<div className="mt-4">
-						<MetricChart
-							emptyState={model.chartFrame.emptyState}
-							series={model.overview.charts}
-							title={model.chartFrame.title}
-						/>
-					</div>
-				</div>
-				<div className="rounded-[1.6rem] border border-black/5 bg-[var(--panel)] p-5">
-					<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-						Fleet summary
-					</p>
-					<div className="mt-4 grid gap-3 md:grid-cols-4">
-						<div className="rounded-[1rem] bg-white px-4 py-3">
-							<p className="text-sm text-[var(--muted)]">Healthy</p>
-							<p className="mt-2 text-2xl font-semibold">
-								{model.overview.summary.healthy_instances}
-							</p>
-						</div>
-						<div className="rounded-[1rem] bg-white px-4 py-3">
-							<p className="text-sm text-[var(--muted)]">Unhealthy</p>
-							<p className="mt-2 text-2xl font-semibold">
-								{model.overview.summary.unhealthy_instances}
-							</p>
-						</div>
-						<div className="rounded-[1rem] bg-white px-4 py-3">
-							<p className="text-sm text-[var(--muted)]">Observed window</p>
-							<p className="mt-2 text-2xl font-semibold">{model.overview.window}</p>
-						</div>
-						<div className="rounded-[1rem] bg-white px-4 py-3">
-							<p className="text-sm text-[var(--muted)]">Engines observed</p>
-							<p className="mt-2 text-2xl font-semibold">{model.engineSummaries.length}</p>
-						</div>
-					</div>
-					<div className="mt-4 grid gap-3 md:grid-cols-2">
-						{model.engineSummaries.map((summary) => (
-							<div className="rounded-[1rem] bg-white px-4 py-3" key={summary.title}>
-								<p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-									{summary.title}
-								</p>
-								<p className="mt-2 text-xl font-semibold">{summary.value}</p>
-								<p className="mt-2 text-sm text-[var(--muted)]">{summary.detail}</p>
-							</div>
-						))}
-					</div>
-				</div>
-				<div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-					<section className="rounded-[1.6rem] border border-black/5 bg-white p-5">
-						<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-							Capacity outlook
-						</p>
-						<div className="mt-4 grid gap-3 md:grid-cols-3">
-							{model.capacityInsights.map((insight) => (
-								<div
-									className="rounded-[1.2rem] border px-4 py-4"
-									key={insight.title}
-									style={insightToneStyle(insight.tone)}
-								>
-									<p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-										{insight.title}
-									</p>
-									<p className="mt-3 text-xl font-semibold">{insight.value}</p>
-									<p className="mt-2 text-sm text-[var(--muted)]">{insight.detail}</p>
-								</div>
-							))}
-						</div>
-					</section>
-					<section className="rounded-[1.6rem] border border-black/5 bg-[var(--panel)] p-5">
-						<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-							Signal leaders
-						</p>
-						{model.capacityLeaders.length === 0 ? (
-							<p className="mt-4 rounded-[1.2rem] bg-white px-4 py-4 text-sm text-[var(--muted)]">
-								No overview signal leaders are populated for the observed engines yet. Use the
-								coverage boundary above and open individual instances for supported detail
-								analytics.
-							</p>
-						) : (
-							<div className="mt-4 space-y-3">
-								{model.capacityLeaders.map((leader) => (
-									<div className="rounded-[1.2rem] bg-white px-4 py-4" key={leader.title}>
-										<div className="flex items-start justify-between gap-3">
-											<div>
-												<p className="text-sm font-semibold">{leader.title}</p>
-												<p className="mt-1 text-sm text-[var(--muted)]">{leader.instanceName}</p>
-											</div>
-											<p className="text-sm font-semibold text-[var(--accent)]">{leader.value}</p>
-										</div>
-										<p className="mt-3 text-sm text-[var(--muted)]">{leader.detail}</p>
-									</div>
-								))}
-							</div>
-						)}
-					</section>
-				</div>
-			</div>
-		</AppChrome>
+		<OverviewShell
+			username={username}
+			labels={shellLabels}
+			entitySummary={entitySummary}
+			quickMetrics={quickMetrics}
+		>
+			<PageContent>
+				<ChartGrid overview={overview} t={t} />
+				<FleetHealthMatrix
+					instances={overview.instances}
+					title={t("fleetMatrixTitle")}
+					subtitle={t("fleetMatrixSubtitle")}
+					emptyLabel={t("fleetMatrixEmpty")}
+					statusLabels={{
+						healthy: t("statusHealthy"),
+						unhealthy: t("statusUnhealthy"),
+						unknown: t("statusUnknown"),
+					}}
+				/>
+				<InstancesSnapshotTable
+					instances={overview.instances}
+					heading={t("tableTitle")}
+					subheading={t("tableSubtitle")}
+					emptyLabel={t("tableEmpty")}
+					keyMetricName={KEY_METRIC_FOR_TABLE}
+					keyMetricLabel={t("tableKeyMetricLabel")}
+					columns={{
+						name: t("columnName"),
+						engine: t("columnEngine"),
+						environment: t("columnEnvironment"),
+						status: t("columnStatus"),
+						keyMetric: t("columnKeyMetric"),
+						labels: t("columnLabels"),
+					}}
+					statusLabels={{
+						healthy: t("statusHealthy"),
+						unhealthy: t("statusUnhealthy"),
+						unknown: t("statusUnknown"),
+					}}
+				/>
+			</PageContent>
+		</OverviewShell>
 	);
 }
 
-function insightToneStyle(tone: InsightTone): {
-	readonly backgroundColor: string;
-	readonly borderColor: string;
-} {
-	if (tone === "risk") {
-		return {
-			backgroundColor: "rgba(246, 214, 209, 0.5)",
-			borderColor: "rgba(182, 79, 44, 0.18)",
-		};
+type TFn = Awaited<ReturnType<typeof getTranslations<"overviewPage">>>;
+
+function ChartGrid({ overview, t }: { readonly overview: OverviewResponse; readonly t: TFn }) {
+	const chartLookup = new Map<string, MetricSeriesResponse>();
+	for (const series of overview.charts) {
+		chartLookup.set(series.metric_name, series);
 	}
-	if (tone === "watch") {
-		return {
-			backgroundColor: "rgba(249, 236, 205, 0.55)",
-			borderColor: "rgba(196, 137, 31, 0.18)",
-		};
+
+	return (
+		<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			{CHART_SLOTS.map((slot) => {
+				const series = chartLookup.get(slot.metric);
+				return (
+					<OverviewLineChart
+						key={slot.metric}
+						title={t(slot.titleKey)}
+						unitLabel={series?.unit}
+						series={series}
+						colorIndex={slot.colorIndex}
+						emptyLabel={t("chartEmpty")}
+					/>
+				);
+			})}
+		</div>
+	);
+}
+
+function buildQuickMetrics(overview: OverviewResponse, t: TFn): readonly QuickMetricItem[] {
+	const total = overview.summary.total_instances;
+	const healthy = overview.summary.healthy_instances;
+	const unhealthy = overview.summary.unhealthy_instances;
+	const healthyRatio = total === 0 ? null : healthy / total;
+
+	const pickCard = (metric: string): MetricCardResponse | undefined =>
+		overview.cards.find((card) => card.metric_name === metric);
+
+	const items: QuickMetricItem[] = [
+		{
+			key: "total",
+			label: t("metricTotalInstances"),
+			value: total.toString(),
+			hint: t("metricEngines", { count: overview.summary.engines.length }),
+		},
+		{
+			key: "healthy-ratio",
+			label: t("metricHealthyRatio"),
+			value: formatPercent(healthyRatio),
+			hint: t("metricHealthyHint", { healthy, unhealthy }),
+		},
+	];
+
+	const qps = pickCard("mysql_queries_per_second");
+	if (qps) {
+		items.push({
+			key: "qps",
+			label: t("metricQps"),
+			value: qps.value.toFixed(2),
+			hint: qps.unit,
+		});
 	}
-	return {
-		backgroundColor: "rgba(230, 237, 232, 0.55)",
-		borderColor: "rgba(74, 110, 89, 0.16)",
-	};
+
+	const conn = pickCard("mysql_threads_connected");
+	if (conn) {
+		items.push({
+			key: "threads-connected",
+			label: t("metricThreadsConnected"),
+			value: conn.value.toFixed(0),
+			hint: conn.unit,
+		});
+	}
+
+	const lag = pickCard("mysql_replication_lag_seconds");
+	if (lag) {
+		items.push({
+			key: "replication-lag",
+			label: t("metricReplicationLag"),
+			value: lag.value.toFixed(1),
+			hint: lag.unit,
+		});
+	}
+
+	return items;
+}
+
+function buildHealthBadges(overview: OverviewResponse, t: TFn): readonly EntityBadgeModel[] {
+	const { healthy_instances: healthy, unhealthy_instances: unhealthy } = overview.summary;
+	const badges: EntityBadgeModel[] = [];
+	if (unhealthy > 0) {
+		badges.push({ tone: "critical", label: t("badgeUnhealthy", { count: unhealthy }) });
+	} else {
+		badges.push({ tone: "ok", label: t("badgeAllHealthy") });
+	}
+	badges.push({ tone: "info", label: t("badgeWindow", { window: overview.window }) });
+	return badges;
 }

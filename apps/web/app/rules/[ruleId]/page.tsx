@@ -1,17 +1,32 @@
+import { Badge, Button, EntitySummary } from "@db-monitor/ui";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
-import { AppChrome } from "../../../src/components/app-chrome";
+import { OverridesPanel } from "../../../src/components/rules/overrides-panel";
+import { RuleAuditTimeline } from "../../../src/components/rules/rule-audit-timeline";
+import { RuleDefinitionPanel } from "../../../src/components/rules/rule-definition-panel";
+import { RuleDetailTabs } from "../../../src/components/rules/rule-detail-tabs";
+import { formatScopeSummary } from "../../../src/components/rules/rule-list-models";
+import { RuleNotificationsPanel } from "../../../src/components/rules/rule-notifications-panel";
+import {
+	buildOverridesPanelCopy,
+	buildRuleAuditCopy,
+	buildRuleDefinitionCopy,
+	buildRuleDetailTabsCopy,
+	buildRuleNotificationsCopy,
+} from "../../../src/components/rules/rules-copy";
+import { RulesShell } from "../../../src/components/rules/rules-shell";
 import { toDraftRows } from "../../../src/rule-overrides-ui";
 import { createServerApiClient, requireServerSession } from "../../../src/server-api";
 
-import { RuleEditForm } from "./_components/rule-edit-form";
+import { updateRuleAction } from "./_components/update-rule-action";
 
-interface RuleEditPageProps {
+interface RuleDetailPageProps {
 	readonly params: Promise<{ readonly ruleId: string }>;
 	readonly searchParams: Promise<{ readonly saved?: string }>;
 }
 
-export default async function RuleEditPage({ params, searchParams }: RuleEditPageProps) {
+export default async function RuleDetailPage({ params, searchParams }: RuleDetailPageProps) {
 	const { ruleId } = await params;
 	const { saved } = await searchParams;
 	const session = await requireServerSession(`/rules/${ruleId}`);
@@ -23,34 +38,92 @@ export default async function RuleEditPage({ params, searchParams }: RuleEditPag
 	const engineInstances = instances.filter((instance) => instance.engine === rule.engine);
 	const initialRows = toDraftRows(rule.overrides);
 
+	const t = await getTranslations("rulesPage");
+	const tCommon = await getTranslations("common");
+	const tNav = await getTranslations("nav");
+	const tTopbar = await getTranslations("topbar");
+
+	const tabsCopy = buildRuleDetailTabsCopy(t);
+	const definitionCopy = buildRuleDefinitionCopy(t, tCommon);
+	const overridesCopy = buildOverridesPanelCopy(t);
+	const notificationsCopy = buildRuleNotificationsCopy(t);
+	const auditCopy = buildRuleAuditCopy(t);
+	const username = session.displayName ?? session.username ?? tCommon("appName");
+
 	return (
-		<AppChrome session={session}>
-			<div className="space-y-6">
-				<header className="flex flex-wrap items-baseline justify-between gap-3">
-					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
-							<Link href="/rules">← 返回规则列表</Link>
-						</p>
-						<h2 className="mt-2 text-2xl font-semibold">编辑规则：{rule.name}</h2>
-						<p className="mt-1 text-sm text-[var(--muted)]">
-							{rule.engine} · {rule.metric_name} · 默认阈值 {rule.threshold}
-						</p>
-					</div>
-					{saved === "1" ? (
-						<output className="rounded-[0.8rem] border border-green-500/30 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
-							已保存覆盖配置
-						</output>
-					) : null}
-				</header>
-				<RuleEditForm
-					initialRows={initialRows}
-					instances={engineInstances.map((instance) => ({
-						id: instance.instance_id,
-						label: `${instance.name} (${instance.instance_id})`,
-					}))}
-					ruleId={rule.rule_id}
+		<RulesShell
+			breadcrumbs={[
+				{ href: "/alerts", label: tNav("alert") },
+				{ href: "/rules", label: tNav("rules") },
+				{ label: rule.name },
+			]}
+			entitySummary={
+				<EntitySummary
+					actions={
+						<Button asChild size="sm" variant="outline">
+							<Link href="/rules">{t("detail.back")}</Link>
+						</Button>
+					}
+					badges={[
+						{
+							label: rule.severity,
+							tone: rule.severity === "critical" ? "critical" : "warning",
+						},
+						{ label: rule.engine.toUpperCase(), tone: "info" },
+						{
+							label: rule.enabled ? tCommon("enabled") : tCommon("disabled"),
+							tone: rule.enabled ? "ok" : "info",
+						},
+					]}
+					subtitle={`${rule.metric_name} · ${formatScopeSummary(rule)}`}
+					title={rule.name}
+				/>
+			}
+			labels={{
+				admin: tNav("admin"),
+				alert: tNav("alert"),
+				commandLabel: tTopbar("commandPalette"),
+				notificationLabel: tTopbar("notifications"),
+				observe: tNav("observe"),
+				operate: tNav("operate"),
+				sidebarAlerts: tNav("alerts"),
+				sidebarInstances: tNav("instances"),
+				sidebarOverview: tNav("overview"),
+				sidebarRules: tNav("rules"),
+				sidebarSettings: tNav("settings"),
+				themeToggleDark: tTopbar("themeToggleDark"),
+				themeToggleLight: tTopbar("themeToggleLight"),
+			}}
+			username={username}
+		>
+			<div className="space-y-4">
+				{saved === "1" ? (
+					<Badge className="bg-sev-ok/15 text-sev-ok" variant="outline">
+						{t("detail.savedBanner")}
+					</Badge>
+				) : null}
+				<p className="text-sm text-fg-muted">{t("detail.tips")}</p>
+				<RuleDetailTabs
+					audit={<RuleAuditTimeline copy={auditCopy} rule={rule} />}
+					copy={tabsCopy}
+					definition={<RuleDefinitionPanel copy={definitionCopy} rule={rule} />}
+					notifications={<RuleNotificationsPanel copy={notificationsCopy} />}
+					overrides={
+						<OverridesPanel
+							action={updateRuleAction}
+							copy={overridesCopy}
+							initialRows={initialRows}
+							instances={engineInstances.map((instance) => ({
+								id: instance.instance_id,
+								label: `${instance.name} (${instance.instance_id})`,
+							}))}
+							ruleDefaultThreshold={rule.threshold}
+							ruleId={rule.rule_id}
+						/>
+					}
+					rule={rule}
 				/>
 			</div>
-		</AppChrome>
+		</RulesShell>
 	);
 }

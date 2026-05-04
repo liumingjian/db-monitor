@@ -3,9 +3,12 @@
 import type { CreateAlertRuleRequest, CreateInstanceRequest } from "@db-monitor/api-client";
 import { RULE_OPERATORS, RULE_SEVERITIES } from "@db-monitor/ui";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { createServerApiClient } from "./server-api";
+import { createServerApiClient, getServerApiBaseUrl } from "./server-api";
+
+const INSTANCE_ID_PATTERN = /^[A-Za-z0-9_\-]+$/;
 
 export async function createInstanceAction(formData: FormData): Promise<void> {
 	const apiClient = await createServerApiClient();
@@ -13,6 +16,58 @@ export async function createInstanceAction(formData: FormData): Promise<void> {
 	revalidatePath("/instances");
 	revalidatePath("/overview");
 	redirect(`/instances/${instance.instance_id}`);
+}
+
+/**
+ * 重验证实例连接。
+ *
+ * 后端端点 `POST /control/instances/{id}/validate` 已存在（router.py L172），但
+ * `@db-monitor/api-client` 尚未暴露方法，而该 package 在 Slice 1.5 写作用域内为只读。
+ * 因此这里直接通过 `fetch` + cookie 转发调用，保持端到端的真实链路；失败抛错由
+ * Next.js server-action 边界负责显示，**不**进行 silent fallback。
+ */
+export async function validateInstanceAction(formData: FormData): Promise<void> {
+	const instanceId = readTextField(formData, "instance_id");
+	if (!INSTANCE_ID_PATTERN.test(instanceId)) {
+		throw new Error(`Invalid instance_id: ${instanceId}`);
+	}
+	const cookieHeader = await buildForwardedCookieHeader();
+	const response = await fetch(
+		`${getServerApiBaseUrl()}/control/instances/${encodeURIComponent(instanceId)}/validate`,
+		{
+			cache: "no-store",
+			headers: {
+				"Content-Type": "application/json",
+				...(cookieHeader === null ? {} : { cookie: cookieHeader }),
+			},
+			method: "POST",
+		},
+	);
+	if (!response.ok) {
+		const detail = await safeReadText(response);
+		throw new Error(
+			`Revalidate failed (HTTP ${response.status}): ${detail.length === 0 ? response.statusText : detail}`,
+		);
+	}
+	revalidatePath("/instances");
+	revalidatePath(`/instances/${instanceId}`);
+}
+
+async function buildForwardedCookieHeader(): Promise<string | null> {
+	const store = await cookies();
+	const entries = store
+		.getAll()
+		.map((cookie) => `${cookie.name}=${cookie.value}`)
+		.join("; ");
+	return entries.length === 0 ? null : entries;
+}
+
+async function safeReadText(response: Response): Promise<string> {
+	try {
+		return (await response.text()).trim();
+	} catch {
+		return "";
+	}
 }
 
 export async function createRuleAction(formData: FormData): Promise<void> {
