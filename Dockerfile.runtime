@@ -3,6 +3,9 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/workspace/apps/api/src:/workspace/apps/scheduler/src:/workspace/apps/worker-mysql/src
 ENV PYTHONUNBUFFERED=1
+ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ENV PIP_TRUSTED_HOST=mirrors.aliyun.com
+ENV UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple/
 
 WORKDIR /workspace
 
