@@ -153,7 +153,23 @@ function buildLineChartOption(args: BuildOptionArgs): Record<string, unknown> {
 		xAxis: {
 			type: "time",
 			axisLine: { lineStyle: { color: palette.axisLine } },
-			axisLabel: { color: palette.axisLabel, fontSize: 11 },
+			axisTick: { show: false },
+			axisLabel: {
+				color: palette.axisLabel,
+				fontSize: 11,
+				hideOverlap: true,
+				margin: 8,
+				formatter: {
+					year: "{yyyy}",
+					month: "{MMM}",
+					day: "{MM}-{dd}",
+					hour: "{HH}:{mm}",
+					minute: "{HH}:{mm}",
+					second: "{HH}:{mm}:{ss}",
+					millisecond: "{HH}:{mm}:{ss}",
+					none: "{HH}:{mm}",
+				},
+			},
 			splitLine: { show: false },
 		},
 		yAxis: {
