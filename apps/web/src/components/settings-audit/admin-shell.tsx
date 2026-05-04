@@ -1,6 +1,12 @@
 "use client";
 
-import { AppShell, type BreadcrumbItem, ThemeToggle, TopBar } from "@db-monitor/ui";
+import {
+	AppShell,
+	type BreadcrumbItem,
+	SidebarMenuButton,
+	ThemeToggle,
+	TopBar,
+} from "@db-monitor/ui";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
@@ -21,6 +27,7 @@ export interface AdminShellProps {
 export function AdminShell(props: AdminShellProps) {
 	const { breadcrumbs, userInitials, children } = props;
 	const tTopbar = useTranslations("topbar");
+	const tSidebar = useTranslations("sidebar");
 
 	return (
 		<AppShell
@@ -30,6 +37,7 @@ export function AdminShell(props: AdminShellProps) {
 					breadcrumbs={breadcrumbs}
 					commandLabel={tTopbar("commandPalette")}
 					commandShortcut={tTopbar("keyboardShortcut")}
+					leadingSlot={<SidebarMenuButton label={tSidebar("openMenu")} />}
 					notificationCount={0}
 					notificationLabel={tTopbar("notifications")}
 					onCommandOpen={NOOP}

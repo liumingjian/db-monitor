@@ -4,7 +4,7 @@ import {
 	AppShell,
 	type BreadcrumbItem,
 	CanonicalPageTemplate,
-	PageBreadcrumb,
+	SidebarMenuButton,
 	ThemeToggle,
 	TopBar,
 } from "@db-monitor/ui";
@@ -30,6 +30,7 @@ const NOOP = (): void => {};
 export function NotifyShell(props: NotifyShellProps) {
 	const { breadcrumbs, children } = props;
 	const tTopbar = useTranslations("topbar");
+	const tSidebar = useTranslations("sidebar");
 
 	return (
 		<AppShell
@@ -39,6 +40,7 @@ export function NotifyShell(props: NotifyShellProps) {
 					breadcrumbs={breadcrumbs}
 					commandLabel={tTopbar("commandPalette")}
 					commandShortcut={tTopbar("keyboardShortcut")}
+					leadingSlot={<SidebarMenuButton label={tSidebar("openMenu")} />}
 					notificationCount={0}
 					notificationLabel={tTopbar("notifications")}
 					onCommandOpen={NOOP}
@@ -56,10 +58,7 @@ export function NotifyShell(props: NotifyShellProps) {
 				/>
 			}
 		>
-			<CanonicalPageTemplate>
-				<PageBreadcrumb items={breadcrumbs} />
-				{children}
-			</CanonicalPageTemplate>
+			<CanonicalPageTemplate>{children}</CanonicalPageTemplate>
 		</AppShell>
 	);
 }

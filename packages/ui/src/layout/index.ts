@@ -28,6 +28,13 @@ export type { QuickMetricsProps } from "./quick-metrics";
 export { Sidebar } from "./sidebar";
 export type { SidebarProps, SidebarStrings } from "./sidebar";
 
+export {
+	SidebarMenuButton,
+	SidebarMobileProvider,
+	useSidebarMobile,
+} from "./sidebar-mobile";
+export type { SidebarMenuButtonProps, SidebarMobileProviderProps } from "./sidebar-mobile";
+
 export { TabBar } from "./tab-bar";
 export type { TabBarProps } from "./tab-bar";
 

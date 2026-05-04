@@ -1,16 +1,11 @@
-import {
-	CanonicalPageTemplate,
-	EntitySummary,
-	PageBreadcrumb,
-	PageContent,
-	QuickMetrics,
-} from "@db-monitor/ui";
+import { CanonicalPageTemplate, EntitySummary, PageContent, QuickMetrics } from "@db-monitor/ui";
 import { getTranslations } from "next-intl/server";
 
 import { resolveActiveMembership } from "../../../src/auth";
 import { AdminShell } from "../../../src/components/settings-audit/admin-shell";
 import { buildAuditFeed } from "../../../src/components/settings-audit/audit-event-model";
 import { AuditFeed } from "../../../src/components/settings-audit/audit-feed";
+import { groupForHref, rootHrefForGroup } from "../../../src/components/shell/sidebar-groups";
 import { createServerApiClient, requireServerSession } from "../../../src/server-api";
 
 const AUDIT_FEED_LIMIT = 200;
@@ -38,6 +33,7 @@ export default async function AuditPage() {
 	});
 
 	const t = await getTranslations("audit");
+	const tNav = await getTranslations("nav");
 
 	const currentUser = users.find((user) => user.username === session.username) ?? null;
 
@@ -45,21 +41,18 @@ export default async function AuditPage() {
 	const settingCount = events.filter((event) => event.target.type === "setting").length;
 	const notifyCount = events.filter((event) => event.target.type === "notify").length;
 
+	const rootGroup = groupForHref("/admin/audit");
+	const breadcrumbs = [
+		{ label: tNav(rootGroup), href: rootHrefForGroup(rootGroup) },
+		{ label: t("breadcrumbAudit") },
+	];
+
 	return (
 		<AdminShell
-			breadcrumbs={[
-				{ label: t("breadcrumbAdmin"), href: "/settings" },
-				{ label: t("breadcrumbAudit") },
-			]}
+			breadcrumbs={breadcrumbs}
 			userInitials={deriveInitials(session.displayName ?? session.username)}
 		>
 			<CanonicalPageTemplate>
-				<PageBreadcrumb
-					items={[
-						{ label: t("breadcrumbAdmin"), href: "/settings" },
-						{ label: t("breadcrumbAudit") },
-					]}
-				/>
 				<EntitySummary
 					title={t("title")}
 					subtitle={t("subtitle")}

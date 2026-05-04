@@ -83,7 +83,8 @@ function FleetCell({ cell }: { readonly cell: Cell }) {
 			href={`/instances/${encodeURIComponent(instance.instance_id)}`}
 			aria-label={`${instance.name} · ${instance.engine} · ${instance.environment} · ${statusText}`}
 			className={cn(
-				"group flex min-h-[74px] flex-col justify-between gap-2 rounded-md border px-3 py-2.5 transition-colors",
+				"group flex min-h-[74px] flex-col justify-between gap-2 rounded-md border px-3 py-2.5",
+				"transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:scale-[0.98]",
 				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 				toneSurfaceClass(tone),
 			)}

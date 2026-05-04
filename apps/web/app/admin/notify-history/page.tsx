@@ -1,6 +1,7 @@
 import type { NotifyHistoryResponse } from "@db-monitor/api-client";
 import { EntitySummary, PageContent, type QuickMetricItem, QuickMetrics } from "@db-monitor/ui";
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 
 import { NotifyDrawer } from "../../../src/components/notify/notify-drawer";
 import { NotifyEmptyState } from "../../../src/components/notify/notify-empty-state";
@@ -17,6 +18,7 @@ import {
 	applyClientFilters,
 	summarizeChannels,
 } from "../../../src/components/notify/notify-view-model";
+import { groupForHref, rootHrefForGroup } from "../../../src/components/shell/sidebar-groups";
 import { createServerApiClient, requireServerSession } from "../../../src/server-api";
 
 const LIMIT_STEP_MULTIPLIER = 2;
@@ -33,22 +35,33 @@ export default async function NotifyHistoryPage({ searchParams }: NotifyHistoryP
 	const activeRowKey = typeof params.row === "string" ? params.row : null;
 
 	const apiClient = await createServerApiClient();
-	const rawEntries = await apiClient.listNotifyHistory({
-		channel: filters.channel.length > 0 ? filters.channel : undefined,
-		limit: filters.limit,
-		rule_id: filters.ruleId.length > 0 ? filters.ruleId : undefined,
-		status: filters.status.length > 0 ? filters.status : undefined,
-	});
+	const t = await getTranslations("notifyHistory");
+	const tNav = await getTranslations("nav");
+
+	const rootGroup = groupForHref("/admin/notify-history");
+	const breadcrumbs = [
+		{ label: tNav(rootGroup), href: rootHrefForGroup(rootGroup) },
+		{ label: t("pageTitle") },
+	];
+
+	let rawEntries: readonly NotifyHistoryResponse[];
+	try {
+		rawEntries = await apiClient.listNotifyHistory({
+			channel: filters.channel.length > 0 ? filters.channel : undefined,
+			limit: filters.limit,
+			rule_id: filters.ruleId.length > 0 ? filters.ruleId : undefined,
+			status: filters.status.length > 0 ? filters.status : undefined,
+		});
+	} catch (err) {
+		// eslint-disable-next-line no-console
+		console.error("[notify-history] listNotifyHistory failed", err);
+		return <NotifyHistoryErrorState breadcrumbs={breadcrumbs} />;
+	}
+
 	// Client-side only: instance_id post-filter (the Feed API accepts channel/status/rule_id only).
 	const entries = applyClientFilters(rawEntries, { instanceId: filters.instanceId });
 
-	const t = await getTranslations("notifyHistory");
 	const summary = summarizeChannels(entries);
-
-	const breadcrumbs = [
-		{ label: t("breadcrumbAdmin"), href: "/admin/notify-history" },
-		{ label: t("pageTitle") },
-	];
 
 	const metrics: readonly QuickMetricItem[] = [
 		{ key: "total", label: t("metricsTotal"), value: String(entries.length) },
@@ -96,6 +109,33 @@ export default async function NotifyHistoryPage({ searchParams }: NotifyHistoryP
 					)}
 				</div>
 				<NotifyDrawer activeRowKey={activeRowKey} entries={entries} />
+			</PageContent>
+		</NotifyShell>
+	);
+}
+
+interface NotifyHistoryErrorStateProps {
+	readonly breadcrumbs: readonly { readonly label: string; readonly href?: string }[];
+}
+
+async function NotifyHistoryErrorState({ breadcrumbs }: NotifyHistoryErrorStateProps) {
+	const tError = await getTranslations("error");
+	const tCommon = await getTranslations("common");
+	const tNotify = await getTranslations("notifyHistory");
+	return (
+		<NotifyShell breadcrumbs={breadcrumbs}>
+			<EntitySummary badges={[]} subtitle={tNotify("pageSubtitle")} title={tNotify("pageTitle")} />
+			<PageContent>
+				<div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border-subtle bg-bg-elevated p-10 text-center">
+					<p className="text-base font-medium text-fg-primary">{tError("genericTitle")}</p>
+					<p className="text-sm text-fg-muted">{tError("genericHint")}</p>
+					<Link
+						href="/admin/notify-history"
+						className="mt-2 inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					>
+						{tCommon("retry")}
+					</Link>
+				</div>
 			</PageContent>
 		</NotifyShell>
 	);

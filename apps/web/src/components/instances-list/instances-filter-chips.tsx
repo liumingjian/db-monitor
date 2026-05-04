@@ -108,39 +108,71 @@ export function InstancesFilterChips(props: InstancesFilterChipsProps) {
 		<div className="flex flex-col gap-3 rounded-md border border-border-hairline bg-bg-base p-3">
 			<form
 				aria-label={t("filterFormLabel")}
-				className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]"
+				className="grid items-end gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]"
 				onSubmit={applyFilters}
 			>
-				<Input
-					aria-label={t("filterName")}
-					onChange={(event) => setDraftName(event.target.value)}
-					placeholder={t("filterNamePlaceholder")}
-					value={draftName}
-				/>
-				<Input
-					aria-label={t("filterEnvironment")}
-					onChange={(event) => setDraftEnvironment(event.target.value)}
-					placeholder={t("filterEnvironmentPlaceholder")}
-					value={draftEnvironment}
-				/>
-				<Input
-					aria-label={t("filterLabel")}
-					onChange={(event) => setDraftLabel(event.target.value)}
-					placeholder={t("filterLabelPlaceholder")}
-					value={draftLabel}
-				/>
-				<Select
-					aria-label={t("filterStatus")}
-					onChange={(event) => setDraftStatus(event.target.value as StatusChoice)}
-					value={draftStatus}
-				>
-					<option value="">{t("filterStatusAll")}</option>
-					{STATUS_CHOICES.map((choice) => (
-						<option key={choice} value={choice}>
-							{t(`filterStatus_${choice}`)}
-						</option>
-					))}
-				</Select>
+				<div className="flex flex-col gap-1">
+					<label
+						htmlFor="instances-filter-name"
+						className="text-[11px] font-medium uppercase tracking-wider text-fg-muted"
+					>
+						{t("filterName")}
+					</label>
+					<Input
+						id="instances-filter-name"
+						onChange={(event) => setDraftName(event.target.value)}
+						placeholder={t("filterNamePlaceholder")}
+						value={draftName}
+					/>
+				</div>
+				<div className="flex flex-col gap-1">
+					<label
+						htmlFor="instances-filter-environment"
+						className="text-[11px] font-medium uppercase tracking-wider text-fg-muted"
+					>
+						{t("filterEnvironment")}
+					</label>
+					<Input
+						id="instances-filter-environment"
+						onChange={(event) => setDraftEnvironment(event.target.value)}
+						placeholder={t("filterEnvironmentPlaceholder")}
+						value={draftEnvironment}
+					/>
+				</div>
+				<div className="flex flex-col gap-1">
+					<label
+						htmlFor="instances-filter-label"
+						className="text-[11px] font-medium uppercase tracking-wider text-fg-muted"
+					>
+						{t("filterLabel")}
+					</label>
+					<Input
+						id="instances-filter-label"
+						onChange={(event) => setDraftLabel(event.target.value)}
+						placeholder={t("filterLabelPlaceholder")}
+						value={draftLabel}
+					/>
+				</div>
+				<div className="flex flex-col gap-1">
+					<label
+						htmlFor="instances-filter-status"
+						className="text-[11px] font-medium uppercase tracking-wider text-fg-muted"
+					>
+						{t("filterStatus")}
+					</label>
+					<Select
+						id="instances-filter-status"
+						onChange={(event) => setDraftStatus(event.target.value as StatusChoice)}
+						value={draftStatus}
+					>
+						<option value="">{t("filterStatusAll")}</option>
+						{STATUS_CHOICES.map((choice) => (
+							<option key={choice} value={choice}>
+								{t(`filterStatus_${choice}`)}
+							</option>
+						))}
+					</Select>
+				</div>
 				<Button size="sm" type="submit" variant="default">
 					{t("filterApply")}
 				</Button>

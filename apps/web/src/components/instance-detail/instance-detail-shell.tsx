@@ -1,6 +1,6 @@
 "use client";
 
-import { AppShell, ThemeToggle, ToastProvider, TopBar } from "@db-monitor/ui";
+import { AppShell, SidebarMenuButton, ThemeToggle, ToastProvider, TopBar } from "@db-monitor/ui";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
@@ -24,6 +24,7 @@ export function InstanceDetailShell(props: InstanceDetailShellProps) {
 	const { session, instanceName, children } = props;
 	const tNav = useTranslations("nav");
 	const tTopbar = useTranslations("topbar");
+	const tSidebar = useTranslations("sidebar");
 	const initials = resolveInitials(session);
 
 	return (
@@ -39,6 +40,7 @@ export function InstanceDetailShell(props: InstanceDetailShellProps) {
 						]}
 						commandLabel={tTopbar("commandPalette")}
 						commandShortcut={tTopbar("keyboardShortcut")}
+						leadingSlot={<SidebarMenuButton label={tSidebar("openMenu")} />}
 						notificationLabel={tTopbar("notifications")}
 						onCommandOpen={NOOP}
 						themeToggle={

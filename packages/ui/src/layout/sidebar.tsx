@@ -4,6 +4,7 @@ import { PanelLeft, PanelLeftClose } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
+import { useSidebarMobile } from "./sidebar-mobile";
 import type { SidebarGroup, SidebarItemModel } from "./types";
 import { cn } from "./utils";
 
@@ -27,29 +28,70 @@ export function Sidebar(props: SidebarProps) {
 	const { items, footer, strings } = props;
 	const collapsed = useCollapsedState();
 	const pathname = usePathname() ?? "";
-	const ToggleIcon = collapsed.value ? PanelLeft : PanelLeftClose;
-	const toggleLabel = collapsed.value ? strings.toggleExpand : strings.toggleCollapse;
+	const mobile = useSidebarMobile();
+
+	// Close the mobile drawer whenever the route changes.
+	useEffect(() => {
+		void pathname;
+		mobile.close();
+	}, [pathname, mobile.close]);
+
+	return (
+		<>
+			<DesktopSidebar
+				collapsed={collapsed.value}
+				footer={footer}
+				items={items}
+				onToggleCollapsed={collapsed.toggle}
+				pathname={pathname}
+				strings={strings}
+			/>
+			<MobileSidebarDrawer
+				footer={footer}
+				items={items}
+				onClose={mobile.close}
+				open={mobile.open}
+				pathname={pathname}
+				strings={strings}
+			/>
+		</>
+	);
+}
+
+interface DesktopSidebarProps {
+	readonly collapsed: boolean;
+	readonly footer: ReactNode;
+	readonly items: readonly SidebarItemModel[];
+	readonly onToggleCollapsed: () => void;
+	readonly pathname: string;
+	readonly strings: SidebarStrings;
+}
+
+function DesktopSidebar(props: DesktopSidebarProps) {
+	const { collapsed, footer, items, onToggleCollapsed, pathname, strings } = props;
+	const ToggleIcon = collapsed ? PanelLeft : PanelLeftClose;
+	const toggleLabel = collapsed ? strings.toggleExpand : strings.toggleCollapse;
 
 	return (
 		<aside
-			aria-expanded={!collapsed.value}
+			aria-expanded={!collapsed}
 			aria-label={strings.navigationLabel}
 			className={cn(
-				"flex h-full shrink-0 flex-col border-r border-border-hairline bg-bg-base",
+				"hidden h-full shrink-0 flex-col border-r border-border-hairline bg-bg-base md:flex",
 				"transition-[width] duration-200 ease-out",
-				collapsed.value ? "w-16" : "w-60",
+				collapsed ? "w-16" : "w-60",
 			)}
 		>
 			<div
 				className={cn(
 					"flex h-12 shrink-0 items-center border-b border-border-hairline",
-					collapsed.value ? "justify-center" : "justify-end px-2",
+					collapsed ? "justify-center" : "justify-end px-2",
 				)}
 			>
 				<button
 					aria-label={toggleLabel}
 					className="flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-surface-overlay hover:text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					onClick={collapsed.toggle}
+					onClick={onToggleCollapsed}
 					title={toggleLabel}
 					type="button"
 				>
@@ -59,7 +101,7 @@ export function Sidebar(props: SidebarProps) {
 			<nav className="flex-1 overflow-y-auto py-2">
 				{SECTION_ORDER.map((group) => (
 					<SidebarSection
-						collapsed={collapsed.value}
+						collapsed={collapsed}
 						group={group}
 						items={items}
 						key={group}
@@ -72,13 +114,70 @@ export function Sidebar(props: SidebarProps) {
 				<div
 					className={cn(
 						"border-t border-border-hairline py-2",
-						collapsed.value ? "flex flex-col items-center gap-1" : "px-2",
+						collapsed ? "flex flex-col items-center gap-1" : "px-2",
 					)}
 				>
 					{footer}
 				</div>
 			) : null}
 		</aside>
+	);
+}
+
+interface MobileSidebarDrawerProps {
+	readonly footer: ReactNode;
+	readonly items: readonly SidebarItemModel[];
+	readonly onClose: () => void;
+	readonly open: boolean;
+	readonly pathname: string;
+	readonly strings: SidebarStrings;
+}
+
+function MobileSidebarDrawer(props: MobileSidebarDrawerProps) {
+	const { footer, items, onClose, open, pathname, strings } = props;
+	return (
+		<div
+			aria-hidden={!open}
+			className={cn(
+				"fixed inset-0 z-50 md:hidden",
+				open ? "pointer-events-auto" : "pointer-events-none",
+			)}
+		>
+			<button
+				aria-label={strings.toggleCollapse}
+				className={cn(
+					"absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200",
+					open ? "opacity-100" : "opacity-0",
+				)}
+				onClick={onClose}
+				tabIndex={open ? 0 : -1}
+				type="button"
+			/>
+			<aside
+				aria-expanded={open}
+				aria-label={strings.navigationLabel}
+				className={cn(
+					"absolute inset-y-0 left-0 flex w-64 flex-col border-r border-border-hairline bg-bg-base shadow-2xl",
+					"transition-transform duration-200 ease-out",
+					open ? "translate-x-0" : "-translate-x-full",
+				)}
+			>
+				<div className="flex h-12 shrink-0 items-center border-b border-border-hairline px-2" />
+				<nav className="flex-1 overflow-y-auto py-2">
+					{SECTION_ORDER.map((group) => (
+						<SidebarSection
+							collapsed={false}
+							group={group}
+							items={items}
+							key={group}
+							label={strings.sectionLabels[group]}
+							pathname={pathname}
+						/>
+					))}
+				</nav>
+				{footer ? <div className="border-t border-border-hairline px-2 py-2">{footer}</div> : null}
+			</aside>
+		</div>
 	);
 }
 

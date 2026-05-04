@@ -17,6 +17,7 @@ import {
 	toChannelHealthKey,
 	toChannelHealthTone,
 } from "../../../src/components/notify/notify-view-model";
+import { groupForHref, rootHrefForGroup } from "../../../src/components/shell/sidebar-groups";
 import { createServerApiClient, requireServerSession } from "../../../src/server-api";
 
 const CHANNEL_SNAPSHOT_LIMIT = 200;
@@ -33,9 +34,11 @@ export default async function ChannelsPage() {
 	const entries = await apiClient.listNotifyHistory({ limit: CHANNEL_SNAPSHOT_LIMIT });
 	const summary = summarizeChannels(entries);
 	const t = await getTranslations("channels");
+	const tNav = await getTranslations("nav");
 
+	const rootGroup = groupForHref("/admin/channels");
 	const breadcrumbs = [
-		{ label: t("breadcrumbAdmin"), href: "/admin/notify-history" },
+		{ label: tNav(rootGroup), href: rootHrefForGroup(rootGroup) },
 		{ label: t("pageTitle") },
 	];
 
@@ -49,10 +52,7 @@ export default async function ChannelsPage() {
 	return (
 		<NotifyShell breadcrumbs={breadcrumbs}>
 			<EntitySummary
-				badges={[
-					{ label: "Read-only", tone: "warning" },
-					{ label: "Slice 1.5", tone: "info" },
-				]}
+				badges={[{ label: "Read-only", tone: "warning" }]}
 				subtitle={t("pageSubtitle")}
 				title={t("pageTitle")}
 			/>

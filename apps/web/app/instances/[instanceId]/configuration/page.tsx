@@ -2,10 +2,8 @@ import { PageContent } from "@db-monitor/ui";
 
 import { Tier3PlaceholderCard } from "../../../../src/components/instance-detail/tier3-placeholder-card";
 
-/**
- * Q13 配置 tab：Tier 3 honest placeholder。
- * 后端尚未开放 per-instance parameter / SHOW VARIABLES 端点，预计 Slice 2 交付。
- */
+// 配置 tab：Tier 3 honest placeholder.
+// 后端尚未开放 per-instance parameter / SHOW VARIABLES 端点，能力即将上线。
 export default function ConfigurationPlaceholderPage() {
 	return (
 		<PageContent>
@@ -16,8 +14,8 @@ export default function ConfigurationPlaceholderPage() {
 					"按模板（OLTP / OLAP / Replica）定义推荐参数",
 					"与运行值漂移告警",
 				]}
-				description="配置视图需要后端新增 parameter snapshot / baseline 端点；预计 Slice 2 上线，与 Slice 2 的 PostgresBindingRepository 落地同步。"
-				sliceLabel="Slice 2 交付"
+				description="配置视图需要后端新增 parameter snapshot / baseline 端点；与绑定写入能力一并上线。"
+				statusLabel="即将上线"
 				title="配置"
 			/>
 		</PageContent>

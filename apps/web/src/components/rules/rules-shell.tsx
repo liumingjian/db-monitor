@@ -4,7 +4,7 @@ import {
 	AppShell,
 	type BreadcrumbItem,
 	CanonicalPageTemplate,
-	PageBreadcrumb,
+	SidebarMenuButton,
 	ThemeToggle,
 	TopBar,
 } from "@db-monitor/ui";
@@ -29,6 +29,7 @@ interface RulesShellProps {
  */
 export function RulesShell({ breadcrumbs, children, entitySummary, username }: RulesShellProps) {
 	const tTopbar = useTranslations("topbar");
+	const tSidebar = useTranslations("sidebar");
 
 	return (
 		<AppShell
@@ -38,6 +39,7 @@ export function RulesShell({ breadcrumbs, children, entitySummary, username }: R
 					breadcrumbs={breadcrumbs}
 					commandLabel={tTopbar("commandPalette")}
 					commandShortcut={tTopbar("keyboardShortcut")}
+					leadingSlot={<SidebarMenuButton label={tSidebar("openMenu")} />}
 					notificationLabel={tTopbar("notifications")}
 					onCommandOpen={NOOP}
 					themeToggle={
@@ -51,7 +53,6 @@ export function RulesShell({ breadcrumbs, children, entitySummary, username }: R
 			}
 		>
 			<CanonicalPageTemplate>
-				<PageBreadcrumb items={breadcrumbs} />
 				{entitySummary}
 				{children}
 			</CanonicalPageTemplate>

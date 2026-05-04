@@ -25,7 +25,7 @@ export function QuickMetricCell(props: QuickMetricCellProps) {
 	return (
 		<div
 			className={cn(
-				"flex h-full min-w-0 items-center gap-3 border-r border-border-hairline px-4 last:border-r-0",
+				"flex min-h-16 min-w-0 items-center gap-3 border-b border-r border-border-hairline px-4 py-2 lg:h-full lg:min-h-0 lg:border-b-0 last:border-r-0",
 				className,
 			)}
 		>

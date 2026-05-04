@@ -8,7 +8,6 @@ import {
 	CardHeader,
 	CardTitle,
 	EntitySummary,
-	PageBreadcrumb,
 	PageContent,
 	QuickMetrics,
 } from "@db-monitor/ui";
@@ -25,6 +24,7 @@ import {
 import { SettingsKeyValueForm } from "../../src/components/settings-audit/settings-key-value-form";
 import { SettingsPageShell } from "../../src/components/settings-audit/settings-page-shell";
 import { UserRoleCard } from "../../src/components/settings-audit/user-role-card";
+import { groupForHref, rootHrefForGroup } from "../../src/components/shell/sidebar-groups";
 import { createServerApiClient, requireServerSession } from "../../src/server-api";
 import { buildSettingsManagementModel } from "../../src/settings-management";
 
@@ -46,7 +46,14 @@ export default async function SettingsPage() {
 	});
 
 	const t = await getTranslations("settingsPage");
+	const tNav = await getTranslations("nav");
 	const partitions = partitionSettings(settings);
+
+	const rootGroup = groupForHref("/settings");
+	const breadcrumbs = [
+		{ label: tNav(rootGroup), href: rootHrefForGroup(rootGroup) },
+		{ label: t("breadcrumbSettings") },
+	];
 
 	const formLabels = {
 		keyLabel: t("keyLabel"),
@@ -162,8 +169,8 @@ export default async function SettingsPage() {
 			<AboutGroup
 				title={t("aboutTitle")}
 				contractVersionLabel={t("aboutContractVersion")}
-				sliceLabel={t("aboutSlice")}
-				sliceValue={t("aboutSliceValue")}
+				phaseLabel={t("aboutPhase")}
+				phaseValue={t("aboutPhaseValue")}
 				adrTitle={t("aboutAdrTitle")}
 				adr0012={t("aboutAdr0012")}
 				adr0006={t("aboutAdr0006")}
@@ -183,19 +190,10 @@ export default async function SettingsPage() {
 
 	return (
 		<AdminShell
-			breadcrumbs={[
-				{ label: t("breadcrumbAdmin"), href: "/settings" },
-				{ label: t("breadcrumbSettings") },
-			]}
+			breadcrumbs={breadcrumbs}
 			userInitials={deriveInitials(session.displayName ?? session.username)}
 		>
 			<CanonicalPageTemplate>
-				<PageBreadcrumb
-					items={[
-						{ label: t("breadcrumbAdmin"), href: "/settings" },
-						{ label: t("breadcrumbSettings") },
-					]}
-				/>
 				<EntitySummary
 					title={t("title")}
 					subtitle={t("subtitle")}
@@ -533,8 +531,8 @@ function AdvancedGroup(props: AdvancedGroupProps) {
 interface AboutGroupProps {
 	readonly title: string;
 	readonly contractVersionLabel: string;
-	readonly sliceLabel: string;
-	readonly sliceValue: string;
+	readonly phaseLabel: string;
+	readonly phaseValue: string;
 	readonly adrTitle: string;
 	readonly adr0012: string;
 	readonly adr0006: string;
@@ -545,8 +543,8 @@ function AboutGroup(props: AboutGroupProps) {
 	const {
 		title,
 		contractVersionLabel,
-		sliceLabel,
-		sliceValue,
+		phaseLabel,
+		phaseValue,
 		adrTitle,
 		adr0012,
 		adr0006,
@@ -563,8 +561,8 @@ function AboutGroup(props: AboutGroupProps) {
 					<dd className="col-span-2 font-mono tabular-nums text-fg-secondary">
 						{API_CONTRACT_VERSION}
 					</dd>
-					<dt className="text-xs uppercase tracking-wider text-fg-muted">{sliceLabel}</dt>
-					<dd className="col-span-2 text-fg-primary">{sliceValue}</dd>
+					<dt className="text-xs uppercase tracking-wider text-fg-muted">{phaseLabel}</dt>
+					<dd className="col-span-2 text-fg-primary">{phaseValue}</dd>
 				</dl>
 				<h4 className="mt-4 text-xs font-medium uppercase tracking-wider text-fg-muted">
 					{adrTitle}

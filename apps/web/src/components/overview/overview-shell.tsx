@@ -4,7 +4,7 @@ import {
 	AppShell,
 	type BreadcrumbItem,
 	CanonicalPageTemplate,
-	PageBreadcrumb,
+	SidebarMenuButton,
 	TabBar,
 	type TabItem,
 	ThemeToggle,
@@ -33,6 +33,7 @@ export function OverviewShell(props: OverviewShellProps) {
 	const { entitySummary, quickMetrics, children, username } = props;
 	const tNav = useTranslations("nav");
 	const tTopbar = useTranslations("topbar");
+	const tSidebar = useTranslations("sidebar");
 	const tOverview = useTranslations("overviewPage");
 
 	const breadcrumbs: readonly BreadcrumbItem[] = [
@@ -49,6 +50,7 @@ export function OverviewShell(props: OverviewShellProps) {
 					breadcrumbs={breadcrumbs}
 					commandLabel={tTopbar("commandPalette")}
 					commandShortcut={tTopbar("keyboardShortcut")}
+					leadingSlot={<SidebarMenuButton label={tSidebar("openMenu")} />}
 					notificationLabel={tTopbar("notifications")}
 					onCommandOpen={NOOP}
 					themeToggle={
@@ -62,7 +64,6 @@ export function OverviewShell(props: OverviewShellProps) {
 			}
 		>
 			<CanonicalPageTemplate>
-				<PageBreadcrumb items={breadcrumbs} />
 				{entitySummary}
 				{quickMetrics}
 				<TabBar tabs={tabs} activeKey="summary" />

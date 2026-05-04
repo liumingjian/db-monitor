@@ -9,6 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 	cn,
+	formatRelativeTime,
 } from "@db-monitor/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -109,8 +110,8 @@ function AuditRow(props: AuditRowProps) {
 
 	return (
 		<tr className="border-t border-border-hairline align-top hover:bg-surface-overlay">
-			<td className="px-4 py-3 font-mono text-xs tabular-nums text-fg-secondary">
-				{event.occurredAt}
+			<td className="px-4 py-3 text-xs tabular-nums text-fg-secondary" title={event.occurredAt}>
+				{formatRelativeTime(event.occurredAt)}
 			</td>
 			<td className="px-4 py-3">
 				<span className="font-medium text-fg-primary">{t(eventI18nKey(event.type))}</span>

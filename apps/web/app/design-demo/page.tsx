@@ -70,10 +70,7 @@ export default function DesignDemoPage() {
 							</Button>
 						</>
 					}
-					badges={[
-						{ tone: "ok", label: "设计就绪" },
-						{ tone: "info", label: "Slice 1.5b" },
-					]}
+					badges={[{ tone: "ok", label: "设计就绪" }]}
 					subtitle="验证 tokens / 字体 / 双主题 / primitives / layout / utils 协同"
 					title="设计系统冒烟页"
 				/>
