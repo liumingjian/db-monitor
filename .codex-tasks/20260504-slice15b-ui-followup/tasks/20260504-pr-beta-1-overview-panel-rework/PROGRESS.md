@@ -3,11 +3,12 @@
 ## Recovery Block
 
 - 任务: Overview 聚合页 panel 战术立模板（section-heading + hairline divider）
+- 任务状态: PR opened，等 Boss 视觉签字 + merge
 - 形态: single-full（epic `20260504-slice15b-ui-followup` child #3）
-- 进度: 8/9
-- 当前: Step 9 — 提交 + push + 开 PR β.1，等 Boss 授权 push
+- 进度: 9/9（child task 自身）
+- PR: https://github.com/liumingjian/db-monitor/pull/10
 - 文件: 新增 packages/ui/src/layout/section-heading.tsx + 导出；改 4 个 overview 组件 + page.tsx + zh-CN.json + smoke/phase-one.spec.ts（中文 login）
-- 下一步: 等 Boss 授权后 commit + push branch + `gh pr create` 开 PR β.1（base=main）
+- 下一步: Boss merge 后回 epic SUBTASKS.csv 把 child #3 标 DONE 并解锁后续 child（β.2 等）
 
 ## 前置条件（已满足）
 
@@ -38,3 +39,4 @@
 - 2026-05-05T(Step 7) — DONE。chrome-devtools MCP 走 admin 登录后双视口截图：1440 桌面 fullPage（1430x1190）+ 500x844 mobile fullPage（500x3107，hide 掉 mobile drawer 后）落 raw/after-desktop.png + raw/after-mobile.png。修了一个 dev-server stale CSS bug（重启 pm2 web 让 Tailwind v4 重扫 packages/ui/sidebar.tsx 的 md:flex），fullPage 截图改用 `evaluate_script` 临时把 main 的 overflow:hidden + h-dvh 改 visible+auto 让全部段落入帧。Mobile 上 EntitySummary badges + KPI grid 窄柱子排版是已有 mobile 问题（不是 β.1 引入），超 SPEC Non-goals "mobile/tablet 响应式 drawer"，留给 Slice 2/3。
 - 2026-05-05T(Step 8) — DONE。Workspace 闸门：`pnpm typecheck` 全绿（packages/api-client + packages/ui + apps/web 三段）；`pnpm lint` 全绿（biome 216 文件 0 fix）；`pnpm smoke:web` 部分通过：login（中文选择子 `用户名` / `密码` / `登录`）+ /overview "机群总览" heading + canvas 全绿，fail 在 line 20 `/instances/inst-prod-primary` canvas 的 `toBeVisible()`。该回归源自 PR β.0 (`ef75859`) 对 `instance-detail-shell.tsx` 的改动（`git log --all -- apps/web/src/components/instance-detail/instance-detail-shell.tsx` 显示 ef75859 是该文件最后一次 commit；β.1 working-tree diff 对 `apps/web/app/instances/` 与 `apps/web/src/components/instance-detail/` 全空），SPEC Non-goals 已把"7 页批量复制"划入 PR γ scope，因此本 PR 不修。Smoke 中 login 段也同步 Chinese-ize 了 selector（β.0 漏改）。
 - 2026-05-05T(Step 8 → 9 衔接) — 等 Boss 授权后 commit + push + open PR β.1。涉及 9 个 modified + 1 个 new 文件 + raw/ 工件目录。Auto Mode 5b 规定 push remote 是 shared-system 改动需要明确确认。
+- 2026-05-05T(Step 9) — DONE。Boss 一句"同意"授权 push + 开 PR。本地 commit `6988f4e`（20 文件 +1139/-68，含 4 个 overview 组件 + section-heading primitive + zh-CN i18n + smoke login Chinese-ize + 任务三件套 + raw/ 工件 11 项）；`git push -u origin codex/slice15b-pr-beta-1-overview-panel-rework` 成功；`gh pr create` base=main head=codex/slice15b-pr-beta-1-overview-panel-rework → PR #10：https://github.com/liumingjian/db-monitor/pull/10。PR body 写明 SPEC 摘要 + 视觉工件清单 + Out-of-scope（PR γ）+ 已知 β.0 smoke 回归声明 + Test plan 勾选状态。等 Boss 视觉签字 + merge 后回 epic SUBTASKS.csv 把 child #3 → DONE。
