@@ -1,5 +1,5 @@
 import type { OverviewInstanceResponse } from "@db-monitor/api-client";
-import { cn } from "@db-monitor/ui";
+import { SectionHeading, cn } from "@db-monitor/ui";
 import Link from "next/link";
 
 interface FleetHealthMatrixProps {
@@ -34,14 +34,12 @@ export function FleetHealthMatrix(props: FleetHealthMatrixProps) {
 	const cells = instances.map((instance) => toCell(instance, statusLabels));
 
 	return (
-		<section className="flex flex-col gap-3 rounded-md border border-border-hairline bg-bg-base p-4">
-			<header className="flex flex-wrap items-baseline justify-between gap-2">
-				<div>
-					<h3 className="text-sm font-semibold text-fg-primary">{title}</h3>
-					<p className="text-xs text-fg-muted">{subtitle}</p>
-				</div>
-				<LegendRow labels={statusLabels} />
-			</header>
+		<section className="flex flex-col gap-4">
+			<SectionHeading
+				label={title}
+				description={subtitle}
+				endSlot={<LegendRow labels={statusLabels} />}
+			/>
 			{cells.length === 0 ? (
 				<div className="rounded-sm border border-border-hairline bg-bg-elevated px-3 py-6 text-center text-xs text-fg-muted">
 					{emptyLabel}

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Variant A — Stripe-API dense / DB Monitor Overview</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class' };
+</script>
+<style>
+  :root {
+    --bg-base: #0b0d0f;
+    --bg-elevated: #111418;
+    --bg-overlay: #1a1f25;
+    --fg-primary: #e6edf3;
+    --fg-muted: #8b95a3;
+    --fg-subtle: #5b6573;
+    --border-hairline: #1f242b;
+    --border-muted: #2a313a;
+    --border-strong: #3a424d;
+    --accent: #3DDCCA;
+    --sev-ok: #10b981;
+    --sev-warning: #f59e0b;
+    --sev-critical: #ef4444;
+    --sev-info: #3b82f6;
+  }
+  body { background: var(--bg-base); color: var(--fg-primary); font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+  .label-cap { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); font-weight: 500; }
+  .hairline { border-top: 1px solid var(--border-hairline); }
+  .hairline-strong { border-top: 1px solid var(--border-muted); }
+  .section-spacing > * + * { margin-top: 24px; }
+  .ok { color: var(--sev-ok); } .crit { color: var(--sev-critical); } .warn { color: var(--sev-warning); } .info { color: var(--sev-info); }
+  .ok-bg { background-color: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); }
+  .crit-bg { background-color: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); }
+  .warn-bg { background-color: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
+  .info-bg { background-color: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); }
+  .accent { color: var(--accent); }
+  .sparkline { stroke: var(--accent); fill: none; stroke-width: 1.5; }
+  .sparkline-fill { fill: var(--accent); fill-opacity: 0.10; }
+  .sidebar-item.active { background: rgba(61,220,202,0.10); color: var(--accent); border-left-color: var(--accent); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ====== AppShell skeleton (sidebar + topbar are visual stubs only) ====== -->
+<div class="flex min-h-screen">
+  <!-- Sidebar (collapsed-able 240px) -->
+  <aside class="w-[240px] shrink-0 border-r" style="border-color: var(--border-hairline); background: var(--bg-elevated)">
+    <div class="px-4 py-3.5 flex items-center gap-2 border-b" style="border-color: var(--border-hairline)">
+      <div class="h-6 w-6 rounded-sm flex items-center justify-center font-bold text-[11px]" style="background: var(--accent); color: #0b0d0f">DB</div>
+      <span class="text-sm font-semibold">DB Monitor</span>
+    </div>
+    <nav class="py-2 text-sm">
+      <div class="px-4 pt-3 pb-1 label-cap">Observe</div>
+      <a class="sidebar-item active flex items-center gap-2 px-4 py-1.5 border-l-2 border-transparent">⊟ Overview</a>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">▤ Instances</a>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">📈 Metrics</a>
+      <div class="px-4 pt-4 pb-1 label-cap">Alert</div>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">⚠ Alerts</a>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">⚙ Rules</a>
+      <div class="px-4 pt-4 pb-1 label-cap">Operate</div>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">📜 Audit</a>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">📥 Notify</a>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">📡 Channels</a>
+      <div class="px-4 pt-4 pb-1 label-cap">Admin</div>
+      <a class="flex items-center gap-2 px-4 py-1.5 text-[var(--fg-muted)] hover:text-[var(--fg-primary)]">⚙ Settings</a>
+    </nav>
+  </aside>
+
+  <!-- Main column -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TopBar -->
+    <header class="h-12 shrink-0 px-6 flex items-center justify-between border-b" style="border-color: var(--border-hairline); background: var(--bg-base)">
+      <nav class="flex items-center gap-2 text-[13px] text-[var(--fg-muted)]">
+        <span>Observe</span> <span class="text-[var(--fg-subtle)]">/</span> <span class="text-[var(--fg-primary)]">Overview</span>
+      </nav>
+      <div class="flex items-center gap-3">
+        <button class="h-7 px-2 text-[12px] border rounded-sm flex items-center gap-2" style="border-color: var(--border-muted); background: var(--bg-elevated)">
+          <span class="text-[var(--fg-muted)]">⌘K</span> <span>Search</span>
+        </button>
+        <span class="text-[var(--fg-subtle)] text-xs">·</span>
+        <button class="text-[var(--fg-muted)] hover:text-[var(--fg-primary)] text-sm">🔔</button>
+        <button class="text-[var(--fg-muted)] hover:text-[var(--fg-primary)] text-sm">☼</button>
+        <div class="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold" style="background: rgba(61,220,202,0.15); color: var(--accent)">SY</div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="flex-1 px-8 py-6 max-w-[1440px] mx-auto w-full">
+
+      <!-- ============ EntitySummary ============ -->
+      <div class="flex items-start justify-between gap-6 mb-5">
+        <div>
+          <h1 class="text-[20px] font-semibold tracking-tight">Overview</h1>
+          <p class="text-sm text-[var(--fg-muted)] mt-1">Fleet snapshot · 24 instances · window 15m</p>
+          <div class="flex items-center gap-2 mt-3">
+            <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-sm text-[11px] font-medium border crit-bg crit num">
+              <span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-critical)"></span> 4 unhealthy
+            </span>
+            <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-sm text-[11px] font-medium border warn-bg warn num">
+              <span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-warning)"></span> 3 degraded
+            </span>
+            <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-sm text-[11px] font-medium border" style="border-color: var(--border-muted); color: var(--fg-muted)">window=15m</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <select class="h-8 px-2 text-[12px] border rounded-sm" style="border-color: var(--border-muted); background: var(--bg-elevated)">
+            <option>Last 15 minutes</option><option>Last 1 hour</option><option>Last 24 hours</option>
+          </select>
+          <button class="h-8 px-2.5 text-[12px] border rounded-sm flex items-center gap-1.5" style="border-color: var(--border-muted); background: var(--bg-elevated)">
+            <span class="h-1.5 w-1.5 rounded-full" style="background: var(--accent); box-shadow: 0 0 6px var(--accent)"></span> Auto-refresh · 4s ago
+          </button>
+        </div>
+      </div>
+
+      <!-- ============ QuickMetrics (KPI row, 5 tiles) ============ -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
+        <div class="border rounded-sm p-3 min-h-[64px]" style="border-color: var(--border-hairline); background: var(--bg-elevated)">
+          <div class="label-cap">Total instances</div>
+          <div class="num text-[22px] font-semibold mt-1 leading-none">24</div>
+          <div class="text-[11px] text-[var(--fg-muted)] mt-1">3 engines</div>
+        </div>
+        <div class="border rounded-sm p-3 min-h-[64px]" style="border-color: var(--border-hairline); background: var(--bg-elevated)">
+          <div class="label-cap">Healthy ratio</div>
+          <div class="num text-[22px] font-semibold mt-1 leading-none">70.8<span class="text-base text-[var(--fg-muted)]">%</span></div>
+          <div class="text-[11px] text-[var(--fg-muted)] mt-1">17 ok · 7 not ok</div>
+        </div>
+        <div class="border rounded-sm p-3 min-h-[64px]" style="border-color: var(--border-hairline); background: var(--bg-elevated)">
+          <div class="label-cap">QPS</div>
+          <div class="num text-[22px] font-semibold mt-1 leading-none">12,847.42</div>
+          <div class="text-[11px] text-[var(--fg-muted)] mt-1">queries/s</div>
+        </div>
+        <div class="border rounded-sm p-3 min-h-[64px]" style="border-color: var(--border-hairline); background: var(--bg-elevated)">
+          <div class="label-cap">Threads connected</div>
+          <div class="num text-[22px] font-semibold mt-1 leading-none">3,142</div>
+          <div class="text-[11px] text-[var(--fg-muted)] mt-1">active</div>
+        </div>
+        <div class="border rounded-sm p-3 min-h-[64px]" style="border-color: var(--border-hairline); background: var(--bg-elevated)">
+          <div class="label-cap">Replication lag</div>
+          <div class="num text-[22px] font-semibold mt-1 leading-none warn">2.4<span class="text-base text-[var(--fg-muted)]">s</span></div>
+          <div class="text-[11px] text-[var(--fg-muted)] mt-1">max across replicas</div>
+        </div>
+      </div>
+
+      <!-- ============ TabBar ============ -->
+      <div class="hairline-strong flex items-center gap-6 text-sm h-10 mb-5">
+        <button class="h-full flex items-center px-0.5 border-b-2 border-[var(--accent)] accent font-medium">Summary</button>
+      </div>
+
+      <!-- ====================================================
+           VARIANT A: section-heading is small all-caps label,
+           dividers are FULL-WIDTH hairline lines (border-top),
+           inter-section spacing 24px, charts are bare (no card).
+           ==================================================== -->
+
+      <!-- ============ Section: Operational metrics (8 charts) ============ -->
+      <section class="mt-2">
+        <div class="flex items-center justify-between gap-4 pb-2.5">
+          <div>
+            <div class="label-cap">Operational metrics</div>
+            <div class="text-[12px] text-[var(--fg-muted)] mt-0.5">8 metrics · last 15m · 1m granularity</div>
+          </div>
+          <div class="text-[11px] text-[var(--fg-muted)] num">updated 4s ago</div>
+        </div>
+        <div class="hairline pt-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-6 gap-y-5">
+            <!-- Generated chart cells (8) -->
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Threads connected</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">3,142</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,55 20,40 40,38 60,30 80,32 100,25 120,28 140,18 160,22 180,14 200,16 200,60 0,60"/><polyline class="sparkline" points="0,55 20,40 40,38 60,30 80,32 100,25 120,28 140,18 160,22 180,14 200,16"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Threads running</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">142</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,40 20,42 40,28 60,35 80,20 100,30 120,18 140,33 160,12 180,28 200,16 200,60 0,60"/><polyline class="sparkline" points="0,40 20,42 40,28 60,35 80,20 100,30 120,18 140,33 160,12 180,28 200,16"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">QPS</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">12,847</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,30 20,35 40,28 60,18 80,22 100,12 120,15 140,8 160,18 180,10 200,4 200,60 0,60"/><polyline class="sparkline" points="0,30 20,35 40,28 60,18 80,22 100,12 120,15 140,8 160,18 180,10 200,4"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Bytes received/s</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">8.4 MB/s</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,38 20,32 40,40 60,28 80,30 100,22 120,32 140,20 160,28 180,16 200,22 200,60 0,60"/><polyline class="sparkline" points="0,38 20,32 40,40 60,28 80,30 100,22 120,32 140,20 160,28 180,16 200,22"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Bytes sent/s</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">14.7 MB/s</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,42 20,30 40,38 60,22 80,32 100,18 120,28 140,12 160,22 180,8 200,14 200,60 0,60"/><polyline class="sparkline" points="0,42 20,30 40,38 60,22 80,32 100,18 120,28 140,12 160,22 180,8 200,14"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Buffer pool reads/s</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">3,290</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,44 20,46 40,28 60,40 80,22 100,38 120,18 140,42 160,14 180,40 200,18 200,60 0,60"/><polyline class="sparkline" points="0,44 20,46 40,28 60,40 80,22 100,38 120,18 140,42 160,14 180,40 200,18"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Replication lag <span class="text-[10px] warn">⚠</span></div>
+                <div class="num text-[12px] warn">2.4 s</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,52 20,48 40,42 60,46 80,28 100,32 120,16 140,24 160,12 180,8 200,5 200,60 0,60" style="fill: rgba(245,158,11,0.10)"/><polyline class="sparkline" points="0,52 20,48 40,42 60,46 80,28 100,32 120,16 140,24 160,12 180,8 200,5" style="stroke: var(--sev-warning)"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="text-[12px] font-medium text-[var(--fg-primary)]">Uptime</div>
+                <div class="num text-[12px] text-[var(--fg-muted)]">14 d 3 h</div>
+              </div>
+              <svg viewBox="0 0 200 60" class="w-full h-[80px] mt-1.5"><polyline class="sparkline-fill" points="0,30 20,28 40,29 60,27 80,28 100,26 120,27 140,25 160,26 180,24 200,25 200,60 0,60"/><polyline class="sparkline" points="0,30 20,28 40,29 60,27 80,28 100,26 120,27 140,25 160,26 180,24 200,25"/></svg>
+              <div class="text-[10px] text-[var(--fg-subtle)] mt-1 num">23:45  ·  23:52  ·  23:59</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ Section: Fleet health matrix ============ -->
+      <section class="mt-6">
+        <div class="flex items-center justify-between gap-4 pb-2.5">
+          <div>
+            <div class="label-cap">Fleet health</div>
+            <div class="text-[12px] text-[var(--fg-muted)] mt-0.5">Each cell = 1 instance · click to drill down</div>
+          </div>
+          <ul class="flex items-center gap-3 text-[11px] text-[var(--fg-muted)]">
+            <li class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-ok)"></span>Healthy 17</li>
+            <li class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-warning)"></span>Degraded 3</li>
+            <li class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-critical)"></span>Unhealthy 4</li>
+            <li class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-info)"></span>Unknown 0</li>
+          </ul>
+        </div>
+        <div class="hairline pt-4">
+          <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(168px, 1fr))">
+            <!-- 24 cells -->
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5">
+              <div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-prod-01</span></div>
+              <div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>prod</span></div>
+              <span class="text-[10px] font-medium ok">Healthy</span>
+            </a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-prod-02</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="crit-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-critical)"></span><span class="truncate text-[12px] font-semibold">mysql-prod-03</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>prod</span></div><span class="text-[10px] font-medium crit">Unhealthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-prod-04</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="warn-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-warning)"></span><span class="truncate text-[12px] font-semibold">mysql-prod-05</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>prod</span></div><span class="text-[10px] font-medium warn">Degraded</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-prod-06</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">pg-prod-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">pg-prod-02</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">pg-prod-03</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="crit-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-critical)"></span><span class="truncate text-[12px] font-semibold">pg-prod-04</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>prod</span></div><span class="text-[10px] font-medium crit">Unhealthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-stage-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>stage</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="warn-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-warning)"></span><span class="truncate text-[12px] font-semibold">mysql-stage-02</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>stage</span></div><span class="text-[10px] font-medium warn">Degraded</span></a>
+            <a class="info-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-info)"></span><span class="truncate text-[12px] font-semibold">mysql-stage-03</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>stage</span></div><span class="text-[10px] font-medium info">Unknown</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">pg-stage-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>stage</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">pg-stage-02</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>stage</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-dev-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>dev</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-dev-02</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>dev</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">mysql-dev-03</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>dev</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="info-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-info)"></span><span class="truncate text-[12px] font-semibold">mysql-dev-04</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>mysql</span><span>dev</span></div><span class="text-[10px] font-medium info">Unknown</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">pg-dev-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>postgres</span><span>dev</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">oracle-prod-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>oracle</span><span>prod</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+            <a class="crit-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-critical)"></span><span class="truncate text-[12px] font-semibold">oracle-prod-02</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>oracle</span><span>prod</span></div><span class="text-[10px] font-medium crit">Unhealthy</span></a>
+            <a class="warn-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-warning)"></span><span class="truncate text-[12px] font-semibold">oracle-stage-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>oracle</span><span>stage</span></div><span class="text-[10px] font-medium warn">Degraded</span></a>
+            <a class="ok-bg border rounded-sm px-3 py-2.5 min-h-[74px] flex flex-col justify-between gap-1.5 transition hover:-translate-y-0.5"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full shrink-0" style="background: var(--sev-ok)"></span><span class="truncate text-[12px] font-semibold">oracle-dev-01</span></div><div class="flex items-center justify-between text-[10px] num text-[var(--fg-muted)] uppercase"><span>oracle</span><span>dev</span></div><span class="text-[10px] font-medium ok">Healthy</span></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ Section: Snapshot table ============ -->
+      <section class="mt-6 pb-12">
+        <div class="flex items-center justify-between gap-4 pb-2.5">
+          <div>
+            <div class="label-cap">Instances snapshot</div>
+            <div class="text-[12px] text-[var(--fg-muted)] mt-0.5">Top 6 needing attention · sorted by status severity</div>
+          </div>
+          <div class="text-[11px] text-[var(--fg-muted)] num">key metric: QPS</div>
+        </div>
+        <div class="hairline pt-3">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left label-cap" style="height: 28px">
+                <th class="font-medium pr-4">Name</th>
+                <th class="font-medium pr-4">Engine</th>
+                <th class="font-medium pr-4">Env</th>
+                <th class="font-medium pr-4">Status</th>
+                <th class="font-medium pr-4 text-right">QPS</th>
+                <th class="font-medium pr-4">Labels</th>
+              </tr>
+            </thead>
+            <tbody class="text-[13px]">
+              <tr class="border-t" style="border-color: var(--border-hairline); height: 36px"><td class="pr-4 font-medium">mysql-prod-03</td><td class="pr-4 num text-[var(--fg-muted)]">mysql</td><td class="pr-4 num text-[var(--fg-muted)]">prod</td><td class="pr-4"><span class="inline-flex items-center gap-1 text-[11px] font-medium crit"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-critical)"></span>Unhealthy</span></td><td class="pr-4 num text-right">2,143.78</td><td class="pr-4 text-[12px] text-[var(--fg-muted)] num">region=us-east-1, tier=primary</td></tr>
+              <tr class="border-t" style="border-color: var(--border-hairline); height: 36px"><td class="pr-4 font-medium">oracle-prod-02</td><td class="pr-4 num text-[var(--fg-muted)]">oracle</td><td class="pr-4 num text-[var(--fg-muted)]">prod</td><td class="pr-4"><span class="inline-flex items-center gap-1 text-[11px] font-medium crit"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-critical)"></span>Unhealthy</span></td><td class="pr-4 num text-right">1,889.02</td><td class="pr-4 text-[12px] text-[var(--fg-muted)] num">region=us-east-1, tier=primary</td></tr>
+              <tr class="border-t" style="border-color: var(--border-hairline); height: 36px"><td class="pr-4 font-medium">pg-prod-04</td><td class="pr-4 num text-[var(--fg-muted)]">postgres</td><td class="pr-4 num text-[var(--fg-muted)]">prod</td><td class="pr-4"><span class="inline-flex items-center gap-1 text-[11px] font-medium crit"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-critical)"></span>Unhealthy</span></td><td class="pr-4 num text-right">1,560.45</td><td class="pr-4 text-[12px] text-[var(--fg-muted)] num">region=eu-west-1, tier=primary</td></tr>
+              <tr class="border-t" style="border-color: var(--border-hairline); height: 36px"><td class="pr-4 font-medium">mysql-prod-05</td><td class="pr-4 num text-[var(--fg-muted)]">mysql</td><td class="pr-4 num text-[var(--fg-muted)]">prod</td><td class="pr-4"><span class="inline-flex items-center gap-1 text-[11px] font-medium warn"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-warning)"></span>Degraded</span></td><td class="pr-4 num text-right">3,402.11</td><td class="pr-4 text-[12px] text-[var(--fg-muted)] num">region=us-east-1, tier=primary</td></tr>
+              <tr class="border-t" style="border-color: var(--border-hairline); height: 36px"><td class="pr-4 font-medium">mysql-stage-02</td><td class="pr-4 num text-[var(--fg-muted)]">mysql</td><td class="pr-4 num text-[var(--fg-muted)]">stage</td><td class="pr-4"><span class="inline-flex items-center gap-1 text-[11px] font-medium warn"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-warning)"></span>Degraded</span></td><td class="pr-4 num text-right">612.30</td><td class="pr-4 text-[12px] text-[var(--fg-muted)] num">region=us-east-1, tier=stage</td></tr>
+              <tr class="border-t" style="border-color: var(--border-hairline); height: 36px"><td class="pr-4 font-medium">oracle-stage-01</td><td class="pr-4 num text-[var(--fg-muted)]">oracle</td><td class="pr-4 num text-[var(--fg-muted)]">stage</td><td class="pr-4"><span class="inline-flex items-center gap-1 text-[11px] font-medium warn"><span class="h-1.5 w-1.5 rounded-full" style="background: var(--sev-warning)"></span>Degraded</span></td><td class="pr-4 num text-right">488.71</td><td class="pr-4 text-[12px] text-[var(--fg-muted)] num">region=us-east-1, tier=stage</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

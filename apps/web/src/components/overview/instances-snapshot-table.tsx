@@ -1,5 +1,5 @@
 import type { MetricCardResponse, OverviewInstanceResponse } from "@db-monitor/api-client";
-import { cn } from "@db-monitor/ui";
+import { SectionHeading, cn } from "@db-monitor/ui";
 import Link from "next/link";
 
 interface InstancesSnapshotTableProps {
@@ -46,11 +46,8 @@ export function InstancesSnapshotTable(props: InstancesSnapshotTableProps) {
 
 	if (instances.length === 0) {
 		return (
-			<section className="flex flex-col gap-2 rounded-md border border-border-hairline bg-bg-base p-4">
-				<header>
-					<h3 className="text-sm font-semibold text-fg-primary">{heading}</h3>
-					<p className="text-xs text-fg-muted">{subheading}</p>
-				</header>
+			<section className="flex flex-col gap-3">
+				<SectionHeading label={heading} description={subheading} />
 				<div className="rounded-sm border border-border-hairline bg-bg-elevated px-3 py-6 text-center text-xs text-fg-muted">
 					{emptyLabel}
 				</div>
@@ -59,14 +56,12 @@ export function InstancesSnapshotTable(props: InstancesSnapshotTableProps) {
 	}
 
 	return (
-		<section className="flex flex-col gap-2 rounded-md border border-border-hairline bg-bg-base p-4">
-			<header className="flex flex-wrap items-baseline justify-between gap-2">
-				<div>
-					<h3 className="text-sm font-semibold text-fg-primary">{heading}</h3>
-					<p className="text-xs text-fg-muted">{subheading}</p>
-				</div>
-				<span className="font-mono text-[11px] text-fg-muted tabular-nums">{keyMetricLabel}</span>
-			</header>
+		<section className="flex flex-col gap-3">
+			<SectionHeading
+				label={heading}
+				description={subheading}
+				endSlot={<span className="font-mono tabular-nums">{keyMetricLabel}</span>}
+			/>
 			<div className="overflow-x-auto">
 				<table className="min-w-full border-separate border-spacing-0 text-sm">
 					<thead>
