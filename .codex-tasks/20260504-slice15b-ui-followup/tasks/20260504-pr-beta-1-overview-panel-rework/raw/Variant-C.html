@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Variant C — Linear Spacious (no-divider, generous rhythm)</title>
+<style>
+  :root {
+    --bg-base: #0b0d0f;
+    --bg-elev: #111417;
+    --bg-soft: #16191d;
+    --border-hairline: #1f242a;
+    --border-muted: #262c33;
+    --fg-primary: #e6edf3;
+    --fg-secondary: #9aa4ad;
+    --fg-tertiary: #6b7480;
+    --accent: #3DDCCA;
+    --sev-ok: #10b981;
+    --sev-warn: #f59e0b;
+    --sev-crit: #ef4444;
+    --sev-info: #38bdf8;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg-base); color: var(--fg-primary); font-family: -apple-system, "SF Pro Text", "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ===== Layout shell ===== */
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--bg-elev); border-right: 1px solid var(--border-hairline); padding: 16px 12px; position: sticky; top: 0; height: 100vh; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 6px 10px 14px; border-bottom: 1px solid var(--border-hairline); margin-bottom: 12px; }
+  .brand-mark { width: 22px; height: 22px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--accent), #1e8e80); }
+  .brand-name { font-weight: 600; letter-spacing: 0.2px; }
+  .nav-group-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-tertiary); padding: 12px 10px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-sm); color: var(--fg-secondary); cursor: pointer; }
+  .nav-item:hover { background: var(--bg-soft); color: var(--fg-primary); }
+  .nav-item.is-active { background: rgba(61, 220, 202, 0.08); color: var(--fg-primary); }
+  .nav-item.is-active::before { content: ""; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; margin-left: -10px; margin-right: 7px; }
+  .nav-icon { width: 14px; height: 14px; border: 1px solid currentColor; border-radius: 3px; opacity: 0.7; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 32px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-base); position: sticky; top: 0; z-index: 5; }
+  .breadcrumb { color: var(--fg-secondary); font-size: 13px; }
+  .breadcrumb b { color: var(--fg-primary); font-weight: 600; }
+  .topbar-actions { display: flex; gap: 12px; align-items: center; }
+  .search { background: var(--bg-elev); border: 1px solid var(--border-hairline); border-radius: var(--radius-md); padding: 6px 10px; color: var(--fg-secondary); font-size: 12px; min-width: 240px; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3DDCCA, #1e8e80); }
+
+  .main { padding: 32px 40px 64px; max-width: 1280px; }
+
+  /* ===== Page header (Linear-style, very airy) ===== */
+  .page-header { margin-bottom: 40px; }
+  .page-title { font-size: 24px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .page-subtitle { color: var(--fg-secondary); font-size: 14px; margin: 0 0 20px; }
+  .page-meta { display: flex; gap: 24px; align-items: center; color: var(--fg-tertiary); font-size: 12px; }
+  .meta-item { display: flex; gap: 6px; align-items: center; }
+  .meta-item b { color: var(--fg-secondary); font-weight: 500; }
+  .sev-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+  .sev-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .sev-pill.crit { background: rgba(239, 68, 68, 0.10); color: #fca5a5; }
+  .sev-pill.crit .dot { background: var(--sev-crit); }
+  .sev-pill.warn { background: rgba(245, 158, 11, 0.10); color: #fcd34d; }
+  .sev-pill.warn .dot { background: var(--sev-warn); }
+  .sev-pill.ok { background: rgba(16, 185, 129, 0.10); color: #6ee7b7; }
+  .sev-pill.ok .dot { background: var(--sev-ok); }
+
+  /* ===== KPI strip (no-card, just generous gaps) ===== */
+  .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 32px; margin-bottom: 56px; }
+  .kpi-cell .label { font-size: 12px; color: var(--fg-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi-cell .value { font-size: 22px; font-weight: 600; font-feature-settings: "tnum"; letter-spacing: -0.01em; }
+  .kpi-cell .delta { font-size: 12px; color: var(--fg-secondary); margin-top: 4px; }
+  .kpi-cell .delta.up { color: #6ee7b7; }
+  .kpi-cell .delta.down { color: #fca5a5; }
+
+  /* ===== Tab bar (subtle, underline-only) ===== */
+  .tabbar { display: flex; gap: 24px; border-bottom: 1px solid var(--border-hairline); margin-bottom: 56px; }
+  .tab { padding: 10px 0; color: var(--fg-secondary); font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.is-active { color: var(--fg-primary); border-bottom-color: var(--accent); font-weight: 500; }
+  .tab .count { color: var(--fg-tertiary); font-size: 12px; margin-left: 6px; }
+
+  /* ===== Section (Linear: heading inline, NO divider, 64px rhythm) ===== */
+  section.block { margin-bottom: 64px; }
+  section.block:last-child { margin-bottom: 0; }
+  .section-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+  .section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.10em; color: var(--fg-tertiary); font-weight: 500; }
+  .section-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-tertiary); }
+  .section-title { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: -0.005em; }
+  .section-desc { color: var(--fg-tertiary); font-size: 13px; margin-left: auto; }
+
+  /* ===== Chart grid (sparser than A/B) ===== */
+  .chart-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .chart-cell { padding: 4px 0; }
+  .chart-cell .ch-label { font-size: 12px; color: var(--fg-secondary); margin-bottom: 8px; }
+  .chart-cell .ch-value { font-size: 18px; font-weight: 600; font-feature-settings: "tnum"; letter-spacing: -0.005em; margin-bottom: 6px; }
+  .chart-cell .ch-delta { font-size: 11px; color: var(--fg-tertiary); margin-bottom: 8px; }
+  .chart-cell .ch-svg { width: 100%; height: 56px; display: block; }
+  .chart-cell .ch-svg path.line { stroke: var(--accent); stroke-width: 1.4; fill: none; }
+  .chart-cell .ch-svg path.area { fill: rgba(61, 220, 202, 0.06); stroke: none; }
+
+  /* ===== Fleet matrix (less dense, breathing room) ===== */
+  .fleet-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+  .fleet-cell { aspect-ratio: 1.6 / 1; border-radius: var(--radius-sm); padding: 10px; background: var(--bg-soft); border: 1px solid var(--border-hairline); display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: border-color 0.15s; }
+  .fleet-cell:hover { border-color: var(--border-muted); }
+  .fleet-cell .name { font-size: 11px; color: var(--fg-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-feature-settings: "tnum"; }
+  .fleet-cell .metric { font-size: 13px; font-weight: 600; font-feature-settings: "tnum"; }
+  .fleet-cell .badge { width: 6px; height: 6px; border-radius: 50%; margin-left: auto; }
+  .fleet-cell.is-ok .badge { background: var(--sev-ok); }
+  .fleet-cell.is-warn .badge { background: var(--sev-warn); }
+  .fleet-cell.is-crit .badge { background: var(--sev-crit); }
+  .fleet-cell.is-info .badge { background: var(--sev-info); }
+  .fleet-cell.is-crit { background: rgba(239, 68, 68, 0.06); border-color: rgba(239, 68, 68, 0.25); }
+  .fleet-cell.is-warn { background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.20); }
+  .row-flex { display: flex; align-items: center; gap: 4px; }
+
+  /* ===== Snapshot table (no card, just airy rows) ===== */
+  table.snap { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.snap thead th { text-align: left; padding: 10px 12px; font-size: 11px; color: var(--fg-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border-hairline); }
+  table.snap tbody td { padding: 14px 12px; border-bottom: 1px solid var(--border-hairline); color: var(--fg-secondary); font-feature-settings: "tnum"; }
+  table.snap tbody tr:last-child td { border-bottom: 0; }
+  table.snap tbody tr:hover td { background: var(--bg-soft); }
+  table.snap td.id { color: var(--fg-primary); font-weight: 500; }
+  table.snap td.num { text-align: right; }
+  table.snap td .row-tag { display: inline-flex; align-items: center; gap: 6px; }
+  table.snap td .row-tag .dot { width: 6px; height: 6px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark"></span><span class="brand-name">db-monitor</span></div>
+    <div class="nav-group-label">主视图</div>
+    <div class="nav-item is-active"><span class="nav-icon"></span>Overview</div>
+    <div class="nav-item"><span class="nav-icon"></span>Instances</div>
+    <div class="nav-item"><span class="nav-icon"></span>Rules</div>
+    <div class="nav-group-label">告警</div>
+    <div class="nav-item"><span class="nav-icon"></span>Alerts</div>
+    <div class="nav-item"><span class="nav-icon"></span>Notifications</div>
+    <div class="nav-group-label">运维</div>
+    <div class="nav-item"><span class="nav-icon"></span>Audit log</div>
+    <div class="nav-item"><span class="nav-icon"></span>Channels</div>
+    <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+  </aside>
+  <div>
+    <header class="topbar">
+      <div class="breadcrumb"><b>Overview</b> · 全实例聚合视图</div>
+      <div class="topbar-actions">
+        <input class="search" placeholder="搜索实例 / 规则…" />
+        <span class="avatar" title="Boss"></span>
+      </div>
+    </header>
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Overview</h1>
+        <p class="page-subtitle">所有 MySQL / PostgreSQL / TiDB 实例的健康聚合视图</p>
+        <div class="page-meta">
+          <span class="meta-item"><b>32</b> 实例</span>
+          <span class="meta-item"><span class="sev-pill crit"><span class="dot"></span>4 Critical</span></span>
+          <span class="meta-item"><span class="sev-pill warn"><span class="dot"></span>3 Degraded</span></span>
+          <span class="meta-item"><span class="sev-pill ok"><span class="dot"></span>25 Healthy</span></span>
+          <span class="meta-item">· 同步于 2 分钟前</span>
+        </div>
+      </div>
+
+      <div class="kpi-strip">
+        <div class="kpi-cell"><div class="label">QPS</div><div class="value">12.4k</div><div class="delta up">+3.1% / 1h</div></div>
+        <div class="kpi-cell"><div class="label">P99 延迟</div><div class="value">218ms</div><div class="delta down">+18ms / 1h</div></div>
+        <div class="kpi-cell"><div class="label">连接占用</div><div class="value">68%</div><div class="delta">阈值 80%</div></div>
+        <div class="kpi-cell"><div class="label">复制延迟</div><div class="value">1.4s</div><div class="delta up">正常</div></div>
+        <div class="kpi-cell"><div class="label">活跃告警</div><div class="value">7</div><div class="delta down">+2 / 1h</div></div>
+      </div>
+
+      <div class="tabbar">
+        <div class="tab is-active">概览<span class="count">8</span></div>
+        <div class="tab">复制<span class="count">3</span></div>
+        <div class="tab">告警<span class="count">7</span></div>
+        <div class="tab">配置<span class="count"></span></div>
+      </div>
+
+      <section class="block">
+        <div class="section-heading">
+          <span class="section-eyebrow">Trends</span>
+          <span class="section-dot"></span>
+          <h2 class="section-title">关键指标趋势</h2>
+          <span class="section-desc">最近 6 小时 · 5 分钟粒度</span>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-cell">
+            <div class="ch-label">QPS (合计)</div>
+            <div class="ch-value">12,430</div>
+            <div class="ch-delta">+3.1% vs 上 1h</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,40 L20,38 40,42 60,30 80,28 100,34 120,26 140,22 160,18 180,20 200,16 L200,56 L0,56 Z" />
+              <path class="line" d="M0,40 L20,38 40,42 60,30 80,28 100,34 120,26 140,22 160,18 180,20 200,16" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">P99 延迟</div>
+            <div class="ch-value">218ms</div>
+            <div class="ch-delta">+18ms vs 上 1h</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,30 L20,32 40,28 60,26 80,30 100,38 120,42 140,36 160,40 180,44 200,40 L200,56 L0,56 Z" />
+              <path class="line" d="M0,30 L20,32 40,28 60,26 80,30 100,38 120,42 140,36 160,40 180,44 200,40" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">连接占用</div>
+            <div class="ch-value">68%</div>
+            <div class="ch-delta">阈值 80%</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,42 L20,40 40,38 60,36 80,32 100,30 120,30 140,28 160,30 180,28 200,26 L200,56 L0,56 Z" />
+              <path class="line" d="M0,42 L20,40 40,38 60,36 80,32 100,30 120,30 140,28 160,30 180,28 200,26" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">复制延迟</div>
+            <div class="ch-value">1.4s</div>
+            <div class="ch-delta">5 实例 ≤ 2s</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,46 L20,44 40,46 60,42 80,40 100,42 120,38 140,40 160,36 180,38 200,34 L200,56 L0,56 Z" />
+              <path class="line" d="M0,46 L20,44 40,46 60,42 80,40 100,42 120,38 140,36 160,40 180,38 200,34" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">慢查询</div>
+            <div class="ch-value">42 /min</div>
+            <div class="ch-delta">P95 880ms</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,28 L20,30 40,32 60,28 80,30 100,32 120,28 140,26 160,30 180,28 200,30 L200,56 L0,56 Z" />
+              <path class="line" d="M0,28 L20,30 40,32 60,28 80,30 100,32 120,28 140,26 160,30 180,28 200,30" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">缓冲池命中</div>
+            <div class="ch-value">99.6%</div>
+            <div class="ch-delta">较稳定</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,18 L20,16 40,18 60,16 80,18 100,16 120,18 140,16 160,18 180,16 200,18 L200,56 L0,56 Z" />
+              <path class="line" d="M0,18 L20,16 40,18 60,16 80,18 100,16 120,18 140,16 160,18 180,16 200,18" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">磁盘 IOPS</div>
+            <div class="ch-value">8.2k</div>
+            <div class="ch-delta">峰值 11k</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,32 L20,28 40,34 60,26 80,30 100,22 120,28 140,32 160,30 180,26 200,30 L200,56 L0,56 Z" />
+              <path class="line" d="M0,32 L20,28 40,34 60,26 80,30 100,22 120,28 140,32 160,30 180,26 200,30" />
+            </svg>
+          </div>
+          <div class="chart-cell">
+            <div class="ch-label">网络吞吐</div>
+            <div class="ch-value">412 MB/s</div>
+            <div class="ch-delta">入 / 出 5:4</div>
+            <svg class="ch-svg" viewBox="0 0 200 56" preserveAspectRatio="none">
+              <path class="area" d="M0,38 L20,36 40,32 60,34 80,28 100,30 120,26 140,30 160,28 180,32 200,30 L200,56 L0,56 Z" />
+              <path class="line" d="M0,38 L20,36 40,32 60,34 80,28 100,30 120,26 140,30 160,28 180,32 200,30" />
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="section-heading">
+          <span class="section-eyebrow">Fleet</span>
+          <span class="section-dot"></span>
+          <h2 class="section-title">实例健康矩阵</h2>
+          <span class="section-desc">32 实例 · 颜色映射严重度</span>
+        </div>
+        <div class="fleet-grid">
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-prod-01</span><span class="badge"></span></div><span class="metric">98ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-prod-02</span><span class="badge"></span></div><span class="metric">112ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-prod-03</span><span class="badge"></span></div><span class="metric">87ms</span></div>
+          <div class="fleet-cell is-warn"><div class="row-flex"><span class="name">db-prod-04</span><span class="badge"></span></div><span class="metric">368ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-prod-05</span><span class="badge"></span></div><span class="metric">142ms</span></div>
+          <div class="fleet-cell is-crit"><div class="row-flex"><span class="name">db-prod-06</span><span class="badge"></span></div><span class="metric">812ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-prod-07</span><span class="badge"></span></div><span class="metric">102ms</span></div>
+          <div class="fleet-cell is-info"><div class="row-flex"><span class="name">db-prod-08</span><span class="badge"></span></div><span class="metric">syncing</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-stg-01</span><span class="badge"></span></div><span class="metric">76ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-stg-02</span><span class="badge"></span></div><span class="metric">82ms</span></div>
+          <div class="fleet-cell is-warn"><div class="row-flex"><span class="name">db-stg-03</span><span class="badge"></span></div><span class="metric">412ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-stg-04</span><span class="badge"></span></div><span class="metric">98ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-an-01</span><span class="badge"></span></div><span class="metric">130ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-an-02</span><span class="badge"></span></div><span class="metric">144ms</span></div>
+          <div class="fleet-cell is-crit"><div class="row-flex"><span class="name">db-an-03</span><span class="badge"></span></div><span class="metric">timeout</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-an-04</span><span class="badge"></span></div><span class="metric">122ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-rep-01</span><span class="badge"></span></div><span class="metric">110ms</span></div>
+          <div class="fleet-cell is-warn"><div class="row-flex"><span class="name">db-rep-02</span><span class="badge"></span></div><span class="metric">298ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-rep-03</span><span class="badge"></span></div><span class="metric">126ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-rep-04</span><span class="badge"></span></div><span class="metric">118ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-bi-01</span><span class="badge"></span></div><span class="metric">94ms</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-bi-02</span><span class="badge"></span></div><span class="metric">88ms</span></div>
+          <div class="fleet-cell is-crit"><div class="row-flex"><span class="name">db-bi-03</span><span class="badge"></span></div><span class="metric">err</span></div>
+          <div class="fleet-cell is-ok"><div class="row-flex"><span class="name">db-bi-04</span><span class="badge"></span></div><span class="metric">132ms</span></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="section-heading">
+          <span class="section-eyebrow">Snapshot</span>
+          <span class="section-dot"></span>
+          <h2 class="section-title">实例快照</h2>
+          <span class="section-desc">P99 延迟最高的 6 个实例</span>
+        </div>
+        <table class="snap">
+          <thead>
+            <tr>
+              <th style="width:18%">实例</th>
+              <th>引擎</th>
+              <th>角色</th>
+              <th>状态</th>
+              <th class="num">QPS</th>
+              <th class="num">P99</th>
+              <th class="num">连接 %</th>
+              <th class="num">复制延迟</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">db-prod-06</td><td>MySQL 8.0</td><td>primary</td><td><span class="row-tag"><span class="dot" style="background:var(--sev-crit)"></span>Critical</span></td><td class="num">2,140</td><td class="num">812ms</td><td class="num">94%</td><td class="num">—</td></tr>
+            <tr><td class="id">db-an-03</td><td>PostgreSQL 15</td><td>replica</td><td><span class="row-tag"><span class="dot" style="background:var(--sev-crit)"></span>Timeout</span></td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+            <tr><td class="id">db-bi-03</td><td>TiDB 7.1</td><td>analytics</td><td><span class="row-tag"><span class="dot" style="background:var(--sev-crit)"></span>Connection error</span></td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+            <tr><td class="id">db-stg-03</td><td>MySQL 8.0</td><td>primary</td><td><span class="row-tag"><span class="dot" style="background:var(--sev-warn)"></span>Degraded</span></td><td class="num">820</td><td class="num">412ms</td><td class="num">72%</td><td class="num">2.1s</td></tr>
+            <tr><td class="id">db-prod-04</td><td>MySQL 8.0</td><td>replica</td><td><span class="row-tag"><span class="dot" style="background:var(--sev-warn)"></span>Degraded</span></td><td class="num">1,460</td><td class="num">368ms</td><td class="num">68%</td><td class="num">1.6s</td></tr>
+            <tr><td class="id">db-rep-02</td><td>PostgreSQL 15</td><td>replica</td><td><span class="row-tag"><span class="dot" style="background:var(--sev-warn)"></span>Degraded</span></td><td class="num">1,012</td><td class="num">298ms</td><td class="num">54%</td><td class="num">1.8s</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>

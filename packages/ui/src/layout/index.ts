@@ -19,6 +19,9 @@ export type { PageBreadcrumbProps } from "./page-breadcrumb";
 export { PageContent } from "./page-content";
 export type { PageContentProps } from "./page-content";
 
+export { SectionHeading } from "./section-heading";
+export type { SectionHeadingProps } from "./section-heading";
+
 export { QuickMetricCell } from "./quick-metric-cell";
 export type { QuickMetricCellProps } from "./quick-metric-cell";
 

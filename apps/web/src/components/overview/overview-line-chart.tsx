@@ -103,18 +103,18 @@ export function OverviewLineChart(props: OverviewLineChartProps) {
 	const hasPoints = (series?.points.length ?? 0) > 0;
 
 	return (
-		<div className="flex flex-col gap-2 rounded-md border border-border-hairline bg-bg-base p-4">
+		<div className="flex flex-col gap-1.5 rounded-md border border-border-hairline bg-bg-elevated px-3.5 py-3">
 			<div className="flex items-baseline justify-between gap-2">
-				<h3 className="text-sm font-semibold text-fg-primary">{title}</h3>
+				<h3 className="text-[13px] font-semibold text-fg-primary">{title}</h3>
 				{unitLabel ? (
-					<span className="font-mono text-xs text-fg-muted tabular-nums">{unitLabel}</span>
+					<span className="font-mono text-[11px] text-fg-muted tabular-nums">{unitLabel}</span>
 				) : null}
 			</div>
 			{hasPoints ? (
 				<div ref={containerRef} style={{ height: CHART_HEIGHT_PX, width: "100%" }} />
 			) : (
 				<div
-					className="flex flex-col items-center justify-center gap-2 rounded-sm bg-bg-elevated"
+					className="flex flex-col items-center justify-center gap-2 rounded-sm bg-bg-base"
 					style={{ height: CHART_HEIGHT_PX }}
 				>
 					<Skeleton className="h-3 w-40" />

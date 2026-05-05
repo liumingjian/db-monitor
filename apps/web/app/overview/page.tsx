@@ -7,6 +7,7 @@ import {
 	EntitySummary,
 	PageContent,
 	QuickMetrics,
+	SectionHeading,
 	formatPercent,
 	formatRelativeTime,
 } from "@db-monitor/ui";
@@ -100,7 +101,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 	return (
 		<OverviewShell username={username} entitySummary={entitySummary} quickMetrics={quickMetrics}>
 			<PageContent>
-				<ChartGrid overview={overview} t={t} />
+				<ChartGrid overview={overview} t={t} timeWindow={timeWindow} />
 				<FleetHealthMatrix
 					instances={overview.instances}
 					title={t("fleetMatrixTitle")}
@@ -140,28 +141,54 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 
 type TFn = Awaited<ReturnType<typeof getTranslations<"overviewPage">>>;
 
-function ChartGrid({ overview, t }: { readonly overview: OverviewResponse; readonly t: TFn }) {
+function formatBucket(seconds: number): string {
+	if (seconds < 60) {
+		return `${seconds}s`;
+	}
+	const minutes = Math.round(seconds / 60);
+	if (minutes < 60) {
+		return `${minutes}m`;
+	}
+	const hours = Math.round(minutes / 60);
+	return `${hours}h`;
+}
+
+function ChartGrid({
+	overview,
+	t,
+	timeWindow,
+}: { readonly overview: OverviewResponse; readonly t: TFn; readonly timeWindow: string }) {
 	const chartLookup = new Map<string, MetricSeriesResponse>();
 	for (const series of overview.charts) {
 		chartLookup.set(series.metric_name, series);
 	}
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-			{CHART_SLOTS.map((slot) => {
-				const series = chartLookup.get(slot.metric);
-				return (
-					<OverviewLineChart
-						key={slot.metric}
-						title={t(slot.titleKey)}
-						unitLabel={series?.unit}
-						series={series}
-						colorIndex={slot.colorIndex}
-						emptyLabel={t("chartEmpty")}
-					/>
-				);
-			})}
-		</div>
+		<section className="flex flex-col gap-4">
+			<SectionHeading
+				label={t("chartsSectionLabel")}
+				description={t("chartsSectionDescription", {
+					count: CHART_SLOTS.length,
+					window: timeWindow,
+					granularity: formatBucket(overview.bucket_seconds),
+				})}
+			/>
+			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+				{CHART_SLOTS.map((slot) => {
+					const series = chartLookup.get(slot.metric);
+					return (
+						<OverviewLineChart
+							key={slot.metric}
+							title={t(slot.titleKey)}
+							unitLabel={series?.unit}
+							series={series}
+							colorIndex={slot.colorIndex}
+							emptyLabel={t("chartEmpty")}
+						/>
+					);
+				})}
+			</div>
+		</section>
 	);
 }
 

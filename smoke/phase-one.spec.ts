@@ -8,11 +8,11 @@ const smokeInstanceUsername = process.env.DB_MONITOR_SMOKE_INSTANCE_USERNAME ?? 
 
 test("phase-one release smoke flow", async ({ page }) => {
 	await page.goto("/login");
-	await page.getByLabel("Username").fill("admin");
-	await page.getByLabel("Password").fill("admin-password");
-	await page.getByRole("button", { name: "Sign in" }).click();
+	await page.getByLabel("用户名").fill("admin");
+	await page.getByLabel("密码").fill("admin-password");
+	await page.getByRole("button", { name: "登录" }).click();
 	await expect(page).toHaveURL(/\/overview$/);
-	await expect(page.getByText("Fleet summary", { exact: true })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "机群总览" })).toBeVisible();
 	await expect(page.locator("canvas").first()).toBeVisible();
 
 	await page.goto("/instances/inst-prod-primary");
